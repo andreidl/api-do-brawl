@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import barra_wr %}
+{% block conteudo %}
+<h1>Consultar jogador</h1>
+{% if mensagem_erro %}<p class="erro">{{ mensagem_erro }}</p>{% endif %}
+{% if rastreio_status %}
+<p class="nota">🔄 Rastreio embutido (a cada 30 min com o app aberto) — última rodada:
+  <code>{{ rastreio_status }}</code></p>
+{% else %}
+<p class="nota">🔄 Rastreio embutido ativo (a cada 30 min com o app aberto) —
+  primeira rodada ainda não aconteceu nesta sessão.</p>
+{% endif %}
+<form method="post" action="/buscar" class="busca">
+  <input type="text" name="tag" placeholder="#299PGGLQL" required>
+  <button type="submit">Buscar</button>
+</form>
+{% if pendencias_externas %}
+<p class="nota">📥 <b>Histórico externo pendente</b> — consultados sem importação do Brawlify:
+  {% for p in pendencias_externas %}{{ p.nick }} <span class="tag">{{ p.tag }}</span>{{ ", " if not loop.last }}{% endfor %}.
+  Peça ao Claude numa sessão com o Chrome aberto ("importa o Brawlify do fulano") — processo de ~2 min (CLAUDE.md §3.6b).</p>
+{% endif %}
+
+{% if ranking %}
+<h2>Ranking do clube{% if clube %} — {{ clube.nome }}{% endif %}</h2>
+{% if clube %}
+<p class="nota">Só membros do {{ clube.nome }} (roster do brawlace, atualizado a cada consulta).
+  Mínimo 5 batalhas decididas no banco.</p>
+{% else %}
+<p class="nota">Todo mundo que já apareceu nas batalhas do banco (mín. 5 decididas).
+  O filtro por clube ativa na próxima consulta de um membro.</p>
+{% endif %}
+<table>
+  <thead><tr><th>#</th><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th><th>Troféus (visto)</th></tr></thead>
+  <tbody>
+    {% for r in ranking %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a> <span class="tag">{{ r.tag }}</span></td>
+      <td>{{ r.jogos }}</td>
+      <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
+      <td>{{ r.star_pct }}%</td>
+      <td>{{ "{:,}".format(r.trofeus).replace(",", ".") if r.trofeus else "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if composicoes and (composicoes.duplas or composicoes.trios) %}
+<h2>Melhores composições{% if clube %} do {{ clube.nome }}{% endif %}</h2>
+<p class="nota">Times reais que jogaram juntos (mín. 3 batalhas decididas juntos).</p>
+
+{% if composicoes.duplas %}
+<h3>Duplas</h3>
+<table>
+  <thead><tr><th>Dupla</th><th>Jogos</th><th>V</th><th>Winrate</th><th>Brawlers mais usados</th><th>Star player</th></tr></thead>
+  <tbody>
+    {% for d in composicoes.duplas %}
+    <tr><td>{{ d.nomes }}</td><td>{{ d.jogos }}</td><td>{{ d.vitorias }}</td>
+        <td>{{ barra_wr(d.winrate, d.jogos) }}</td>
+        <td>{% for c in d.brawlers_top %}{{ c }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
+        <td>{% for s in d.stars %}{{ s }}{% if not loop.last %} · {% endif %}{% else %}—{% endfor %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if composicoes.trios %}
+<h3>Trios</h3>
+<table>
+  <thead><tr><th>Trio</th><th>Jogos</th><th>V</th><th>Winrate</th><th>Brawlers mais usados</th><th>Star player</th></tr></thead>
+  <tbody>
+    {% for t in composicoes.trios %}
+    <tr><td>{{ t.nomes }}</td><td>{{ t.jogos }}</td><td>{{ t.vitorias }}</td>
+        <td>{{ barra_wr(t.winrate, t.jogos) }}</td>
+        <td>{% for c in t.brawlers_top %}{{ c }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
+        <td>{% for s in t.stars %}{{ s }}{% if not loop.last %} · {% endif %}{% else %}—{% endfor %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if fora_do_clube %}
+<h3>Conhecidos de fora do clube ({{ fora_do_clube | length }})</h3>
+<table>
+  <thead><tr><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th></tr></thead>
+  <tbody>
+    {% for r in fora_do_clube %}
+    <tr>
+      <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a> <span class="tag">{{ r.tag }}</span></td>
+      <td>{{ r.jogos }}</td>
+      <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
+      <td>{{ r.star_pct }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if recentes %}
+<h2>Consultados recentemente</h2>
+<p class="nota">🎮 = painel "Jogar agora" (eventos ativos com seus melhores picks)</p>
+<ul class="recentes">
+  {% for j in recentes %}
+  <li><a href="/jogador/{{ j.tag.lstrip('#') }}">{{ j.nick }} <span class="tag">{{ j.tag }}</span></a>
+      <a class="jogar-link" href="/jogar/{{ j.tag.lstrip('#') }}" title="Jogar agora">🎮</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

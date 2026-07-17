@@ -1,0 +1,2559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SNK | andreidl — API do Brawl</title>
+  <style>/* ============================================================
+   API do Brawl — tema escuro estilo Brawl Stars
+   Paleta: navy profundo + amarelo Brawl (#ffce00) + azul (#3b9dff)
+   ============================================================ */
+
+:root {
+  --fundo: #12141f;
+  --fundo-grad: #1a1d2e;
+  --painel: #1f2335;
+  --painel-borda: #2d3250;
+  --painel-hover: #262b42;
+  --texto: #e8eaf6;
+  --texto-suave: #8b90ad;
+  --destaque: #ffce00;          /* amarelo Brawl Stars */
+  --destaque-escuro: #e0a800;
+  --azul: #3b9dff;
+  --roxo: #9b6dff;
+  --verde: #3ddc84;
+  --vermelho: #ff5c6c;
+  --sombra: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --raio: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(59, 157, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(255, 206, 0, 0.06), transparent 55%),
+    linear-gradient(180deg, var(--fundo-grad) 0%, var(--fundo) 320px);
+  background-attachment: fixed;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+/* ---------- header ---------- */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(18, 20, 31, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 0.85rem 1.4rem;
+  border-bottom: 2px solid var(--destaque);
+  box-shadow: var(--sombra);
+}
+header a {
+  color: var(--destaque);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+header a:hover { color: #ffe15c; }
+
+main { max-width: 980px; margin: 0 auto; padding: 1.4rem 1.2rem 4rem; }
+
+/* ---------- tipografia ---------- */
+h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0.8rem 0 0.4rem;
+}
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.2rem 0 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--painel-borda);
+  color: var(--destaque);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 1.6rem 0 0.4rem;
+  color: var(--azul);
+}
+a { color: var(--azul); }
+a:hover { color: #7cbfff; }
+
+.tag { color: var(--texto-suave); font-size: 0.8em; font-weight: 500; }
+.erro { color: var(--vermelho); font-weight: 600; }
+.nota { color: var(--texto-suave); font-size: 0.88em; }
+.clube { color: var(--texto-suave); margin-top: 0; }
+
+/* ---------- busca (home) ---------- */
+.busca { display: flex; gap: 0.6rem; margin: 1.2rem 0 1.8rem; }
+.busca input {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  font-size: 1.05rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.busca input::placeholder { color: var(--texto-suave); }
+.busca input:focus {
+  outline: none;
+  border-color: var(--destaque);
+  box-shadow: 0 0 0 3px rgba(255, 206, 0, 0.18);
+}
+.busca button {
+  padding: 0.85rem 1.8rem;
+  border: none;
+  border-radius: var(--raio);
+  background: linear-gradient(180deg, #ffd93d, var(--destaque-escuro));
+  color: #1a1500;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #a87e00, var(--sombra);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+}
+.busca button:hover { filter: brightness(1.08); }
+.busca button:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87e00; }
+
+/* ---------- lista de recentes ---------- */
+.recentes { list-style: none; padding: 0; margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.recentes li a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.65rem 1rem;
+  text-decoration: none;
+  color: var(--texto);
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.recentes li a:hover {
+  background: var(--painel-hover);
+  border-color: var(--destaque);
+  transform: translateX(3px);
+}
+
+/* ---------- cartões de stats ---------- */
+.cartoes { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 1rem 0; }
+.cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  box-shadow: var(--sombra);
+  transition: border-color 0.15s, transform 0.1s;
+}
+.cartao:hover { border-color: var(--destaque); transform: translateY(-2px); }
+.cartao b { font-size: 1.45rem; color: var(--destaque); font-weight: 800; }
+.cartao span {
+  font-size: 0.76rem;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+/* ---------- tabelas ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1.6rem;
+  font-size: 0.9rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+thead { background: rgba(0, 0, 0, 0.25); }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--painel-borda); }
+tbody tr:last-child td { border-bottom: none; }
+th {
+  color: var(--texto-suave);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--painel-hover); }
+
+tr.vitoria td:last-child { color: var(--verde); font-weight: 700; }
+tr.derrota td:last-child { color: var(--vermelho); font-weight: 700; }
+tr.vitoria { box-shadow: inset 3px 0 0 var(--verde); }
+tr.derrota { box-shadow: inset 3px 0 0 var(--vermelho); }
+td.bom { color: var(--verde); font-weight: 700; }
+td.ruim { color: var(--vermelho); font-weight: 700; }
+
+/* ---------- gráficos SVG ---------- */
+.grafico {
+  width: 100%;
+  height: 170px;
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  margin: 0.5rem 0;
+  box-shadow: var(--sombra);
+}
+
+/* ---------- página de erro ---------- */
+.painel-erro {
+  background: var(--painel);
+  border: 1px solid var(--vermelho);
+  border-radius: var(--raio);
+  padding: 1.4rem 1.6rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--sombra);
+}
+.painel-erro h1 { margin-top: 0; }
+
+/* ---------- responsivo ---------- */
+@media (max-width: 640px) {
+  h1 { font-size: 1.5rem; }
+  .cartao { min-width: calc(50% - 0.35rem); flex: 1; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+  .busca { flex-direction: column; }
+  .busca button { width: 100%; }
+}
+
+/* ---------- abas ranked × troféus ---------- */
+.abas {
+  display: flex; gap: 0.5rem; margin: 0.8rem 0 0.4rem;
+}
+.abas a {
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.abas a:hover { border-color: var(--destaque); }
+.abas a.ativa {
+  background: var(--destaque);
+  color: #1a1500;
+  border-color: var(--destaque);
+}
+
+/* ---------- painel Jogar agora ---------- */
+.eventos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 0.9rem;
+  margin: 1.2rem 0;
+}
+@media (max-width: 640px) { .eventos-grid { grid-template-columns: 1fr; } }
+.evento-cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 1rem 1.2rem;
+  box-shadow: var(--sombra);
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.evento-cartao:hover { border-color: var(--destaque); }
+.evento-topo { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.evento-topo b {
+  color: var(--destaque); text-transform: uppercase; font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+.evento-topo .mapa { color: var(--azul); font-weight: 600; }
+.evento-numeros { font-weight: 700; font-size: 0.95rem; }
+.evento-linha { font-size: 0.9rem; line-height: 1.6; }
+.evento-linha .rotulo {
+  display: block; color: var(--texto-suave); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.recentes li { display: flex; align-items: center; gap: 0.4rem; }
+.recentes li > a:first-child { flex: 1; }
+.jogar-link { font-size: 1.2rem; text-decoration: none; }
+
+/* ---------- seletor de time (Jogar agora) ---------- */
+.time-form {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.7rem 1rem;
+  margin: 1rem 0;
+}
+.time-form .rotulo { color: var(--texto-suave); font-size: 0.8rem; text-transform: uppercase; }
+.time-opcao { display: flex; align-items: center; gap: 0.3rem; font-size: 0.9rem; cursor: pointer; }
+.time-form button {
+  padding: 0.4rem 1rem; border: none; border-radius: 999px;
+  background: var(--verde); color: #06281a; font-weight: 800; cursor: pointer;
+}
+.distribuicao { border-left: 3px solid var(--verde); padding-left: 0.6rem; }
+
+/* ---------- barras de winrate (leitura de relance) ---------- */
+.wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
+.wr-barra {
+  flex: 1; height: 8px; min-width: 70px; max-width: 110px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px; overflow: hidden;
+}
+.wr-preenchido { display: block; height: 100%; border-radius: 4px; }
+.wr-alto  { background: var(--verde); }
+.wr-medio { background: var(--destaque); }
+.wr-baixo { background: var(--vermelho); }
+.wr-texto { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wr-amostra-fraca .wr-preenchido { opacity: 0.35; }
+.wr-amostra-fraca .wr-texto { color: var(--texto-suave); }
+
+/* ---------- tabelas recolhíveis ---------- */
+details.recolhivel > summary {
+  cursor: pointer; color: var(--azul); font-weight: 600;
+  padding: 0.4rem 0; list-style: none; font-size: 0.9rem;
+}
+details.recolhivel > summary::before { content: "▸ "; }
+details.recolhivel[open] > summary::before { content: "▾ "; }
+
+/* ---------- destaque da melhor aposta (Jogar agora) ---------- */
+.evento-cartao.melhor-aposta {
+  border-color: var(--verde);
+  box-shadow: 0 0 0 1px var(--verde), var(--sombra);
+}
+.melhor-aposta-selo {
+  align-self: flex-start;
+  background: var(--verde); color: #06281a;
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 0.15rem 0.6rem; border-radius: 999px;
+}
+.evento-numeros .wr-destaque { font-size: 1.6rem; font-weight: 800; }
+
+/* ---------- acessórios recomendados ---------- */
+.picks-lista { list-style: none; padding: 0; margin: 0.3rem 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.picks-lista li { line-height: 1.5; }
+.acess { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; margin-left: 0.3rem; vertical-align: middle; }
+.acess-item {
+  font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--painel-borda); white-space: nowrap;
+}
+.acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
+.acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }
+</style>
+</head>
+<body>
+  <header><a href="index.html">⭐ API do Brawl</a></header>
+  <main><p class="nota" style="text-align:center">📸 Foto do clã — atualizada quando o dono publica. Versão ao vivo roda no PC dele.</p>
+
+<p class="nota" id="aviso-atualizacao">⚡ Dados do banco (2026-07-17T17:23:14+00:00) —
+  buscando novidades no brawlace em segundo plano…</p>
+
+
+<h1>SNK | andreidl <span class="tag">#299PGGLQL</span></h1>
+
+
+<nav class="abas">
+  <a href="jogar_299PGGLQL.html" style="border-color: var(--verde); color: var(--verde);">🎮 Jogar agora</a>
+  <a href="jogador_299PGGLQL.html" class="ativa">Tudo</a>
+  <a href="#" class="">🏆 Troféus</a>
+  <a href="#" class="">🎖️ Ranked</a>
+</nav>
+
+
+
+<section class="cartoes">
+  
+  <div class="cartao"><b>73.205</b><span>Troféus</span></div>
+  
+  
+  
+  <div class="cartao"><b>SILVER I (750)</b><span>Ranked atual</span></div>
+  
+  <div class="cartao"><b>199</b><span>Level</span></div>
+  
+  <div class="cartao"><b>11413</b><span>Vitórias 3v3</span></div>
+  
+  <div class="cartao"><b>104</b><span>Brawlers</span></div>
+</section>
+
+
+<h2>Carreira (vida inteira)</h2>
+<section class="cartoes">
+  
+  <div class="cartao"><b>2018</b><span>Conta criada (8 anos)</span></div>
+  
+  <div class="cartao"><b>73.205</b><span>Pico de troféus</span></div>
+  <div class="cartao"><b>MYTHIC I (6331)</b><span>Melhor ranked da história</span></div>
+  <div class="cartao"><b>11.413</b><span>Vitórias 3v3 (total)</span></div>
+  <div class="cartao"><b>170</b><span>Vitórias solo (total)</span></div>
+  <div class="cartao"><b>1844</b><span>Vitórias duo (total)</span></div>
+  
+  <div class="cartao"><b>22.310</b><span>Record points</span></div>
+  
+</section>
+
+
+
+
+
+
+
+<h2>Histórico de longo prazo (2025-11-15 → 2026-07-17)</h2>
+<section class="cartoes">
+  <div class="cartao"><b>1.030</b><span>Batalhas rastreadas</span></div>
+  <div class="cartao"><b>63.4%</b><span>Winrate</span></div>
+  <div class="cartao"><b>652 / 377</b><span>Vitórias / derrotas</span></div>
+  <div class="cartao"><b>+3.527</b><span>Troféus no período</span></div>
+  <div class="cartao"><b>57</b><span>Dias com jogo</span></div>
+</section>
+
+
+
+
+
+
+<svg viewBox="0 0 600 160" class="grafico" preserveAspectRatio="none">
+  <polyline fill="none" stroke="#ffcf40" stroke-width="2" points="
+    10.0,140.0
+    20.4,137.3
+    30.7,136.1
+    41.1,136.6
+    51.4,131.8
+    61.8,130.4
+    72.1,129.2
+    82.5,129.0
+    92.9,127.1
+    103.2,126.2
+    113.6,125.5
+    123.9,122.8
+    134.3,120.2
+    144.6,118.2
+    155.0,116.0
+    165.4,115.9
+    175.7,115.9
+    186.1,115.4
+    196.4,114.0
+    206.8,111.6
+    217.1,110.1
+    227.5,108.7
+    237.9,107.4
+    248.2,105.0
+    258.6,102.0
+    268.9,99.9
+    279.3,99.1
+    289.6,99.0
+    300.0,99.2
+    310.4,97.5
+    320.7,97.6
+    331.1,93.3
+    341.4,90.5
+    351.8,87.0
+    362.1,87.0
+    372.5,84.8
+    382.9,82.1
+    393.2,77.1
+    403.6,75.2
+    413.9,68.8
+    424.3,65.5
+    434.6,60.9
+    445.0,57.1
+    455.4,50.9
+    465.7,45.8
+    476.1,45.1
+    486.4,41.6
+    496.8,38.6
+    507.1,33.6
+    517.5,33.3
+    527.9,30.5
+    538.2,28.8
+    548.6,27.2
+    558.9,24.7
+    569.3,20.0
+    579.6,20.1
+    590.0,20.1" />
+</svg>
+<p class="nota">Evolução de troféus reconstruída dia a dia: 2025-11-15
+  (69.591) → 2026-07-17
+  (73.118)</p>
+
+
+
+<h3>Todos os brawlers jogados no período (82)</h3>
+<details class="recolhivel" >
+<summary>mostrar tabela completa</summary>
+<table>
+  <thead><tr><th>#</th><th>Brawler</th><th>Jogos</th><th>V</th><th>D</th><th>Winrate</th><th>Troféus</th></tr></thead>
+  <tbody>
+    
+    <tr><td>1</td><td>EMZ</td><td>103</td>
+        <td>59</td><td>44</td>
+        <td><span class="wr-celula" title="57.3% em 103 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 57.3%"></span></span>
+  <span class="wr-texto">57.3%</span>
+</span></td>
+        <td>+253</td></tr>
+    
+    <tr><td>2</td><td>BROCK</td><td>94</td>
+        <td>52</td><td>42</td>
+        <td><span class="wr-celula" title="55.3% em 94 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 55.3%"></span></span>
+  <span class="wr-texto">55.3%</span>
+</span></td>
+        <td>+228</td></tr>
+    
+    <tr><td>3</td><td>SPIKE</td><td>48</td>
+        <td>25</td><td>23</td>
+        <td><span class="wr-celula" title="52.1% em 48 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 52.1%"></span></span>
+  <span class="wr-texto">52.1%</span>
+</span></td>
+        <td>+95</td></tr>
+    
+    <tr><td>4</td><td>BO</td><td>40</td>
+        <td>22</td><td>18</td>
+        <td><span class="wr-celula" title="55.0% em 40 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 55.0%"></span></span>
+  <span class="wr-texto">55.0%</span>
+</span></td>
+        <td>+47</td></tr>
+    
+    <tr><td>5</td><td>JACKY</td><td>36</td>
+        <td>22</td><td>13</td>
+        <td><span class="wr-celula" title="62.9% em 36 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 62.9%"></span></span>
+  <span class="wr-texto">62.9%</span>
+</span></td>
+        <td>+22</td></tr>
+    
+    <tr><td>6</td><td>RICO</td><td>32</td>
+        <td>18</td><td>14</td>
+        <td><span class="wr-celula" title="56.2% em 32 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 56.2%"></span></span>
+  <span class="wr-texto">56.2%</span>
+</span></td>
+        <td>+102</td></tr>
+    
+    <tr><td>7</td><td>GROM</td><td>29</td>
+        <td>21</td><td>8</td>
+        <td><span class="wr-celula" title="72.4% em 29 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 72.4%"></span></span>
+  <span class="wr-texto">72.4%</span>
+</span></td>
+        <td>+67</td></tr>
+    
+    <tr><td>8</td><td>JESSIE</td><td>29</td>
+        <td>18</td><td>11</td>
+        <td><span class="wr-celula" title="62.1% em 29 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 62.1%"></span></span>
+  <span class="wr-texto">62.1%</span>
+</span></td>
+        <td>+20</td></tr>
+    
+    <tr><td>9</td><td>COLETTE</td><td>28</td>
+        <td>17</td><td>11</td>
+        <td><span class="wr-celula" title="60.7% em 28 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.7%"></span></span>
+  <span class="wr-texto">60.7%</span>
+</span></td>
+        <td>+146</td></tr>
+    
+    <tr><td>10</td><td>KENJI</td><td>22</td>
+        <td>14</td><td>8</td>
+        <td><span class="wr-celula" title="63.6% em 22 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 63.6%"></span></span>
+  <span class="wr-texto">63.6%</span>
+</span></td>
+        <td>+63</td></tr>
+    
+    <tr><td>11</td><td>MEEPLE</td><td>21</td>
+        <td>14</td><td>7</td>
+        <td><span class="wr-celula" title="66.7% em 21 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span></td>
+        <td>+64</td></tr>
+    
+    <tr><td>12</td><td>PEARL</td><td>21</td>
+        <td>17</td><td>4</td>
+        <td><span class="wr-celula" title="81.0% em 21 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 81.0%"></span></span>
+  <span class="wr-texto">81.0%</span>
+</span></td>
+        <td>+81</td></tr>
+    
+    <tr><td>13</td><td>ZIGGY</td><td>21</td>
+        <td>14</td><td>7</td>
+        <td><span class="wr-celula" title="66.7% em 21 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span></td>
+        <td>+61</td></tr>
+    
+    <tr><td>14</td><td>CLANCY</td><td>20</td>
+        <td>13</td><td>7</td>
+        <td><span class="wr-celula" title="65.0% em 20 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 65.0%"></span></span>
+  <span class="wr-texto">65.0%</span>
+</span></td>
+        <td>+117</td></tr>
+    
+    <tr><td>15</td><td>PIERCE</td><td>20</td>
+        <td>14</td><td>6</td>
+        <td><span class="wr-celula" title="70.0% em 20 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 70.0%"></span></span>
+  <span class="wr-texto">70.0%</span>
+</span></td>
+        <td>+66</td></tr>
+    
+    <tr><td>16</td><td>CHUCK</td><td>18</td>
+        <td>9</td><td>9</td>
+        <td><span class="wr-celula" title="50.0% em 18 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%</span>
+</span></td>
+        <td>+52</td></tr>
+    
+    <tr><td>17</td><td>LARRY &amp; LAWRIE</td><td>18</td>
+        <td>13</td><td>5</td>
+        <td><span class="wr-celula" title="72.2% em 18 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 72.2%"></span></span>
+  <span class="wr-texto">72.2%</span>
+</span></td>
+        <td>+86</td></tr>
+    
+    <tr><td>18</td><td>PENNY</td><td>18</td>
+        <td>8</td><td>10</td>
+        <td><span class="wr-celula" title="44.4% em 18 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 44.4%"></span></span>
+  <span class="wr-texto">44.4%</span>
+</span></td>
+        <td>+28</td></tr>
+    
+    <tr><td>19</td><td>OTIS</td><td>17</td>
+        <td>13</td><td>4</td>
+        <td><span class="wr-celula" title="76.5% em 17 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 76.5%"></span></span>
+  <span class="wr-texto">76.5%</span>
+</span></td>
+        <td>+83</td></tr>
+    
+    <tr><td>20</td><td>MAX</td><td>16</td>
+        <td>15</td><td>1</td>
+        <td><span class="wr-celula" title="93.8% em 16 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 93.8%"></span></span>
+  <span class="wr-texto">93.8%</span>
+</span></td>
+        <td>+89</td></tr>
+    
+    <tr><td>21</td><td>NITA</td><td>16</td>
+        <td>12</td><td>4</td>
+        <td><span class="wr-celula" title="75.0% em 16 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%</span>
+</span></td>
+        <td>+54</td></tr>
+    
+    <tr><td>22</td><td>SIRIUS</td><td>16</td>
+        <td>10</td><td>6</td>
+        <td><span class="wr-celula" title="62.5% em 16 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 62.5%"></span></span>
+  <span class="wr-texto">62.5%</span>
+</span></td>
+        <td>+92</td></tr>
+    
+    <tr><td>23</td><td>MINA</td><td>15</td>
+        <td>11</td><td>4</td>
+        <td><span class="wr-celula" title="73.3% em 15 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 73.3%"></span></span>
+  <span class="wr-texto">73.3%</span>
+</span></td>
+        <td>+90</td></tr>
+    
+    <tr><td>24</td><td>SQUEAK</td><td>15</td>
+        <td>7</td><td>8</td>
+        <td><span class="wr-celula" title="46.7% em 15 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 46.7%"></span></span>
+  <span class="wr-texto">46.7%</span>
+</span></td>
+        <td>+36</td></tr>
+    
+    <tr><td>25</td><td>FRANK</td><td>14</td>
+        <td>6</td><td>8</td>
+        <td><span class="wr-celula" title="42.9% em 14 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 42.9%"></span></span>
+  <span class="wr-texto">42.9%</span>
+</span></td>
+        <td>+14</td></tr>
+    
+    <tr><td>26</td><td>NAJIA</td><td>14</td>
+        <td>8</td><td>6</td>
+        <td><span class="wr-celula" title="57.1% em 14 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 57.1%"></span></span>
+  <span class="wr-texto">57.1%</span>
+</span></td>
+        <td>+64</td></tr>
+    
+    <tr><td>27</td><td>SHELLY</td><td>14</td>
+        <td>6</td><td>8</td>
+        <td><span class="wr-celula" title="42.9% em 14 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 42.9%"></span></span>
+  <span class="wr-texto">42.9%</span>
+</span></td>
+        <td>+15</td></tr>
+    
+    <tr><td>28</td><td>MORTIS</td><td>12</td>
+        <td>7</td><td>5</td>
+        <td><span class="wr-celula" title="58.3% em 12 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 58.3%"></span></span>
+  <span class="wr-texto">58.3%</span>
+</span></td>
+        <td>+43</td></tr>
+    
+    <tr><td>29</td><td>BELLE</td><td>11</td>
+        <td>6</td><td>5</td>
+        <td><span class="wr-celula" title="54.5% em 11 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 54.5%"></span></span>
+  <span class="wr-texto">54.5%</span>
+</span></td>
+        <td>+11</td></tr>
+    
+    <tr><td>30</td><td>BERRY</td><td>11</td>
+        <td>8</td><td>3</td>
+        <td><span class="wr-celula" title="72.7% em 11 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 72.7%"></span></span>
+  <span class="wr-texto">72.7%</span>
+</span></td>
+        <td>+26</td></tr>
+    
+    <tr><td>31</td><td>DOUG</td><td>11</td>
+        <td>8</td><td>3</td>
+        <td><span class="wr-celula" title="72.7% em 11 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 72.7%"></span></span>
+  <span class="wr-texto">72.7%</span>
+</span></td>
+        <td>+78</td></tr>
+    
+    <tr><td>32</td><td>FINX</td><td>11</td>
+        <td>8</td><td>3</td>
+        <td><span class="wr-celula" title="72.7% em 11 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 72.7%"></span></span>
+  <span class="wr-texto">72.7%</span>
+</span></td>
+        <td>+43</td></tr>
+    
+    <tr><td>33</td><td>LOLA</td><td>11</td>
+        <td>9</td><td>2</td>
+        <td><span class="wr-celula" title="81.8% em 11 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 81.8%"></span></span>
+  <span class="wr-texto">81.8%</span>
+</span></td>
+        <td>+80</td></tr>
+    
+    <tr><td>34</td><td>JAE-YONG</td><td>10</td>
+        <td>6</td><td>4</td>
+        <td><span class="wr-celula" title="60.0% em 10 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.0%"></span></span>
+  <span class="wr-texto">60.0%</span>
+</span></td>
+        <td>+32</td></tr>
+    
+    <tr><td>35</td><td>POCO</td><td>10</td>
+        <td>7</td><td>3</td>
+        <td><span class="wr-celula" title="70.0% em 10 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 70.0%"></span></span>
+  <span class="wr-texto">70.0%</span>
+</span></td>
+        <td>+41</td></tr>
+    
+    <tr><td>36</td><td>ASH</td><td>9</td>
+        <td>7</td><td>2</td>
+        <td><span class="wr-celula" title="77.8% em 9 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 77.8%"></span></span>
+  <span class="wr-texto">77.8%</span>
+</span></td>
+        <td>+94</td></tr>
+    
+    <tr><td>37</td><td>GLOWY</td><td>9</td>
+        <td>8</td><td>1</td>
+        <td><span class="wr-celula" title="88.9% em 9 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 88.9%"></span></span>
+  <span class="wr-texto">88.9%</span>
+</span></td>
+        <td>+92</td></tr>
+    
+    <tr><td>38</td><td>LOU</td><td>9</td>
+        <td>3</td><td>6</td>
+        <td><span class="wr-celula" title="33.3% em 9 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%</span>
+</span></td>
+        <td>+8</td></tr>
+    
+    <tr><td>39</td><td>DYNAMIKE</td><td>7</td>
+        <td>3</td><td>4</td>
+        <td><span class="wr-celula" title="42.9% em 7 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 42.9%"></span></span>
+  <span class="wr-texto">42.9%</span>
+</span></td>
+        <td>+11</td></tr>
+    
+    <tr><td>40</td><td>EDGAR</td><td>7</td>
+        <td>4</td><td>3</td>
+        <td><span class="wr-celula" title="57.1% em 7 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 57.1%"></span></span>
+  <span class="wr-texto">57.1%</span>
+</span></td>
+        <td>-5</td></tr>
+    
+    <tr><td>41</td><td>NANI</td><td>7</td>
+        <td>7</td><td>0</td>
+        <td><span class="wr-celula" title="100.0% em 7 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%</span>
+</span></td>
+        <td>+46</td></tr>
+    
+    <tr><td>42</td><td>PIPER</td><td>7</td>
+        <td>4</td><td>3</td>
+        <td><span class="wr-celula" title="57.1% em 7 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 57.1%"></span></span>
+  <span class="wr-texto">57.1%</span>
+</span></td>
+        <td>+23</td></tr>
+    
+    <tr><td>43</td><td>BEA</td><td>6</td>
+        <td>5</td><td>1</td>
+        <td><span class="wr-celula" title="83.3% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td>
+        <td>+38</td></tr>
+    
+    <tr><td>44</td><td>GIGI</td><td>6</td>
+        <td>5</td><td>1</td>
+        <td><span class="wr-celula" title="83.3% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td>
+        <td>+55</td></tr>
+    
+    <tr><td>45</td><td>MANDY</td><td>6</td>
+        <td>5</td><td>1</td>
+        <td><span class="wr-celula" title="83.3% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td>
+        <td>+30</td></tr>
+    
+    <tr><td>46</td><td>R-T</td><td>6</td>
+        <td>5</td><td>1</td>
+        <td><span class="wr-celula" title="83.3% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td>
+        <td>+35</td></tr>
+    
+    <tr><td>47</td><td>STARR NOVA</td><td>6</td>
+        <td>6</td><td>0</td>
+        <td><span class="wr-celula" title="100.0% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%</span>
+</span></td>
+        <td>+48</td></tr>
+    
+    <tr><td>48</td><td>BOLT</td><td>5</td>
+        <td>5</td><td>0</td>
+        <td><span class="wr-celula" title="100.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%</span>
+</span></td>
+        <td>+57</td></tr>
+    
+    <tr><td>49</td><td>COLT</td><td>5</td>
+        <td>4</td><td>1</td>
+        <td><span class="wr-celula" title="80.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 80.0%"></span></span>
+  <span class="wr-texto">80.0%</span>
+</span></td>
+        <td>+50</td></tr>
+    
+    <tr><td>50</td><td>GRIFF</td><td>5</td>
+        <td>4</td><td>1</td>
+        <td><span class="wr-celula" title="80.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 80.0%"></span></span>
+  <span class="wr-texto">80.0%</span>
+</span></td>
+        <td>+29</td></tr>
+    
+    <tr><td>51</td><td>KIT</td><td>5</td>
+        <td>4</td><td>1</td>
+        <td><span class="wr-celula" title="80.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 80.0%"></span></span>
+  <span class="wr-texto">80.0%</span>
+</span></td>
+        <td>+52</td></tr>
+    
+    <tr><td>52</td><td>LILY</td><td>5</td>
+        <td>5</td><td>0</td>
+        <td><span class="wr-celula" title="100.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%</span>
+</span></td>
+        <td>+36</td></tr>
+    
+    <tr><td>53</td><td>TICK</td><td>5</td>
+        <td>3</td><td>2</td>
+        <td><span class="wr-celula" title="60.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.0%"></span></span>
+  <span class="wr-texto">60.0%</span>
+</span></td>
+        <td>+8</td></tr>
+    
+    <tr><td>54</td><td>BIBI</td><td>4</td>
+        <td>4</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+33</td></tr>
+    
+    <tr><td>55</td><td>DAMIAN</td><td>4</td>
+        <td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+3</td></tr>
+    
+    <tr><td>56</td><td>EVE</td><td>4</td>
+        <td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+25</td></tr>
+    
+    <tr><td>57</td><td>FANG</td><td>4</td>
+        <td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+8</td></tr>
+    
+    <tr><td>58</td><td>MICO</td><td>4</td>
+        <td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+10</td></tr>
+    
+    <tr><td>59</td><td>OLLIE</td><td>4</td>
+        <td>1</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="25.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 25.0%"></span></span>
+  <span class="wr-texto">25.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+10</td></tr>
+    
+    <tr><td>60</td><td>SPROUT</td><td>4</td>
+        <td>2</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+17</td></tr>
+    
+    <tr><td>61</td><td>TRUNK</td><td>4</td>
+        <td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+13</td></tr>
+    
+    <tr><td>62</td><td>8-BIT</td><td>3</td>
+        <td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td>
+        <td>+17</td></tr>
+    
+    <tr><td>63</td><td>DARRYL</td><td>3</td>
+        <td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td>
+        <td>+13</td></tr>
+    
+    <tr><td>64</td><td>EL PRIMO</td><td>3</td>
+        <td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td>
+        <td>+19</td></tr>
+    
+    <tr><td>65</td><td>HANK</td><td>3</td>
+        <td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td>
+        <td>+19</td></tr>
+    
+    <tr><td>66</td><td>MOE</td><td>3</td>
+        <td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td>
+        <td>+21</td></tr>
+    
+    <tr><td>67</td><td>ANGELO</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+3</td></tr>
+    
+    <tr><td>68</td><td>BULL</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+6</td></tr>
+    
+    <tr><td>69</td><td>BUZZ</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+5</td></tr>
+    
+    <tr><td>70</td><td>BYRON</td><td>2</td>
+        <td>2</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>0</td></tr>
+    
+    <tr><td>71</td><td>CARL</td><td>2</td>
+        <td>2</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+21</td></tr>
+    
+    <tr><td>72</td><td>CHARLIE</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+9</td></tr>
+    
+    <tr><td>73</td><td>JUJU</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+7</td></tr>
+    
+    <tr><td>74</td><td>KAZE</td><td>2</td>
+        <td>2</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+15</td></tr>
+    
+    <tr><td>75</td><td>ROSA</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+7</td></tr>
+    
+    <tr><td>76</td><td>SAM</td><td>2</td>
+        <td>1</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+7</td></tr>
+    
+    <tr><td>77</td><td>ALLI</td><td>1</td>
+        <td>0</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td>
+        <td>-3</td></tr>
+    
+    <tr><td>78</td><td>BARLEY</td><td>1</td>
+        <td>1</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+16</td></tr>
+    
+    <tr><td>79</td><td>BONNIE</td><td>1</td>
+        <td>1</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>+13</td></tr>
+    
+    <tr><td>80</td><td>CHESTER</td><td>1</td>
+        <td>0</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td>
+        <td>-2</td></tr>
+    
+    <tr><td>81</td><td>CORDELIUS</td><td>1</td>
+        <td>1</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td>
+        <td>0</td></tr>
+    
+    <tr><td>82</td><td>CROW</td><td>1</td>
+        <td>0</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td>
+        <td>-4</td></tr>
+    
+  </tbody>
+</table>
+</details>
+
+
+
+<h2>Indicadores de performance</h2>
+<p class="nota">Calculados sobre 43 batalhas decididas
+  acumuladas no banco (0 novas nesta consulta).
+  </p>
+
+<section class="cartoes">
+  
+  <div class="cartao"><b>53.5%</b><span>Winrate geral</span></div>
+  
+  <div class="cartao"><b>47</b><span>Batalhas no histórico</span></div>
+</section>
+
+
+<h3>Winrate por modo</h3>
+<table>
+  <thead><tr><th>Modo</th><th>Partidas</th><th>Vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    
+    <tr><td>DUO SHOWDOWN</td><td>12</td><td>8</td>
+        <td><span class="wr-celula" title="66.7% em 12 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span></td></tr>
+    
+    <tr><td>BOUNTY</td><td>11</td><td>5</td>
+        <td><span class="wr-celula" title="45.5% em 11 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 45.5%"></span></span>
+  <span class="wr-texto">45.5%</span>
+</span></td></tr>
+    
+    <tr><td>HOT ZONE</td><td>8</td><td>4</td>
+        <td><span class="wr-celula" title="50.0% em 8 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%</span>
+</span></td></tr>
+    
+    <tr><td>GEM GRAB</td><td>7</td><td>3</td>
+        <td><span class="wr-celula" title="42.9% em 7 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 42.9%"></span></span>
+  <span class="wr-texto">42.9%</span>
+</span></td></tr>
+    
+    <tr><td>BRAWL BALL</td><td>4</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>KNOCKOUT</td><td>1</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+  </tbody>
+</table>
+
+
+
+<h3>Performance por brawler</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Partidas</th><th>Uso</th><th>Winrate</th></tr></thead>
+  <tbody>
+    
+    <tr><td>EMZ</td><td>13</td><td>30.2%</td>
+        <td><span class="wr-celula" title="38.5% em 13 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 38.5%"></span></span>
+  <span class="wr-texto">38.5%</span>
+</span></td></tr>
+    
+    <tr><td>COLT</td><td>9</td><td>20.9%</td>
+        <td><span class="wr-celula" title="66.7% em 9 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span></td></tr>
+    
+    <tr><td>BROCK</td><td>6</td><td>14.0%</td>
+        <td><span class="wr-celula" title="50.0% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%</span>
+</span></td></tr>
+    
+    <tr><td>JACKY</td><td>4</td><td>9.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BO</td><td>4</td><td>9.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>MR. P</td><td>2</td><td>4.7%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BOLT</td><td>1</td><td>2.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EDGAR</td><td>1</td><td>2.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>GROM</td><td>1</td><td>2.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>PIERCE</td><td>1</td><td>2.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>SQUEAK</td><td>1</td><td>2.3%</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 1 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+  </tbody>
+</table>
+
+
+
+<h3>Brawlers em queda (mais longe do próprio pico)</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Atual</th><th>Pico</th><th>Queda</th></tr></thead>
+  <tbody>
+    
+    <tr><td>JACKY</td><td>1060</td><td>1090</td>
+        <td class="ruim">-30 (2.8%)</td></tr>
+    
+    <tr><td>JESSIE</td><td>1154</td><td>1178</td>
+        <td class="ruim">-24 (2.0%)</td></tr>
+    
+    <tr><td>BO</td><td>1005</td><td>1020</td>
+        <td class="ruim">-15 (1.5%)</td></tr>
+    
+    <tr><td>COLETTE</td><td>1061</td><td>1071</td>
+        <td class="ruim">-10 (0.9%)</td></tr>
+    
+    <tr><td>BEA</td><td>802</td><td>810</td>
+        <td class="ruim">-8 (1.0%)</td></tr>
+    
+    <tr><td>EDGAR</td><td>745</td><td>753</td>
+        <td class="ruim">-8 (1.1%)</td></tr>
+    
+    <tr><td>CLANCY</td><td>836</td><td>844</td>
+        <td class="ruim">-8 (0.9%)</td></tr>
+    
+    <tr><td>BROCK</td><td>1109</td><td>1115</td>
+        <td class="ruim">-6 (0.5%)</td></tr>
+    
+    <tr><td>NANI</td><td>603</td><td>609</td>
+        <td class="ruim">-6 (1.0%)</td></tr>
+    
+    <tr><td>BELLE</td><td>1104</td><td>1110</td>
+        <td class="ruim">-6 (0.5%)</td></tr>
+    
+  </tbody>
+</table>
+
+
+
+
+
+<p class="nota">Evolução de troféus: aparece a partir do 2º dia de dados
+  (o rastreamento automático cuida disso).</p>
+
+
+
+<h2>Meta atual e recomendações</h2>
+<p class="nota">Meta global de 2026-07-17 17:06:50 (brawlace.com, % de Star Player por modo)</p>
+
+
+<section class="cartoes">
+  <div class="cartao"><b>82.0/100</b><span>Score vs meta</span></div>
+</section>
+<p class="nota">Quanto maior, mais os brawlers que você joga estão fortes no meta
+  dos modos em que você os joga.</p>
+<table>
+  <thead><tr><th>Modo</th><th>Brawler</th><th>Suas partidas</th><th>Posição no meta</th><th>Percentil</th></tr></thead>
+  <tbody>
+    
+    <tr><td>DUO SHOWDOWN</td><td>COLT</td><td>10</td>
+        <td>8 / 105</td>
+        <td class="bom">93.3%</td></tr>
+    
+    <tr><td>HOT ZONE</td><td>EMZ</td><td>8</td>
+        <td>6 / 105</td>
+        <td class="bom">95.2%</td></tr>
+    
+    <tr><td>BOUNTY</td><td>BROCK</td><td>6</td>
+        <td>2 / 105</td>
+        <td class="bom">99.0%</td></tr>
+    
+    <tr><td>BRAWL BALL</td><td>JACKY</td><td>5</td>
+        <td>50 / 105</td>
+        <td class="bom">53.3%</td></tr>
+    
+    <tr><td>DUO SHOWDOWN</td><td>MR. P</td><td>3</td>
+        <td>82 / 105</td>
+        <td class="ruim">22.9%</td></tr>
+    
+    <tr><td>GEM GRAB</td><td>EMZ</td><td>3</td>
+        <td>7 / 105</td>
+        <td class="bom">94.3%</td></tr>
+    
+    <tr><td>BOUNTY</td><td>EMZ</td><td>2</td>
+        <td>31 / 105</td>
+        <td class="bom">71.4%</td></tr>
+    
+    <tr><td>GEM GRAB</td><td>BO</td><td>2</td>
+        <td>6 / 105</td>
+        <td class="bom">95.2%</td></tr>
+    
+    <tr><td>BOUNTY</td><td>BO</td><td>2</td>
+        <td>32 / 105</td>
+        <td class="bom">70.5%</td></tr>
+    
+    <tr><td>DUO SHOWDOWN</td><td>BOLT</td><td>1</td>
+        <td>11 / 105</td>
+        <td class="bom">90.5%</td></tr>
+    
+  </tbody>
+</table>
+
+
+
+<h3>Melhores picks seus para os eventos ativos</h3>
+<p class="nota">Score = 50% meta do modo + 50% seu desempenho com o brawler
+  (winrate ponderado por amostra). Só brawlers seus com power ≥ 9.</p>
+<table>
+  <thead><tr><th>Modo</th><th>Mapa</th><th>Picks recomendados</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td>KNOCKOUT</td>
+      <td>New Perspective</td>
+      <td>
+        
+        <b>BROCK</b> <span class="nota">(#1 do meta, 59.6% neste modo (57j))</span> · 
+        
+        <b>MINA</b> <span class="nota">(#40 do meta, 69.2% neste modo (13j))</span> · 
+        
+        <b>GROM</b> <span class="nota">(#19 do meta, 58.3% neste modo (12j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>BRAWL ARENA</td>
+      <td>Silver Highlands</td>
+      <td>
+        
+        <b>MAX</b> <span class="nota">(#59 do meta, 93.8% geral (16j))</span> · 
+        
+        <b>NANI</b> <span class="nota">(#55 do meta, 100.0% geral (7j))</span> · 
+        
+        <b>PEARL</b> <span class="nota">(#53 do meta, 81.0% geral (21j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>BRAWL BALL</td>
+      <td>Bustling Business</td>
+      <td>
+        
+        <b>JACKY</b> <span class="nota">(#50 do meta, 65.8% neste modo (38j))</span> · 
+        
+        <b>KIT</b> <span class="nota">(#38 do meta, 100.0% neste modo (4j))</span> · 
+        
+        <b>CLANCY</b> <span class="nota">(#27 do meta, 65.0% neste modo (20j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>BOUNTY</td>
+      <td>No Excuses</td>
+      <td>
+        
+        <b>GROM</b> <span class="nota">(#19 do meta, 90.9% neste modo (11j))</span> · 
+        
+        <b>BROCK</b> <span class="nota">(#2 do meta, 50.0% neste modo (30j))</span> · 
+        
+        <b>BO</b> <span class="nota">(#32 do meta, 71.4% neste modo (7j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>WIPEOUT</td>
+      <td>Palette Hangout</td>
+      <td>
+        
+        <b>MAX</b> <span class="nota">(#70 do meta, 93.8% geral (16j))</span> · 
+        
+        <b>NANI</b> <span class="nota">(#22 do meta, 100.0% geral (7j))</span> · 
+        
+        <b>PEARL</b> <span class="nota">(#39 do meta, 81.0% geral (21j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>KNOCKOUT</td>
+      <td>Opening Move</td>
+      <td>
+        
+        <b>BROCK</b> <span class="nota">(#1 do meta, 59.6% neste modo (57j))</span> · 
+        
+        <b>MINA</b> <span class="nota">(#40 do meta, 69.2% neste modo (13j))</span> · 
+        
+        <b>GROM</b> <span class="nota">(#19 do meta, 58.3% neste modo (12j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>GEM GRAB</td>
+      <td>Gem Fort</td>
+      <td>
+        
+        <b>EMZ</b> <span class="nota">(#7 do meta, 72.2% neste modo (18j))</span> · 
+        
+        <b>MANDY</b> <span class="nota">(#54 do meta, 100.0% neste modo (2j))</span> · 
+        
+        <b>EDGAR</b> <span class="nota">(#2 do meta, 100.0% neste modo (2j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>SOLO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>
+        
+        <b>FINX</b> <span class="nota">(#61 do meta, 100.0% neste modo (2j))</span> · 
+        
+        <b>BYRON</b> <span class="nota">(#58 do meta, 100.0% neste modo (2j))</span> · 
+        
+        <b>JAE-YONG</b> <span class="nota">(#99 do meta, 66.7% neste modo (3j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>
+        
+        <b>MAX</b> <span class="nota">(#28 do meta, 93.3% neste modo (15j))</span> · 
+        
+        <b>NANI</b> <span class="nota">(#52 do meta, 100.0% neste modo (7j))</span> · 
+        
+        <b>OTIS</b> <span class="nota">(#26 do meta, 100.0% neste modo (8j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>TRIO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>
+        
+        <b>ZIGGY</b> <span class="nota">(#96 do meta, 100.0% neste modo (5j))</span> · 
+        
+        <b>MAX</b> <span class="nota">(#25 do meta, 93.8% geral (16j))</span> · 
+        
+        <b>NANI</b> <span class="nota">(#56 do meta, 100.0% geral (7j))</span>
+        
+      </td>
+    </tr>
+    
+    <tr>
+      <td>HOT ZONE</td>
+      <td>Golden Bay</td>
+      <td>
+        
+        <b>EMZ</b> <span class="nota">(#6 do meta, 58.9% neste modo (56j))</span> · 
+        
+        <b>FINX</b> <span class="nota">(#49 do meta, 100.0% neste modo (3j))</span> · 
+        
+        <b>GROM</b> <span class="nota">(#60 do meta, 66.7% neste modo (6j))</span>
+        
+      </td>
+    </tr>
+    
+  </tbody>
+</table>
+
+
+
+
+<h2>Star Player</h2>
+<section class="cartoes">
+  <div class="cartao"><b>9.3%</b><span>Taxa de star player</span></div>
+  <div class="cartao"><b>4 / 43</b><span>Stars / batalhas 3v3</span></div>
+</section>
+
+<h3>Por brawler (mín. 3 jogos)</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Jogos</th><th>Stars</th><th>Taxa</th></tr></thead>
+  <tbody>
+    
+    <tr><td>JACKY</td><td>4</td><td>1</td>
+        <td class="bom">25.0%</td></tr>
+    
+    <tr><td>EMZ</td><td>13</td><td>3</td>
+        <td class="">23.1%</td></tr>
+    
+    <tr><td>BO</td><td>4</td><td>0</td>
+        <td class="">0.0%</td></tr>
+    
+    <tr><td>BROCK</td><td>6</td><td>0</td>
+        <td class="">0.0%</td></tr>
+    
+    <tr><td>COLT</td><td>9</td><td>0</td>
+        <td class="">0.0%</td></tr>
+    
+  </tbody>
+</table>
+
+
+
+
+<h2>Matchups e parceiros</h2>
+<p class="nota">Baseado nos times completos de 43 batalhas
+  gravadas (acumula a cada consulta; batalhas antigas não têm esse detalhe).</p>
+
+
+<h3>Contra quais brawlers você mais sofre (mín. 2 jogos)</h3>
+<table>
+  <thead><tr><th>Brawler inimigo</th><th>Jogos contra</th><th>Suas vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    
+    <tr><td>CHESTER</td><td>3</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>MORTIS</td><td>3</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>SPIKE</td><td>5</td><td>1</td>
+        <td><span class="wr-celula" title="20.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 20.0%"></span></span>
+  <span class="wr-texto">20.0%</span>
+</span></td></tr>
+    
+    <tr><td>CORDELIUS</td><td>2</td><td>0</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EDGAR</td><td>17</td><td>9</td>
+        <td><span class="wr-celula" title="52.9% em 17 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 52.9%"></span></span>
+  <span class="wr-texto">52.9%</span>
+</span></td></tr>
+    
+    <tr><td>BYRON</td><td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="33.3% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>COLETTE</td><td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="33.3% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>DYNAMIKE</td><td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="33.3% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>SQUEAK</td><td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="33.3% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>TICK</td><td>3</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="33.3% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>NORI</td><td>6</td><td>3</td>
+        <td><span class="wr-celula" title="50.0% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%</span>
+</span></td></tr>
+    
+    <tr><td>LEON</td><td>4</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>OTIS</td><td>5</td><td>3</td>
+        <td><span class="wr-celula" title="60.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.0%"></span></span>
+  <span class="wr-texto">60.0%</span>
+</span></td></tr>
+    
+    <tr><td>SHELLY</td><td>5</td><td>3</td>
+        <td><span class="wr-celula" title="60.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.0%"></span></span>
+  <span class="wr-texto">60.0%</span>
+</span></td></tr>
+    
+    <tr><td>SURGE</td><td>5</td><td>3</td>
+        <td><span class="wr-celula" title="60.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.0%"></span></span>
+  <span class="wr-texto">60.0%</span>
+</span></td></tr>
+    
+    <tr><td>BIBI</td><td>6</td><td>4</td>
+        <td><span class="wr-celula" title="66.7% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span></td></tr>
+    
+    <tr><td>BONNIE</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BROCK</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>CLANCY</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>DARRYL</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>FANG</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>GROM</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>KIT</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>MICO</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>PENNY</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>SPROUT</td><td>2</td><td>1</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>8-BIT</td><td>3</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>MR. P</td><td>3</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>PIERCE</td><td>3</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>4</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>RICO</td><td>5</td><td>4</td>
+        <td><span class="wr-celula" title="80.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 80.0%"></span></span>
+  <span class="wr-texto">80.0%</span>
+</span></td></tr>
+    
+    <tr><td>COLT</td><td>6</td><td>5</td>
+        <td><span class="wr-celula" title="83.3% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td></tr>
+    
+    <tr><td>CROW</td><td>6</td><td>5</td>
+        <td><span class="wr-celula" title="83.3% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td></tr>
+    
+    <tr><td>BARLEY</td><td>2</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BULL</td><td>3</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BUZZ</td><td>3</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EVE</td><td>2</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>GRIFF</td><td>4</td><td>4</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>KENJI</td><td>3</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>NITA</td><td>4</td><td>4</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>SIRIUS</td><td>2</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="100.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 100.0%"></span></span>
+  <span class="wr-texto">100.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+  </tbody>
+</table>
+
+
+
+<h3>Parceiros de time</h3>
+<table>
+  <thead><tr><th>Jogador</th><th>Jogos juntos</th><th>Vitórias</th><th>Winrate juntos</th></tr></thead>
+  <tbody>
+    
+    <tr><td><a href="jogador_2QLLLGV0R0.html">SNK |camilacgs</a> <span class="tag">#2QLLLGV0R0</span></td>
+        <td>41</td><td>22</td>
+        <td><span class="wr-celula" title="53.7% em 41 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 53.7%"></span></span>
+  <span class="wr-texto">53.7%</span>
+</span></td></tr>
+    
+    <tr><td><a href="jogador_9029RVG2J.html">SNK | BIGBOSS</a> <span class="tag">#9029RVG2J</span></td>
+        <td>18</td><td>11</td>
+        <td><span class="wr-celula" title="61.1% em 18 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 61.1%"></span></span>
+  <span class="wr-texto">61.1%</span>
+</span></td></tr>
+    
+    <tr><td><a href="jogador_89R22LV2Y.html">LoganKL</a> <span class="tag">#89R22LV2Y</span></td>
+        <td>8</td><td>1</td>
+        <td><span class="wr-celula" title="12.5% em 8 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 12.5%"></span></span>
+  <span class="wr-texto">12.5%</span>
+</span></td></tr>
+    
+  </tbody>
+</table>
+
+
+
+
+<h2>Composições de time</h2>
+
+
+<h3>Seu brawler + brawler aliado (mín. 2 jogos)</h3>
+<table>
+  <thead><tr><th>Você</th><th>Aliado</th><th>Jogos</th><th>Winrate</th></tr></thead>
+  <tbody>
+    
+    <tr><td>COLT</td><td>MEG</td><td>9</td>
+        <td><span class="wr-celula" title="66.7% em 9 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>PENNY</td><td>4</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>JACKY</td><td>EMZ</td><td>4</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="75.0% em 4 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 75.0%"></span></span>
+  <span class="wr-texto">75.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>EDGAR</td><td>5</td>
+        <td><span class="wr-celula" title="60.0% em 5 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 60.0%"></span></span>
+  <span class="wr-texto">60.0%</span>
+</span></td></tr>
+    
+    <tr><td>BROCK</td><td>COLETTE</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>BROCK</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="66.7% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BROCK</td><td>BELLE</td><td>6</td>
+        <td><span class="wr-celula" title="50.0% em 6 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%</span>
+</span></td></tr>
+    
+    <tr><td>BROCK</td><td>RUFFS</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>STARR NOVA</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BO</td><td>BELLE</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>BO</td><td>RUFFS</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>MR. P</td><td>CROW</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="50.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 50.0%"></span></span>
+  <span class="wr-texto">50.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>NORI</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="33.3% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 33.3%"></span></span>
+  <span class="wr-texto">33.3%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>SIRIUS</td><td>3</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 3 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+    <tr><td>EMZ</td><td>BELLE</td><td>2</td>
+        <td><span class="wr-celula wr-amostra-fraca" title="0.0% em 2 jogos — amostra pequena">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 0.0%"></span></span>
+  <span class="wr-texto">0.0%<span class="nota">?</span></span>
+</span></td></tr>
+    
+  </tbody>
+</table>
+
+
+
+<h3>Seus trios (você + 2 parceiros)</h3>
+<table>
+  <thead><tr><th>Parceiros</th><th>Jogos</th><th>Vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    
+    <tr><td>SNK |camilacgs + SNK | BIGBOSS</td><td>17</td><td>11</td>
+        <td><span class="wr-celula" title="64.7% em 17 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 64.7%"></span></span>
+  <span class="wr-texto">64.7%</span>
+</span></td></tr>
+    
+    <tr><td>SNK |camilacgs + LoganKL</td><td>8</td><td>1</td>
+        <td><span class="wr-celula" title="12.5% em 8 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 12.5%"></span></span>
+  <span class="wr-texto">12.5%</span>
+</span></td></tr>
+    
+  </tbody>
+</table>
+
+
+
+
+<h2>Tendências do meta</h2>
+<p class="nota">Aparece quando houver 2+ dias de meta coletados — o rastreamento
+  acumula um snapshot do meta a cada consulta/rodada do rastreador.</p>
+
+
+
+<h2>Últimas batalhas (25 de 47 no banco)</h2>
+<table>
+  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Resultado</th></tr></thead>
+  <tbody>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T17:20:14Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>BOLT</td>
+      <td>1º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:48:12Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>MR. P</td>
+      <td>1º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-17T16:46:48Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>MR. P</td>
+      <td>5º lugar <span class="nota">(Defeat)</span></td>
+    </tr>
+    
+    <tr class="">
+      <td>2026-07-17T16:44:55Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>MR. P</td>
+      <td>3º lugar <span class="nota">(Draw)</span></td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-17T16:42:01Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>4º lugar <span class="nota">(Defeat)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:39:52Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>2º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:37:08Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>2º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-17T16:35:32Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>4º lugar <span class="nota">(Defeat)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:31:05Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>2º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:29:30Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>1º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:27:16Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>2º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-17T16:25:40Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>4º lugar <span class="nota">(Defeat)</span></td>
+    </tr>
+    
+    <tr class="">
+      <td>2026-07-17T16:24:05Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>3º lugar <span class="nota">(Draw)</span></td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-17T16:21:21Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>COLT</td>
+      <td>1º lugar <span class="nota">(Victory)</span></td>
+    </tr>
+    
+    <tr class="">
+      <td>2026-07-17T16:19:09Z</td>
+      <td>TROPHIES</td>
+      <td>DUO SHOWDOWN</td>
+      <td>Truth</td>
+      <td>8-BIT</td>
+      <td>3º lugar <span class="nota">(Draw)</span></td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-17T03:11:36Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:43:39Z</td>
+      <td>RANKED</td>
+      <td>KNOCKOUT</td>
+      <td>Jungle Top</td>
+      <td>PIERCE</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:39:05Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Hard Rock Mine</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T21:36:20Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:33:56Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Hard Rock Mine</td>
+      <td>SQUEAK</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:30:41Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Dry Season</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:28:38Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:26:40Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:24:25Z</td>
+      <td>RANKED</td>
+      <td>BRAWL BALL</td>
+      <td>Sneaky Fields</td>
+      <td>JACKY</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T21:22:23Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Double Swoosh</td>
+      <td>BO</td>
+      <td>Victory</td>
+    </tr>
+    
+  </tbody>
+</table>
+
+
+<details class="recolhivel">
+<summary>mostrar as outras 22 batalhas do banco</summary>
+<table>
+  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Resultado</th></tr></thead>
+  <tbody>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:17:24Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>BROCK</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T21:14:56Z</td>
+      <td>RANKED</td>
+      <td>BRAWL BALL</td>
+      <td>Sneaky Fields</td>
+      <td>JACKY</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T21:12:20Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Double Swoosh</td>
+      <td>BO</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T21:09:43Z</td>
+      <td>RANKED</td>
+      <td>BRAWL BALL</td>
+      <td>Super Beach</td>
+      <td>JACKY</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T04:31:28Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>GROM</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T04:28:30Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>BROCK</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T04:26:07Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T04:22:58Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Double Swoosh</td>
+      <td>EDGAR</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T04:20:07Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Dry Season</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T04:17:38Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Dry Season</td>
+      <td>BROCK</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T04:14:40Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ ⭐</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T04:12:06Z</td>
+      <td>RANKED</td>
+      <td>BRAWL BALL</td>
+      <td>Super Beach</td>
+      <td>JACKY ⭐</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T04:08:45Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T04:05:07Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>BROCK</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T03:54:09Z</td>
+      <td>RANKED</td>
+      <td>HOT ZONE</td>
+      <td>Controller Chaos</td>
+      <td>EMZ ⭐</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T03:51:24Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>BROCK</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T03:48:37Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Hard Rock Mine</td>
+      <td>EMZ</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T03:44:51Z</td>
+      <td>RANKED</td>
+      <td>GEM GRAB</td>
+      <td>Double Swoosh</td>
+      <td>EMZ ⭐</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="derrota">
+      <td>2026-07-16T03:42:11Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>BO</td>
+      <td>Defeat</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T03:38:15Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Dry Season</td>
+      <td>BO</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="vitoria">
+      <td>2026-07-16T03:32:10Z</td>
+      <td>RANKED</td>
+      <td>BOUNTY</td>
+      <td>Shooting Star</td>
+      <td>BROCK</td>
+      <td>Victory</td>
+    </tr>
+    
+    <tr class="">
+      <td>2026-07-16T03:26:21Z</td>
+      <td>RANKED</td>
+      <td>BRAWL BALL</td>
+      <td>Sneaky Fields</td>
+      <td>JACKY</td>
+      <td>Draw</td>
+    </tr>
+    
+  </tbody>
+</table>
+</details>
+
+
+<h2>Brawlers (104) — top 15 por troféus</h2>
+<table>
+  <thead><tr><th>Brawler</th><th>Power</th><th>Troféus</th><th>Máx</th><th>Skin</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td>JESSIE</td><td>11</td><td>1154</td>
+      <td>1178</td><td>SKADI JESSIE</td>
+    </tr>
+    
+    <tr>
+      <td>BROCK</td><td>11</td><td>1109</td>
+      <td>1115</td><td>SUPER RANGER BROCK RED</td>
+    </tr>
+    
+    <tr>
+      <td>BELLE</td><td>11</td><td>1104</td>
+      <td>1110</td><td>KNIGHT BELLE</td>
+    </tr>
+    
+    <tr>
+      <td>COLETTE</td><td>11</td><td>1061</td>
+      <td>1071</td><td>BLACK HOLE COLETTE</td>
+    </tr>
+    
+    <tr>
+      <td>JACKY</td><td>11</td><td>1060</td>
+      <td>1090</td><td>CUTTLEFISH JACKY</td>
+    </tr>
+    
+    <tr>
+      <td>SPIKE</td><td>11</td><td>1024</td>
+      <td>1024</td><td>PYRO SPIKE</td>
+    </tr>
+    
+    <tr>
+      <td>GROM</td><td>11</td><td>1016</td>
+      <td>1016</td><td>GROMBIN HOOD</td>
+    </tr>
+    
+    <tr>
+      <td>SQUEAK</td><td>11</td><td>1012</td>
+      <td>1017</td><td>GHOST SQUEAK</td>
+    </tr>
+    
+    <tr>
+      <td>TICK</td><td>11</td><td>1010</td>
+      <td>1010</td><td>MR. KRABS TICK</td>
+    </tr>
+    
+    <tr>
+      <td>CROW</td><td>11</td><td>1006</td>
+      <td>1006</td><td>DRAGON CROW III</td>
+    </tr>
+    
+    <tr>
+      <td>EMZ</td><td>11</td><td>1006</td>
+      <td>1011</td><td>DEMON EMZ</td>
+    </tr>
+    
+    <tr>
+      <td>BO</td><td>11</td><td>1005</td>
+      <td>1020</td><td>SUPREME BO</td>
+    </tr>
+    
+    <tr>
+      <td>NITA</td><td>11</td><td>1004</td>
+      <td>1009</td><td>WHALE WATCH NITA</td>
+    </tr>
+    
+    <tr>
+      <td>PENNY</td><td>11</td><td>1002</td>
+      <td>1002</td><td>TRASH PANDA PENNY</td>
+    </tr>
+    
+    <tr>
+      <td>LOU</td><td>11</td><td>1002</td>
+      <td>1002</td><td>RUDE LOU</td>
+    </tr>
+    
+  </tbody>
+</table>
+</main>
+</body>
+</html>

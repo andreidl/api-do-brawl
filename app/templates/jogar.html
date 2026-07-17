@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% from "_macros.html" import barra_wr, acessorios %}
+{% block titulo %}Jogar agora — {{ perfil.nick }}{% endblock %}
+{% block conteudo %}
+<h1>🎮 Jogar agora <span class="tag">{{ perfil.nick }} {{ perfil.tag }}</span></h1>
+<p class="nota">Eventos ativos ordenados pelos modos em que VOCÊ vai melhor.
+  Meta de {{ data_meta }}. <a href="/jogador/{{ perfil.tag.lstrip('#') }}">← perfil completo</a></p>
+
+{% if conhecidos %}
+<form method="get" class="time-form">
+  <span class="rotulo">Jogando em time com:</span>
+  {% for c in conhecidos %}
+  <label class="time-opcao">
+    <input type="checkbox" name="t" value="{{ c.tag.lstrip('#') }}"
+           {{ 'checked' if c.tag in tags_time }}> {{ c.nick }}
+  </label>
+  {% endfor %}
+  <button type="submit">Montar time</button>
+</form>
+<script>
+// junta os checkboxes marcados em ?time=a,b (máx. 2 parceiros)
+document.querySelector(".time-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  const marcados = [...this.querySelectorAll("input:checked")].map(i => i.value).slice(0, 2);
+  location.href = location.pathname + (marcados.length ? "?time=" + marcados.join(",") : "");
+});
+</script>
+{% endif %}
+
+<div class="eventos-grid">
+{% for c in cartoes %}
+  <div class="evento-cartao{{ ' melhor-aposta' if loop.first and c.wr_modo is not none and c.jogos_modo >= 5 }}">
+    {% if loop.first and c.wr_modo is not none and c.jogos_modo >= 5 %}
+    <span class="melhor-aposta-selo">⭐ sua melhor aposta agora</span>
+    {% endif %}
+    <div class="evento-topo">
+      <b>{{ c.modo }}</b>
+      <span class="mapa">{{ c.mapa }}</span>
+      {% if c.fim %}<time datetime="{{ c.fim }}" class="nota">até {{ c.fim[11:16] }} UTC</time>{% endif %}
+    </div>
+
+    <div class="evento-numeros">
+      {% if c.wr_modo is not none %}
+      <span class="wr-destaque {{ 'bom' if c.wr_modo >= 50 else 'ruim' }}">{{ c.wr_modo }}%</span>
+      <span class="nota">no modo ({{ c.jogos_modo }}j)</span>
+      {% else %}
+      <span class="nota">sem histórico no modo</span>
+      {% endif %}
+      {% if c.wr_mapa is not none %}
+      <span class="nota"> · </span>{{ barra_wr(c.wr_mapa, c.jogos_mapa) }} <span class="nota">neste mapa ({{ c.jogos_mapa }}j)</span>
+      {% endif %}
+    </div>
+
+    {% if c.picks %}
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      {% for p in c.picks %}
+      <li><b>{{ p.brawler }}</b><span class="nota">{% if p.winrate_no_modo is not none %} {{ p.winrate_no_modo }}%/{{ p.jogos_no_modo }}j{% elif p.winrate_seu is not none %} {{ p.winrate_seu }}% geral{% endif %}</span>
+        {{ acessorios(p.acessorios) }}</li>
+      {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if c.distribuicao %}
+    {% if c.distribuicao.individuais %}
+    <div class="evento-linha distribuicao"><span class="rotulo">Cada um por si (solo) — pode repetir brawler</span>
+      {% for a in c.distribuicao.individuais %}
+      {{ a.nick }} → <b>{{ a.brawler }}</b>
+      <span class="nota">{% if a.winrate_modo is not none %}({{ a.winrate_modo }}%/{{ a.jogos_modo }}j no modo){% elif a.winrate_geral is not none %}({{ a.winrate_geral }}% geral){% else %}(nunca jogou){% endif %}</span>{{ " · " if not loop.last }}
+      {% endfor %}
+    </div>
+    {% elif c.distribuicao.atribuicao %}
+    <div class="evento-linha distribuicao"><span class="rotulo">Quem pega o quê
+      ({{ c.distribuicao.atribuicao | length }} entram{% if c.distribuicao.de_fora %} — fica de fora: {{ c.distribuicao.de_fora | join(", ") }}{% endif %})</span>
+      <ul class="picks-lista">
+      {% for a in c.distribuicao.atribuicao %}
+      <li><b>{{ a.brawler }}</b> → {{ a.nick }}
+      <span class="nota">{% if a.winrate_modo is not none %}({{ a.winrate_modo }}%/{{ a.jogos_modo }}j no modo){% elif a.winrate_geral is not none %}({{ a.winrate_geral }}% geral){% else %}(nunca jogou){% endif %}</span>
+      {{ acessorios(a.acessorios) }}</li>
+      {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if c.distribuicao.por_brawler %}
+    <div class="evento-linha"><span class="rotulo">Dono de cada brawler do topo</span>
+      {% for pb in c.distribuicao.por_brawler %}
+      {{ pb.brawler }}: <b>{{ pb.melhor }}</b><span class="nota">{% if pb.winrate_modo is not none %} {{ pb.winrate_modo }}%/{{ pb.jogos_modo }}j{% elif pb.winrate_geral is not none %} {{ pb.winrate_geral }}% geral{% endif %}</span>{{ " · " if not loop.last }}
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if c.melhor_time %}
+    <div class="evento-linha"><span class="rotulo">Melhor time do clube neste modo</span>
+      {{ c.melhor_time.nomes }} <span class="{{ 'bom' if c.melhor_time.winrate >= 50 else 'ruim' }}">{{ c.melhor_time.winrate }}%</span>
+      <span class="nota">({{ c.melhor_time.jogos }}j{% if c.melhor_time.brawlers_top %} — {{ c.melhor_time.brawlers_top[0] }}{% endif %})</span>
+    </div>
+    {% endif %}
+
+    {% if c.mapa_meta and c.mapa_meta.times %}
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      {% for t in c.mapa_meta.times[:2] %}{{ t.brawlers | join(" + ") }} <span class="nota">({{ t.vitorias }} vit.)</span>{{ " · " if not loop.last }}{% endfor %}
+    </div>
+    {% endif %}
+    {% if c.meta_top %}
+    <div class="evento-linha"><span class="rotulo">Topo do meta {{ "do MAPA" if c.mapa_meta else "global do modo" }}</span>
+      {% if c.mapa_meta %}
+      {% for nome, wr in (c.mapa_meta.brawlers.items() | list)[:3] %}{{ nome }} <span class="nota">{{ wr }}%</span>{{ " · " if not loop.last }}{% endfor %}
+      {% else %}
+      {% for m in c.meta_top %}{{ m.brawler }}{{ " · " if not loop.last }}{% endfor %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

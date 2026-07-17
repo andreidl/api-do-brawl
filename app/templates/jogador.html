@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+{% from "_macros.html" import barra_wr %}
+{% block titulo %}{{ perfil.nick }} — API do Brawl{% endblock %}
+{% block conteudo %}
+{% if modo_instantaneo %}
+<p class="nota" id="aviso-atualizacao">⚡ Dados do banco ({{ snapshot_em }}) —
+  buscando novidades no brawlace em segundo plano…</p>
+<script>
+fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
+  .then(r => r.json())
+  .then(d => {
+    if (d.batalhas_novas > 0) {
+      location.href = "/jogador/{{ perfil.tag.lstrip('#') }}?atualizado=1{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}";
+    } else {
+      const aviso = document.getElementById("aviso-atualizacao");
+      if (aviso) aviso.textContent = "✅ Dados em dia com o brawlace (nenhuma batalha nova).";
+    }
+  })
+  .catch(() => {
+    const aviso = document.getElementById("aviso-atualizacao");
+    if (aviso) aviso.textContent = "⚠️ Não consegui atualizar agora (brawlace fora do ar?) — mostrando o banco local.";
+  });
+</script>
+{% endif %}
+<h1>{{ perfil.nick }} <span class="tag">{{ perfil.tag }}</span></h1>
+
+{% set tag_url = perfil.tag.lstrip('#') %}
+<nav class="abas">
+  <a href="/jogar/{{ tag_url }}" style="border-color: var(--verde); color: var(--verde);">🎮 Jogar agora</a>
+  <a href="/jogador/{{ tag_url }}" class="{{ 'ativa' if not filtro_tipo }}">Tudo</a>
+  <a href="/jogador/{{ tag_url }}?tipo=trofeus" class="{{ 'ativa' if filtro_tipo == 'trofeus' }}">🏆 Troféus</a>
+  <a href="/jogador/{{ tag_url }}?tipo=ranked" class="{{ 'ativa' if filtro_tipo == 'ranked' }}">🎖️ Ranked</a>
+</nav>
+{% if filtro_tipo %}
+<p class="nota">Mostrando só batalhas de {{ "RANKED" if filtro_tipo == "ranked" else "troféus (não-ranked)" }}.
+  {{ "Seções de troféus e carreira ficam nas abas Tudo/Troféus." if filtro_tipo == "ranked" else "A carreira completa fica na aba Tudo." }}</p>
+{% endif %}
+{% if perfil.clube %}<p class="clube">Clube: {{ perfil.clube }}</p>{% endif %}
+
+<section class="cartoes">
+  {% if filtro_tipo != 'ranked' %}
+  <div class="cartao"><b>{{ "{:,}".format(perfil.stats.trofeus).replace(",", ".") }}</b><span>Troféus</span></div>
+  {% endif %}
+  {% if filtro_tipo == 'trofeus' and perfil.stats.trofeus_max %}
+  <div class="cartao"><b>{{ "{:,}".format(perfil.stats.trofeus_max).replace(",", ".") }}</b><span>Pico de troféus</span></div>
+  {% endif %}
+  {% if filtro_tipo == 'ranked' %}
+  <div class="cartao"><b>{{ perfil.stats.ranked_atual or "—" }}</b><span>Ranked atual</span></div>
+  <div class="cartao"><b>{{ perfil.stats.ranked_max or "—" }}</b><span>Melhor ranked</span></div>
+  {% elif not filtro_tipo and perfil.stats.ranked_atual %}
+  <div class="cartao"><b>{{ perfil.stats.ranked_atual }}</b><span>Ranked atual</span></div>
+  {% endif %}
+  <div class="cartao"><b>{{ perfil.stats.level }}</b><span>Level</span></div>
+  {% if not filtro_tipo %}
+  <div class="cartao"><b>{{ perfil.stats.vitorias_3v3 }}</b><span>Vitórias 3v3</span></div>
+  {% endif %}
+  <div class="cartao"><b>{{ perfil.brawlers | length }}</b><span>Brawlers</span></div>
+</section>
+
+{% if not filtro_tipo %}
+<h2>Carreira (vida inteira)</h2>
+<section class="cartoes">
+  {% if extra and extra.conta_criada_em %}
+  <div class="cartao"><b>{{ extra.conta_criada_em }}</b><span>Conta criada ({{ 2026 - extra.conta_criada_em }} anos)</span></div>
+  {% endif %}
+  <div class="cartao"><b>{{ "{:,}".format(perfil.stats.trofeus_max).replace(",", ".") }}</b><span>Pico de troféus</span></div>
+  {% if perfil.stats.ranked_max %}<div class="cartao"><b>{{ perfil.stats.ranked_max }}</b><span>Melhor ranked da história</span></div>{% endif %}
+  <div class="cartao"><b>{{ "{:,}".format(perfil.stats.vitorias_3v3).replace(",", ".") }}</b><span>Vitórias 3v3 (total)</span></div>
+  <div class="cartao"><b>{{ perfil.stats.vitorias_solo }}</b><span>Vitórias solo (total)</span></div>
+  <div class="cartao"><b>{{ perfil.stats.vitorias_duo }}</b><span>Vitórias duo (total)</span></div>
+  {% if extra and extra.record_points %}
+  <div class="cartao"><b>{{ "{:,}".format(extra.record_points).replace(",", ".") }}</b><span>Record points</span></div>
+  {% endif %}
+</section>
+
+{% if perfil.grafico_trofeus | length >= 2 %}
+<h3>Troféus nas últimas {{ perfil.grafico_trofeus | length }} partidas registradas</h3>
+{% set gt = perfil.grafico_trofeus %}
+{% set gmin = gt | min %}
+{% set gmax = gt | max %}
+{% set gfaixa = (gmax - gmin) if gmax > gmin else 1 %}
+<svg viewBox="0 0 600 160" class="grafico" preserveAspectRatio="none">
+  <polyline fill="none" stroke="#4ade80" stroke-width="2" points="
+    {%- for v in gt %}
+    {{ (loop.index0 / (gt | length - 1) * 580 + 10) | round(1) }},{{ (140 - (v - gmin) / gfaixa * 120) | round(1) }}
+    {%- endfor %}" />
+</svg>
+<p class="nota">Registro do brawlace.com — cresce conforme o rastreamento acumula
+  (de {{ gmin }} a {{ gmax }} troféus).</p>
+{% endif %}
+{% if conta %}
+<h2>Conta (Brawlytix)</h2>
+<section class="cartoes">
+  {% if conta.horas_jogadas %}<div class="cartao"><b>{{ "{:,}".format(conta.horas_jogadas).replace(",", ".") }}h</b><span>Horas jogadas</span></div>{% endif %}
+  {% if conta.skill_score %}<div class="cartao"><b>{{ conta.skill_score }}/10</b><span>Skill score ({{ conta.skill_rotulo }})</span></div>{% endif %}
+  {% if conta.valor_conta %}<div class="cartao"><b>{{ "{:,}".format(conta.valor_conta).replace(",", ".") }}</b><span>Valor da conta (gems)</span></div>{% endif %}
+  {% if conta.elo_ranked %}<div class="cartao"><b>{{ conta.elo_ranked }}</b><span>Elo ranked atual</span></div>{% endif %}
+  {% if conta.elo_ranked_recorde %}<div class="cartao"><b>{{ "{:,}".format(conta.elo_ranked_recorde).replace(",", ".") }}</b><span>Elo ranked recorde</span></div>{% endif %}
+  {% if conta.wins_por_hora %}<div class="cartao"><b>{{ conta.wins_por_hora }}</b><span>Vitórias por hora</span></div>{% endif %}
+  {% if conta.prestige %}<div class="cartao"><b>{{ conta.prestige }}</b><span>Prestige total</span></div>{% endif %}
+  {% if conta.fama %}<div class="cartao"><b>{{ conta.fama }}</b><span>Fama</span></div>{% endif %}
+</section>
+<details class="recolhivel">
+<summary>todos os dados da conta ({{ conta.stats | length }})</summary>
+<table>
+  <thead><tr><th>Dado</th><th>Valor</th></tr></thead>
+  <tbody>
+    {% for nome, valor in conta.stats.items() %}
+    <tr><td>{{ nome }}</td><td>{{ "{:,}".format(valor).replace(",", ".") if valor is number and valor > 999 else valor }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</details>
+{% endif %}
+{% endif %}{# fim: só na aba Tudo (carreira + gráfico do brawlace) #}
+
+{% set lp = indicadores.longo_prazo %}
+{% if lp and filtro_tipo != 'ranked' %}
+<h2>Histórico de longo prazo ({{ lp.inicio }} → {{ lp.fim }})</h2>
+<section class="cartoes">
+  <div class="cartao"><b>{{ "{:,}".format(lp.batalhas).replace(",", ".") }}</b><span>Batalhas rastreadas</span></div>
+  <div class="cartao"><b>{{ lp.winrate }}%</b><span>Winrate</span></div>
+  <div class="cartao"><b>{{ lp.vitorias }} / {{ lp.derrotas }}</b><span>Vitórias / derrotas</span></div>
+  <div class="cartao"><b>+{{ "{:,}".format(lp.trofeus_delta).replace(",", ".") }}</b><span>Troféus no período</span></div>
+  <div class="cartao"><b>{{ lp.dias_jogados }}</b><span>Dias com jogo</span></div>
+</section>
+
+{% if lp.evolucao | length >= 2 %}
+{% set pts = lp.evolucao %}
+{% set pmin = pts | map(attribute="trofeus") | min %}
+{% set pmax = pts | map(attribute="trofeus") | max %}
+{% set pfaixa = (pmax - pmin) if pmax > pmin else 1 %}
+<svg viewBox="0 0 600 160" class="grafico" preserveAspectRatio="none">
+  <polyline fill="none" stroke="#ffcf40" stroke-width="2" points="
+    {%- for p in pts %}
+    {{ (loop.index0 / (pts | length - 1) * 580 + 10) | round(1) }},{{ (140 - (p.trofeus - pmin) / pfaixa * 120) | round(1) }}
+    {%- endfor %}" />
+</svg>
+<p class="nota">Evolução de troféus reconstruída dia a dia: {{ pts[0].dia }}
+  ({{ "{:,}".format(pmin).replace(",", ".") }}) → {{ pts[-1].dia }}
+  ({{ "{:,}".format(pts[-1].trofeus).replace(",", ".") }})</p>
+{% endif %}
+
+{% if brawlers_longo_prazo %}
+<h3>Todos os brawlers jogados no período ({{ brawlers_longo_prazo | length }})</h3>
+<details class="recolhivel" {{ 'open' if brawlers_longo_prazo | length <= 15 }}>
+<summary>mostrar tabela completa</summary>
+<table>
+  <thead><tr><th>#</th><th>Brawler</th><th>Jogos</th><th>V</th><th>D</th><th>Winrate</th><th>Troféus</th></tr></thead>
+  <tbody>
+    {% for b in brawlers_longo_prazo %}
+    <tr><td>{{ loop.index }}</td><td>{{ b.brawler }}</td><td>{{ b.jogos }}</td>
+        <td>{{ b.vitorias }}</td><td>{{ b.derrotas }}</td>
+        <td>{{ barra_wr(b.winrate_pct, b.jogos) }}</td>
+        <td>{{ "+" if b.trofeus_delta > 0 }}{{ b.trofeus_delta }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</details>
+{% endif %}
+{% endif %}
+
+<h2>Indicadores de performance</h2>
+<p class="nota">Calculados sobre {{ indicadores.partidas_decididas }} batalhas decididas
+  acumuladas no banco ({{ gravacao.batalhas_novas }} novas nesta consulta).
+  {% if indicadores.amostra_pequena %}⚠️ Amostra pequena — os números ficam confiáveis
+  a partir de ~20 batalhas; o rastreamento automático acumula mais a cada 2h.{% endif %}</p>
+
+<section class="cartoes">
+  {% if indicadores.winrate_geral is not none %}
+  <div class="cartao"><b>{{ indicadores.winrate_geral }}%</b><span>Winrate geral</span></div>
+  {% endif %}
+  <div class="cartao"><b>{{ indicadores.partidas }}</b><span>Batalhas no histórico</span></div>
+</section>
+
+{% if indicadores.por_modo %}
+<h3>Winrate por modo</h3>
+<table>
+  <thead><tr><th>Modo</th><th>Partidas</th><th>Vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for m in indicadores.por_modo %}
+    <tr><td>{{ m.nome }}</td><td>{{ m.partidas }}</td><td>{{ m.vitorias }}</td>
+        <td>{{ barra_wr(m.winrate, m.partidas) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if indicadores.por_brawler %}
+<h3>Performance por brawler</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Partidas</th><th>Uso</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for b in indicadores.por_brawler %}
+    <tr><td>{{ b.nome }}</td><td>{{ b.partidas }}</td><td>{{ b.uso_pct }}%</td>
+        <td>{{ barra_wr(b.winrate, b.partidas) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if indicadores.queda_trofeus and filtro_tipo != 'ranked' %}
+<h3>Brawlers em queda (mais longe do próprio pico)</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Atual</th><th>Pico</th><th>Queda</th></tr></thead>
+  <tbody>
+    {% for q in indicadores.queda_trofeus %}
+    <tr><td>{{ q.nome }}</td><td>{{ q.trofeus }}</td><td>{{ q.trofeus_max }}</td>
+        <td class="ruim">-{{ q.queda }} ({{ q.queda_pct }}%)</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if indicadores.resets_temporada and filtro_tipo != 'ranked' %}
+{% for r in indicadores.resets_temporada %}
+<p class="nota">🔄 <b>Provável reset de temporada</b> entre {{ r.entre }} e {{ r.e }}:
+  queda de ~{{ "{:,}".format(r.queda).replace(",", ".") }} troféus não explicada pelas partidas
+  (variação real {{ r.variacao_real }}, partidas somaram {{ r.delta_partidas }}).
+  A curva abaixo inclui esse degrau — não foi derrota sua.</p>
+{% endfor %}
+{% endif %}
+
+{% if filtro_tipo == 'ranked' %}
+{# evolução de troféus não se aplica à aba Ranked #}
+{% elif indicadores.evolucao | length >= 2 %}
+<h3>Evolução de troféus</h3>
+{% set pontos = indicadores.evolucao %}
+{% set minimo = pontos | map(attribute="trofeus") | min %}
+{% set maximo = pontos | map(attribute="trofeus") | max %}
+{% set faixa = (maximo - minimo) if maximo > minimo else 1 %}
+<svg viewBox="0 0 600 160" class="grafico" preserveAspectRatio="none">
+  <polyline fill="none" stroke="#ffcf40" stroke-width="2" points="
+    {%- for p in pontos %}
+    {{ (loop.index0 / (pontos | length - 1) * 580 + 10) | round(1) }},{{ (140 - (p.trofeus - minimo) / faixa * 120) | round(1) }}
+    {%- endfor %}" />
+</svg>
+<p class="nota">{{ pontos[0].dia }} ({{ pontos[0].trofeus }}) → {{ pontos[-1].dia }} ({{ pontos[-1].trofeus }})</p>
+{% else %}
+<p class="nota">Evolução de troféus: aparece a partir do 2º dia de dados
+  (o rastreamento automático cuida disso).</p>
+{% endif %}
+
+{% if correlacao %}
+<h2>Meta atual e recomendações</h2>
+<p class="nota">Meta global de {{ correlacao.data_meta }} (brawlace.com, % de Star Player por modo)</p>
+
+{% if correlacao.score %}
+<section class="cartoes">
+  <div class="cartao"><b>{{ correlacao.score.score }}/100</b><span>Score vs meta</span></div>
+</section>
+<p class="nota">Quanto maior, mais os brawlers que você joga estão fortes no meta
+  dos modos em que você os joga.</p>
+<table>
+  <thead><tr><th>Modo</th><th>Brawler</th><th>Suas partidas</th><th>Posição no meta</th><th>Percentil</th></tr></thead>
+  <tbody>
+    {% for d in correlacao.score.detalhes %}
+    <tr><td>{{ d.modo }}</td><td>{{ d.brawler }}</td><td>{{ d.partidas }}</td>
+        <td>{{ d.posicao_meta if d.posicao_meta else "fora do ranking" }} / {{ d.total_ranking }}</td>
+        <td class="{{ 'bom' if d.percentil >= 50 else 'ruim' }}">{{ d.percentil }}%</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if correlacao.sugestoes %}
+<h3>Melhores picks seus para os eventos ativos</h3>
+<p class="nota">Score = 50% meta do modo + 50% seu desempenho com o brawler
+  (winrate ponderado por amostra). Só brawlers seus com power ≥ 9.</p>
+<table>
+  <thead><tr><th>Modo</th><th>Mapa</th><th>Picks recomendados</th></tr></thead>
+  <tbody>
+    {% for s in correlacao.sugestoes %}
+    <tr>
+      <td>{{ s.modo }}</td>
+      <td>{{ s.mapa }}</td>
+      <td>
+        {% for p in s.picks %}
+        <b>{{ p.brawler }}</b> <span class="nota">(#{{ p.posicao_meta }} do meta{% if p.winrate_no_modo is not none %}, {{ p.winrate_no_modo }}% neste modo ({{ p.jogos_no_modo }}j){% elif p.winrate_seu is not none %}, {{ p.winrate_seu }}% geral ({{ p.jogos_seus }}j){% else %}, você nunca jogou{% endif %})</span>{{ " · " if not loop.last }}
+        {% else %}—{% endfor %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if star %}
+<h2>Star Player</h2>
+<section class="cartoes">
+  <div class="cartao"><b>{{ star.taxa_geral }}%</b><span>Taxa de star player</span></div>
+  <div class="cartao"><b>{{ star.stars }} / {{ star.total }}</b><span>Stars / batalhas 3v3</span></div>
+</section>
+{% if star.por_brawler %}
+<h3>Por brawler (mín. 3 jogos)</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Jogos</th><th>Stars</th><th>Taxa</th></tr></thead>
+  <tbody>
+    {% for s in star.por_brawler %}
+    <tr><td>{{ s.nome }}</td><td>{{ s.jogos }}</td><td>{{ s.stars }}</td>
+        <td class="{{ 'bom' if s.taxa >= 25 else '' }}">{{ s.taxa }}%</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if social and (social.matchups or social.parceiros) %}
+<h2>Matchups e parceiros</h2>
+<p class="nota">Baseado nos times completos de {{ social.batalhas_cobertas }} batalhas
+  gravadas (acumula a cada consulta; batalhas antigas não têm esse detalhe).</p>
+
+{% if social.matchups %}
+<h3>Contra quais brawlers você mais sofre (mín. {{ 2 }} jogos)</h3>
+<table>
+  <thead><tr><th>Brawler inimigo</th><th>Jogos contra</th><th>Suas vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for m in social.matchups %}
+    <tr><td>{{ m.brawler }}</td><td>{{ m.jogos }}</td><td>{{ m.vitorias }}</td>
+        <td>{{ barra_wr(m.winrate, m.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if social.parceiros %}
+<h3>Parceiros de time</h3>
+<table>
+  <thead><tr><th>Jogador</th><th>Jogos juntos</th><th>Vitórias</th><th>Winrate juntos</th></tr></thead>
+  <tbody>
+    {% for p in social.parceiros %}
+    <tr><td><a href="/jogador/{{ p.tag.lstrip('#') }}">{{ p.nick }}</a> <span class="tag">{{ p.tag }}</span></td>
+        <td>{{ p.jogos }}</td><td>{{ p.vitorias }}</td>
+        <td>{{ barra_wr(p.winrate, p.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if composicoes and (composicoes.duplas_brawlers or composicoes.trios_jogadores) %}
+<h2>Composições de time</h2>
+
+{% if composicoes.duplas_brawlers %}
+<h3>Seu brawler + brawler aliado (mín. 2 jogos)</h3>
+<table>
+  <thead><tr><th>Você</th><th>Aliado</th><th>Jogos</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for d in composicoes.duplas_brawlers %}
+    <tr><td>{{ d.meu_brawler }}</td><td>{{ d.brawler_aliado }}</td><td>{{ d.jogos }}</td>
+        <td>{{ barra_wr(d.winrate, d.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if composicoes.trios_jogadores %}
+<h3>Seus trios (você + 2 parceiros)</h3>
+<table>
+  <thead><tr><th>Parceiros</th><th>Jogos</th><th>Vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for t in composicoes.trios_jogadores %}
+    <tr><td>{{ t.parceiros }}</td><td>{{ t.jogos }}</td><td>{{ t.vitorias }}</td>
+        <td>{{ barra_wr(t.winrate, t.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
+
+{% if tendencias %}
+<h2>Tendências do meta ({{ tendencias.de }} → {{ tendencias.ate }})</h2>
+{% if tendencias.subindo %}
+<h3>Subindo 📈</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Modo</th><th>Antes</th><th>Agora</th><th>Δ</th></tr></thead>
+  <tbody>
+    {% for t in tendencias.subindo %}
+    <tr><td>{{ t.brawler }}</td><td>{{ t.modo }}</td><td>#{{ t.pos_antes }}</td>
+        <td>#{{ t.pos_agora }}</td><td class="bom">+{{ t.delta }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% if tendencias.caindo %}
+<h3>Caindo 📉</h3>
+<table>
+  <thead><tr><th>Brawler</th><th>Modo</th><th>Antes</th><th>Agora</th><th>Δ</th></tr></thead>
+  <tbody>
+    {% for t in tendencias.caindo %}
+    <tr><td>{{ t.brawler }}</td><td>{{ t.modo }}</td><td>#{{ t.pos_antes }}</td>
+        <td>#{{ t.pos_agora }}</td><td class="ruim">{{ t.delta }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% elif correlacao %}
+<h2>Tendências do meta</h2>
+<p class="nota">Aparece quando houver 2+ dias de meta coletados — o rastreamento
+  acumula um snapshot do meta a cada consulta/rodada do rastreador.</p>
+{% endif %}
+
+{% set todas = historico_batalhas if historico_batalhas is defined and historico_batalhas else perfil.batalhas %}
+<h2>Últimas batalhas ({{ [todas | length, 25] | min }} de {{ todas | length }} no banco)</h2>
+<table>
+  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Resultado</th></tr></thead>
+  <tbody>
+    {% for b in todas[:25] %}
+    <tr class="{{ 'vitoria' if b.resultado == 'Victory' or b.rank == 1 else ('derrota' if b.resultado == 'Defeat' else '') }}">
+      <td>{{ b.ocorrida_em or "?" }}</td>
+      <td>{{ b.tipo }}</td>
+      <td>{{ b.modo }}</td>
+      <td>{{ b.mapa or "?" }}</td>
+      <td>{{ b.brawler or "?" }}{% if b.star_player %} ⭐{% endif %}</td>
+      <td>{% if b.rank %}{{ b.rank }}º lugar{% if b.resultado %} <span class="nota">({{ b.resultado }})</span>{% endif %}{% else %}{{ b.resultado or "—" }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if todas | length > 25 %}
+<details class="recolhivel">
+<summary>mostrar as outras {{ todas | length - 25 }} batalhas do banco</summary>
+<table>
+  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Resultado</th></tr></thead>
+  <tbody>
+    {% for b in todas[25:] %}
+    <tr class="{{ 'vitoria' if b.resultado == 'Victory' or b.rank == 1 else ('derrota' if b.resultado == 'Defeat' else '') }}">
+      <td>{{ b.ocorrida_em or "?" }}</td>
+      <td>{{ b.tipo }}</td>
+      <td>{{ b.modo }}</td>
+      <td>{{ b.mapa or "?" }}</td>
+      <td>{{ b.brawler or "?" }}{% if b.star_player %} ⭐{% endif %}</td>
+      <td>{% if b.rank %}{{ b.rank }}º lugar{% if b.resultado %} <span class="nota">({{ b.resultado }})</span>{% endif %}{% else %}{{ b.resultado or "—" }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</details>
+{% endif %}
+
+<h2>Brawlers ({{ perfil.brawlers | length }}) — top 15 por troféus</h2>
+<table>
+  <thead><tr><th>Brawler</th><th>Power</th><th>Troféus</th><th>Máx</th><th>Skin</th></tr></thead>
+  <tbody>
+    {% for br in (perfil.brawlers | sort(attribute="trofeus", reverse=true))[:15] %}
+    <tr>
+      <td>{{ br.nome }}</td><td>{{ br.power }}</td><td>{{ br.trofeus }}</td>
+      <td>{{ br.trofeus_max }}</td><td>{{ br.skin or "—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,33 @@
+{# Macros de visualização — usadas em todas as tabelas de winrate #}
+
+{% macro barra_wr(winrate, jogos=None) -%}
+{%- if winrate is none -%}
+<span class="nota">—</span>
+{%- else -%}
+{%- set classe = 'wr-alto' if winrate >= 55 else ('wr-medio' if winrate >= 45 else 'wr-baixo') -%}
+{%- set fraca = jogos is not none and jogos < 5 -%}
+<span class="wr-celula{{ ' wr-amostra-fraca' if fraca }}" title="{{ winrate }}%{% if jogos is not none %} em {{ jogos }} jogos{% endif %}{{ ' — amostra pequena' if fraca }}">
+  <span class="wr-barra"><span class="wr-preenchido {{ classe }}" style="width: {{ winrate }}%"></span></span>
+  <span class="wr-texto">{{ winrate }}%{% if fraca %}<span class="nota">?</span>{% endif %}</span>
+</span>
+{%- endif -%}
+{%- endmacro %}
+
+{% macro acessorios(a) -%}
+{%- if a -%}
+<span class="acess">
+  {%- if a.hypercharge %}<span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span>{% endif -%}
+  {%- for tipo in ['star_power', 'gadget', 'gear'] -%}
+    {%- set it = a[tipo] if tipo in a else none -%}
+    {%- if it and it.equipar -%}
+      {%- set rotulo = {'star_power':'SP','gadget':'Gadget','gear':'Gear'}[tipo] -%}
+      {%- if it.possui_recomendado == false -%}
+        <span class="acess-item acess-alerta" title="O melhor é {{ it.recomendado }} ({{ it.winrate }}%) — você não tem; equipe {{ it.equipar }}">{{ rotulo }}: {{ it.equipar }} ⚠️</span>
+      {%- else -%}
+        <span class="acess-item acess-ok" title="{{ rotulo }} recomendado{% if it.winrate %} ({{ it.winrate }}%){% endif %}">{{ rotulo }}: {{ it.equipar }}{% if it.possui_recomendado %} ✓{% endif %}</span>
+      {%- endif -%}
+    {%- endif -%}
+  {%- endfor -%}
+</span>
+{%- endif -%}
+{%- endmacro %}

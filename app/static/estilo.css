@@ -1,0 +1,353 @@
+/* ============================================================
+   API do Brawl — tema escuro estilo Brawl Stars
+   Paleta: navy profundo + amarelo Brawl (#ffce00) + azul (#3b9dff)
+   ============================================================ */
+
+:root {
+  --fundo: #12141f;
+  --fundo-grad: #1a1d2e;
+  --painel: #1f2335;
+  --painel-borda: #2d3250;
+  --painel-hover: #262b42;
+  --texto: #e8eaf6;
+  --texto-suave: #8b90ad;
+  --destaque: #ffce00;          /* amarelo Brawl Stars */
+  --destaque-escuro: #e0a800;
+  --azul: #3b9dff;
+  --roxo: #9b6dff;
+  --verde: #3ddc84;
+  --vermelho: #ff5c6c;
+  --sombra: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --raio: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(59, 157, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(255, 206, 0, 0.06), transparent 55%),
+    linear-gradient(180deg, var(--fundo-grad) 0%, var(--fundo) 320px);
+  background-attachment: fixed;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+/* ---------- header ---------- */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(18, 20, 31, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 0.85rem 1.4rem;
+  border-bottom: 2px solid var(--destaque);
+  box-shadow: var(--sombra);
+}
+header a {
+  color: var(--destaque);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+header a:hover { color: #ffe15c; }
+
+main { max-width: 980px; margin: 0 auto; padding: 1.4rem 1.2rem 4rem; }
+
+/* ---------- tipografia ---------- */
+h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0.8rem 0 0.4rem;
+}
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.2rem 0 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--painel-borda);
+  color: var(--destaque);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 1.6rem 0 0.4rem;
+  color: var(--azul);
+}
+a { color: var(--azul); }
+a:hover { color: #7cbfff; }
+
+.tag { color: var(--texto-suave); font-size: 0.8em; font-weight: 500; }
+.erro { color: var(--vermelho); font-weight: 600; }
+.nota { color: var(--texto-suave); font-size: 0.88em; }
+.clube { color: var(--texto-suave); margin-top: 0; }
+
+/* ---------- busca (home) ---------- */
+.busca { display: flex; gap: 0.6rem; margin: 1.2rem 0 1.8rem; }
+.busca input {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  font-size: 1.05rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.busca input::placeholder { color: var(--texto-suave); }
+.busca input:focus {
+  outline: none;
+  border-color: var(--destaque);
+  box-shadow: 0 0 0 3px rgba(255, 206, 0, 0.18);
+}
+.busca button {
+  padding: 0.85rem 1.8rem;
+  border: none;
+  border-radius: var(--raio);
+  background: linear-gradient(180deg, #ffd93d, var(--destaque-escuro));
+  color: #1a1500;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #a87e00, var(--sombra);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+}
+.busca button:hover { filter: brightness(1.08); }
+.busca button:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87e00; }
+
+/* ---------- lista de recentes ---------- */
+.recentes { list-style: none; padding: 0; margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.recentes li a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.65rem 1rem;
+  text-decoration: none;
+  color: var(--texto);
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.recentes li a:hover {
+  background: var(--painel-hover);
+  border-color: var(--destaque);
+  transform: translateX(3px);
+}
+
+/* ---------- cartões de stats ---------- */
+.cartoes { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 1rem 0; }
+.cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  box-shadow: var(--sombra);
+  transition: border-color 0.15s, transform 0.1s;
+}
+.cartao:hover { border-color: var(--destaque); transform: translateY(-2px); }
+.cartao b { font-size: 1.45rem; color: var(--destaque); font-weight: 800; }
+.cartao span {
+  font-size: 0.76rem;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+/* ---------- tabelas ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1.6rem;
+  font-size: 0.9rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+thead { background: rgba(0, 0, 0, 0.25); }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--painel-borda); }
+tbody tr:last-child td { border-bottom: none; }
+th {
+  color: var(--texto-suave);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--painel-hover); }
+
+tr.vitoria td:last-child { color: var(--verde); font-weight: 700; }
+tr.derrota td:last-child { color: var(--vermelho); font-weight: 700; }
+tr.vitoria { box-shadow: inset 3px 0 0 var(--verde); }
+tr.derrota { box-shadow: inset 3px 0 0 var(--vermelho); }
+td.bom { color: var(--verde); font-weight: 700; }
+td.ruim { color: var(--vermelho); font-weight: 700; }
+
+/* ---------- gráficos SVG ---------- */
+.grafico {
+  width: 100%;
+  height: 170px;
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  margin: 0.5rem 0;
+  box-shadow: var(--sombra);
+}
+
+/* ---------- página de erro ---------- */
+.painel-erro {
+  background: var(--painel);
+  border: 1px solid var(--vermelho);
+  border-radius: var(--raio);
+  padding: 1.4rem 1.6rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--sombra);
+}
+.painel-erro h1 { margin-top: 0; }
+
+/* ---------- responsivo ---------- */
+@media (max-width: 640px) {
+  h1 { font-size: 1.5rem; }
+  .cartao { min-width: calc(50% - 0.35rem); flex: 1; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+  .busca { flex-direction: column; }
+  .busca button { width: 100%; }
+}
+
+/* ---------- abas ranked × troféus ---------- */
+.abas {
+  display: flex; gap: 0.5rem; margin: 0.8rem 0 0.4rem;
+}
+.abas a {
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.abas a:hover { border-color: var(--destaque); }
+.abas a.ativa {
+  background: var(--destaque);
+  color: #1a1500;
+  border-color: var(--destaque);
+}
+
+/* ---------- painel Jogar agora ---------- */
+.eventos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 0.9rem;
+  margin: 1.2rem 0;
+}
+@media (max-width: 640px) { .eventos-grid { grid-template-columns: 1fr; } }
+.evento-cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 1rem 1.2rem;
+  box-shadow: var(--sombra);
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.evento-cartao:hover { border-color: var(--destaque); }
+.evento-topo { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.evento-topo b {
+  color: var(--destaque); text-transform: uppercase; font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+.evento-topo .mapa { color: var(--azul); font-weight: 600; }
+.evento-numeros { font-weight: 700; font-size: 0.95rem; }
+.evento-linha { font-size: 0.9rem; line-height: 1.6; }
+.evento-linha .rotulo {
+  display: block; color: var(--texto-suave); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.recentes li { display: flex; align-items: center; gap: 0.4rem; }
+.recentes li > a:first-child { flex: 1; }
+.jogar-link { font-size: 1.2rem; text-decoration: none; }
+
+/* ---------- seletor de time (Jogar agora) ---------- */
+.time-form {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.7rem 1rem;
+  margin: 1rem 0;
+}
+.time-form .rotulo { color: var(--texto-suave); font-size: 0.8rem; text-transform: uppercase; }
+.time-opcao { display: flex; align-items: center; gap: 0.3rem; font-size: 0.9rem; cursor: pointer; }
+.time-form button {
+  padding: 0.4rem 1rem; border: none; border-radius: 999px;
+  background: var(--verde); color: #06281a; font-weight: 800; cursor: pointer;
+}
+.distribuicao { border-left: 3px solid var(--verde); padding-left: 0.6rem; }
+
+/* ---------- barras de winrate (leitura de relance) ---------- */
+.wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
+.wr-barra {
+  flex: 1; height: 8px; min-width: 70px; max-width: 110px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px; overflow: hidden;
+}
+.wr-preenchido { display: block; height: 100%; border-radius: 4px; }
+.wr-alto  { background: var(--verde); }
+.wr-medio { background: var(--destaque); }
+.wr-baixo { background: var(--vermelho); }
+.wr-texto { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wr-amostra-fraca .wr-preenchido { opacity: 0.35; }
+.wr-amostra-fraca .wr-texto { color: var(--texto-suave); }
+
+/* ---------- tabelas recolhíveis ---------- */
+details.recolhivel > summary {
+  cursor: pointer; color: var(--azul); font-weight: 600;
+  padding: 0.4rem 0; list-style: none; font-size: 0.9rem;
+}
+details.recolhivel > summary::before { content: "▸ "; }
+details.recolhivel[open] > summary::before { content: "▾ "; }
+
+/* ---------- destaque da melhor aposta (Jogar agora) ---------- */
+.evento-cartao.melhor-aposta {
+  border-color: var(--verde);
+  box-shadow: 0 0 0 1px var(--verde), var(--sombra);
+}
+.melhor-aposta-selo {
+  align-self: flex-start;
+  background: var(--verde); color: #06281a;
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 0.15rem 0.6rem; border-radius: 999px;
+}
+.evento-numeros .wr-destaque { font-size: 1.6rem; font-weight: 800; }
+
+/* ---------- acessórios recomendados ---------- */
+.picks-lista { list-style: none; padding: 0; margin: 0.3rem 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.picks-lista li { line-height: 1.5; }
+.acess { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; margin-left: 0.3rem; vertical-align: middle; }
+.acess-item {
+  font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--painel-borda); white-space: nowrap;
+}
+.acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
+.acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }

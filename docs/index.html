@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API do Brawl</title>
+  <style>/* ============================================================
+   API do Brawl — tema escuro estilo Brawl Stars
+   Paleta: navy profundo + amarelo Brawl (#ffce00) + azul (#3b9dff)
+   ============================================================ */
+
+:root {
+  --fundo: #12141f;
+  --fundo-grad: #1a1d2e;
+  --painel: #1f2335;
+  --painel-borda: #2d3250;
+  --painel-hover: #262b42;
+  --texto: #e8eaf6;
+  --texto-suave: #8b90ad;
+  --destaque: #ffce00;          /* amarelo Brawl Stars */
+  --destaque-escuro: #e0a800;
+  --azul: #3b9dff;
+  --roxo: #9b6dff;
+  --verde: #3ddc84;
+  --vermelho: #ff5c6c;
+  --sombra: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --raio: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(59, 157, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(255, 206, 0, 0.06), transparent 55%),
+    linear-gradient(180deg, var(--fundo-grad) 0%, var(--fundo) 320px);
+  background-attachment: fixed;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+/* ---------- header ---------- */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(18, 20, 31, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 0.85rem 1.4rem;
+  border-bottom: 2px solid var(--destaque);
+  box-shadow: var(--sombra);
+}
+header a {
+  color: var(--destaque);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+header a:hover { color: #ffe15c; }
+
+main { max-width: 980px; margin: 0 auto; padding: 1.4rem 1.2rem 4rem; }
+
+/* ---------- tipografia ---------- */
+h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0.8rem 0 0.4rem;
+}
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.2rem 0 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--painel-borda);
+  color: var(--destaque);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 1.6rem 0 0.4rem;
+  color: var(--azul);
+}
+a { color: var(--azul); }
+a:hover { color: #7cbfff; }
+
+.tag { color: var(--texto-suave); font-size: 0.8em; font-weight: 500; }
+.erro { color: var(--vermelho); font-weight: 600; }
+.nota { color: var(--texto-suave); font-size: 0.88em; }
+.clube { color: var(--texto-suave); margin-top: 0; }
+
+/* ---------- busca (home) ---------- */
+.busca { display: flex; gap: 0.6rem; margin: 1.2rem 0 1.8rem; }
+.busca input {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  font-size: 1.05rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.busca input::placeholder { color: var(--texto-suave); }
+.busca input:focus {
+  outline: none;
+  border-color: var(--destaque);
+  box-shadow: 0 0 0 3px rgba(255, 206, 0, 0.18);
+}
+.busca button {
+  padding: 0.85rem 1.8rem;
+  border: none;
+  border-radius: var(--raio);
+  background: linear-gradient(180deg, #ffd93d, var(--destaque-escuro));
+  color: #1a1500;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #a87e00, var(--sombra);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+}
+.busca button:hover { filter: brightness(1.08); }
+.busca button:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87e00; }
+
+/* ---------- lista de recentes ---------- */
+.recentes { list-style: none; padding: 0; margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.recentes li a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.65rem 1rem;
+  text-decoration: none;
+  color: var(--texto);
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.recentes li a:hover {
+  background: var(--painel-hover);
+  border-color: var(--destaque);
+  transform: translateX(3px);
+}
+
+/* ---------- cartões de stats ---------- */
+.cartoes { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 1rem 0; }
+.cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  box-shadow: var(--sombra);
+  transition: border-color 0.15s, transform 0.1s;
+}
+.cartao:hover { border-color: var(--destaque); transform: translateY(-2px); }
+.cartao b { font-size: 1.45rem; color: var(--destaque); font-weight: 800; }
+.cartao span {
+  font-size: 0.76rem;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+/* ---------- tabelas ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1.6rem;
+  font-size: 0.9rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+thead { background: rgba(0, 0, 0, 0.25); }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--painel-borda); }
+tbody tr:last-child td { border-bottom: none; }
+th {
+  color: var(--texto-suave);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--painel-hover); }
+
+tr.vitoria td:last-child { color: var(--verde); font-weight: 700; }
+tr.derrota td:last-child { color: var(--vermelho); font-weight: 700; }
+tr.vitoria { box-shadow: inset 3px 0 0 var(--verde); }
+tr.derrota { box-shadow: inset 3px 0 0 var(--vermelho); }
+td.bom { color: var(--verde); font-weight: 700; }
+td.ruim { color: var(--vermelho); font-weight: 700; }
+
+/* ---------- gráficos SVG ---------- */
+.grafico {
+  width: 100%;
+  height: 170px;
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  margin: 0.5rem 0;
+  box-shadow: var(--sombra);
+}
+
+/* ---------- página de erro ---------- */
+.painel-erro {
+  background: var(--painel);
+  border: 1px solid var(--vermelho);
+  border-radius: var(--raio);
+  padding: 1.4rem 1.6rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--sombra);
+}
+.painel-erro h1 { margin-top: 0; }
+
+/* ---------- responsivo ---------- */
+@media (max-width: 640px) {
+  h1 { font-size: 1.5rem; }
+  .cartao { min-width: calc(50% - 0.35rem); flex: 1; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+  .busca { flex-direction: column; }
+  .busca button { width: 100%; }
+}
+
+/* ---------- abas ranked × troféus ---------- */
+.abas {
+  display: flex; gap: 0.5rem; margin: 0.8rem 0 0.4rem;
+}
+.abas a {
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.abas a:hover { border-color: var(--destaque); }
+.abas a.ativa {
+  background: var(--destaque);
+  color: #1a1500;
+  border-color: var(--destaque);
+}
+
+/* ---------- painel Jogar agora ---------- */
+.eventos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 0.9rem;
+  margin: 1.2rem 0;
+}
+@media (max-width: 640px) { .eventos-grid { grid-template-columns: 1fr; } }
+.evento-cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 1rem 1.2rem;
+  box-shadow: var(--sombra);
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.evento-cartao:hover { border-color: var(--destaque); }
+.evento-topo { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.evento-topo b {
+  color: var(--destaque); text-transform: uppercase; font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+.evento-topo .mapa { color: var(--azul); font-weight: 600; }
+.evento-numeros { font-weight: 700; font-size: 0.95rem; }
+.evento-linha { font-size: 0.9rem; line-height: 1.6; }
+.evento-linha .rotulo {
+  display: block; color: var(--texto-suave); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.recentes li { display: flex; align-items: center; gap: 0.4rem; }
+.recentes li > a:first-child { flex: 1; }
+.jogar-link { font-size: 1.2rem; text-decoration: none; }
+
+/* ---------- seletor de time (Jogar agora) ---------- */
+.time-form {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.7rem 1rem;
+  margin: 1rem 0;
+}
+.time-form .rotulo { color: var(--texto-suave); font-size: 0.8rem; text-transform: uppercase; }
+.time-opcao { display: flex; align-items: center; gap: 0.3rem; font-size: 0.9rem; cursor: pointer; }
+.time-form button {
+  padding: 0.4rem 1rem; border: none; border-radius: 999px;
+  background: var(--verde); color: #06281a; font-weight: 800; cursor: pointer;
+}
+.distribuicao { border-left: 3px solid var(--verde); padding-left: 0.6rem; }
+
+/* ---------- barras de winrate (leitura de relance) ---------- */
+.wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
+.wr-barra {
+  flex: 1; height: 8px; min-width: 70px; max-width: 110px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px; overflow: hidden;
+}
+.wr-preenchido { display: block; height: 100%; border-radius: 4px; }
+.wr-alto  { background: var(--verde); }
+.wr-medio { background: var(--destaque); }
+.wr-baixo { background: var(--vermelho); }
+.wr-texto { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wr-amostra-fraca .wr-preenchido { opacity: 0.35; }
+.wr-amostra-fraca .wr-texto { color: var(--texto-suave); }
+
+/* ---------- tabelas recolhíveis ---------- */
+details.recolhivel > summary {
+  cursor: pointer; color: var(--azul); font-weight: 600;
+  padding: 0.4rem 0; list-style: none; font-size: 0.9rem;
+}
+details.recolhivel > summary::before { content: "▸ "; }
+details.recolhivel[open] > summary::before { content: "▾ "; }
+
+/* ---------- destaque da melhor aposta (Jogar agora) ---------- */
+.evento-cartao.melhor-aposta {
+  border-color: var(--verde);
+  box-shadow: 0 0 0 1px var(--verde), var(--sombra);
+}
+.melhor-aposta-selo {
+  align-self: flex-start;
+  background: var(--verde); color: #06281a;
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 0.15rem 0.6rem; border-radius: 999px;
+}
+.evento-numeros .wr-destaque { font-size: 1.6rem; font-weight: 800; }
+
+/* ---------- acessórios recomendados ---------- */
+.picks-lista { list-style: none; padding: 0; margin: 0.3rem 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.picks-lista li { line-height: 1.5; }
+.acess { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; margin-left: 0.3rem; vertical-align: middle; }
+.acess-item {
+  font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--painel-borda); white-space: nowrap;
+}
+.acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
+.acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }
+</style>
+</head>
+<body>
+  <header><a href="index.html">⭐ API do Brawl</a></header>
+  <main><p class="nota" style="text-align:center">📸 Foto do clã — atualizada quando o dono publica. Versão ao vivo roda no PC dele.</p>
+<h1>Consultar jogador</h1>
+
+
+<p class="nota">🔄 Rastreio embutido (a cada 30 min com o app aberto) — última rodada:
+  <code>2026-07-17T14:24:34 meta: +0 linhas em meta_snapshots</code></p>
+
+<p class="nota">🔒 Busca de tag nova só na versão local (esta é uma foto do clã).</p>
+
+<p class="nota">📥 <b>Histórico externo pendente</b> — consultados sem importação do Brawlify:
+  LoganKL <span class="tag">#89R22LV2Y</span>, Tade <span class="tag">#28GY9U20U</span>.
+  Peça ao Claude numa sessão com o Chrome aberto ("importa o Brawlify do fulano") — processo de ~2 min (CLAUDE.md §3.6b).</p>
+
+
+
+<h2>Ranking do clube — clan Snake</h2>
+
+<p class="nota">Só membros do clan Snake (roster do brawlace, atualizado a cada consulta).
+  Mínimo 5 batalhas decididas no banco.</p>
+
+<table>
+  <thead><tr><th>#</th><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th><th>Troféus (visto)</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td>1</td>
+      <td><a href="jogador_9029RVG2J.html">SNK | BIGBOSS</a> <span class="tag">#9029RVG2J</span></td>
+      <td>24</td>
+      <td><span class="wr-celula" title="70.8% em 24 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 70.8%"></span></span>
+  <span class="wr-texto">70.8%</span>
+</span></td>
+      <td>29.2%</td>
+      <td>1.394</td>
+    </tr>
+    
+    <tr>
+      <td>2</td>
+      <td><a href="jogador_2QLLLGV0R0.html">SNK |camilacgs</a> <span class="tag">#2QLLLGV0R0</span></td>
+      <td>62</td>
+      <td><span class="wr-celula" title="59.7% em 62 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 59.7%"></span></span>
+  <span class="wr-texto">59.7%</span>
+</span></td>
+      <td>8.1%</td>
+      <td>1.503</td>
+    </tr>
+    
+    <tr>
+      <td>3</td>
+      <td><a href="jogador_28GY9QJVC.html">SNK|gustavo</a> <span class="tag">#28GY9QJVC</span></td>
+      <td>23</td>
+      <td><span class="wr-celula" title="65.2% em 23 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 65.2%"></span></span>
+  <span class="wr-texto">65.2%</span>
+</span></td>
+      <td>0.0%</td>
+      <td>1.036</td>
+    </tr>
+    
+    <tr>
+      <td>4</td>
+      <td><a href="jogador_299PGGLQL.html">SNK | andreidl</a> <span class="tag">#299PGGLQL</span></td>
+      <td>43</td>
+      <td><span class="wr-celula" title="53.5% em 43 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 53.5%"></span></span>
+  <span class="wr-texto">53.5%</span>
+</span></td>
+      <td>9.3%</td>
+      <td>1.109</td>
+    </tr>
+    
+    <tr>
+      <td>5</td>
+      <td><a href="jogador_89R22LV2Y.html">LoganKL</a> <span class="tag">#89R22LV2Y</span></td>
+      <td>25</td>
+      <td><span class="wr-celula" title="56.0% em 25 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 56.0%"></span></span>
+  <span class="wr-texto">56.0%</span>
+</span></td>
+      <td>4.0%</td>
+      <td>2.008</td>
+    </tr>
+    
+  </tbody>
+</table>
+
+
+
+<h2>Melhores composições do clan Snake</h2>
+<p class="nota">Times reais que jogaram juntos (mín. 3 batalhas decididas juntos).</p>
+
+
+<h3>Duplas</h3>
+<table>
+  <thead><tr><th>Dupla</th><th>Jogos</th><th>V</th><th>Winrate</th><th>Brawlers mais usados</th><th>Star player</th></tr></thead>
+  <tbody>
+    
+    <tr><td>SNK |camilacgs + SNK | BIGBOSS</td><td>17</td><td>11</td>
+        <td><span class="wr-celula" title="64.7% em 17 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 64.7%"></span></span>
+  <span class="wr-texto">64.7%</span>
+</span></td>
+        <td>BELLE + COLETTE (4j, 75%)<br>BELLE + RUFFS (4j, 50%)</td>
+        <td>SNK | BIGBOSS ⭐3 · SNK |camilacgs ⭐3</td></tr>
+    
+    <tr><td>SNK | andreidl + SNK |camilacgs</td><td>41</td><td>22</td>
+        <td><span class="wr-celula" title="53.7% em 41 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-medio" style="width: 53.7%"></span></span>
+  <span class="wr-texto">53.7%</span>
+</span></td>
+        <td>COLT + MEG (9j, 67%)<br>BROCK + BELLE (6j, 50%)</td>
+        <td>SNK |camilacgs ⭐5 · SNK | andreidl ⭐4</td></tr>
+    
+    <tr><td>SNK | andreidl + SNK | BIGBOSS</td><td>18</td><td>11</td>
+        <td><span class="wr-celula" title="61.1% em 18 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 61.1%"></span></span>
+  <span class="wr-texto">61.1%</span>
+</span></td>
+        <td>EMZ + EDGAR (4j, 75%)<br>BROCK + COLETTE (3j, 67%)</td>
+        <td>SNK | BIGBOSS ⭐4 · SNK | andreidl ⭐4</td></tr>
+    
+    <tr><td>SNK | andreidl + LoganKL</td><td>8</td><td>1</td>
+        <td><span class="wr-celula" title="12.5% em 8 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 12.5%"></span></span>
+  <span class="wr-texto">12.5%</span>
+</span></td>
+        <td>EMZ + NORI (3j, 33%)<br>PIERCE + BYRON (1j, 0%)</td>
+        <td>LoganKL ⭐1</td></tr>
+    
+    <tr><td>SNK |camilacgs + LoganKL</td><td>8</td><td>1</td>
+        <td><span class="wr-celula" title="12.5% em 8 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 12.5%"></span></span>
+  <span class="wr-texto">12.5%</span>
+</span></td>
+        <td>SIRIUS + NORI (2j, 0%)<br>PENNY + NORI (1j, 100%)</td>
+        <td>LoganKL ⭐1 · SNK |camilacgs ⭐1</td></tr>
+    
+  </tbody>
+</table>
+
+
+
+<h3>Trios</h3>
+<table>
+  <thead><tr><th>Trio</th><th>Jogos</th><th>V</th><th>Winrate</th><th>Brawlers mais usados</th><th>Star player</th></tr></thead>
+  <tbody>
+    
+    <tr><td>SNK | andreidl + SNK |camilacgs + SNK | BIGBOSS</td><td>17</td><td>11</td>
+        <td><span class="wr-celula" title="64.7% em 17 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 64.7%"></span></span>
+  <span class="wr-texto">64.7%</span>
+</span></td>
+        <td>EMZ + PENNY + EDGAR (3j, 67%)<br>BROCK + BELLE + COLETTE (3j, 67%)</td>
+        <td>SNK | andreidl ⭐4 · SNK | BIGBOSS ⭐3</td></tr>
+    
+    <tr><td>SNK | andreidl + SNK |camilacgs + LoganKL</td><td>8</td><td>1</td>
+        <td><span class="wr-celula" title="12.5% em 8 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-baixo" style="width: 12.5%"></span></span>
+  <span class="wr-texto">12.5%</span>
+</span></td>
+        <td>EMZ + SIRIUS + NORI (2j, 0%)<br>EMZ + PENNY + NORI (1j, 100%)</td>
+        <td>LoganKL ⭐1 · SNK |camilacgs ⭐1</td></tr>
+    
+  </tbody>
+</table>
+
+
+
+
+<h3>Conhecidos de fora do clube (3)</h3>
+<table>
+  <thead><tr><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th></tr></thead>
+  <tbody>
+    
+    <tr>
+      <td><a href="jogador_28GY9U20U.html">Tade</a> <span class="tag">#28GY9U20U</span></td>
+      <td>54</td>
+      <td><span class="wr-celula" title="83.3% em 54 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 83.3%"></span></span>
+  <span class="wr-texto">83.3%</span>
+</span></td>
+      <td>22.2%</td>
+    </tr>
+    
+    <tr>
+      <td><a href="#">Gastocum</a> <span class="tag">#2QY8P8QJ2</span></td>
+      <td>29</td>
+      <td><span class="wr-celula" title="79.3% em 29 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 79.3%"></span></span>
+  <span class="wr-texto">79.3%</span>
+</span></td>
+      <td>20.7%</td>
+    </tr>
+    
+    <tr>
+      <td><a href="#">iArielo!</a> <span class="tag">#J2YLYC0Q</span></td>
+      <td>29</td>
+      <td><span class="wr-celula" title="79.3% em 29 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 79.3%"></span></span>
+  <span class="wr-texto">79.3%</span>
+</span></td>
+      <td>31.0%</td>
+    </tr>
+    
+  </tbody>
+</table>
+
+
+
+<h2>Consultados recentemente</h2>
+<p class="nota">🎮 = painel "Jogar agora" (eventos ativos com seus melhores picks)</p>
+<ul class="recentes">
+  
+  <li><a href="jogador_9029RVG2J.html">SNK | BIGBOSS <span class="tag">#9029RVG2J</span></a>
+      <a class="jogar-link" href="jogar_9029RVG2J.html" title="Jogar agora">🎮</a></li>
+  
+  <li><a href="jogador_89R22LV2Y.html">LoganKL <span class="tag">#89R22LV2Y</span></a>
+      <a class="jogar-link" href="jogar_89R22LV2Y.html" title="Jogar agora">🎮</a></li>
+  
+  <li><a href="jogador_2QLLLGV0R0.html">SNK |camilacgs <span class="tag">#2QLLLGV0R0</span></a>
+      <a class="jogar-link" href="jogar_2QLLLGV0R0.html" title="Jogar agora">🎮</a></li>
+  
+  <li><a href="jogador_299PGGLQL.html">SNK | andreidl <span class="tag">#299PGGLQL</span></a>
+      <a class="jogar-link" href="jogar_299PGGLQL.html" title="Jogar agora">🎮</a></li>
+  
+  <li><a href="jogador_28GY9U20U.html">Tade <span class="tag">#28GY9U20U</span></a>
+      <a class="jogar-link" href="jogar_28GY9U20U.html" title="Jogar agora">🎮</a></li>
+  
+  <li><a href="jogador_28GY9QJVC.html">SNK|gustavo <span class="tag">#28GY9QJVC</span></a>
+      <a class="jogar-link" href="jogar_28GY9QJVC.html" title="Jogar agora">🎮</a></li>
+  
+</ul>
+
+</main>
+</body>
+</html>

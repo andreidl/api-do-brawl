@@ -1,0 +1,18 @@
+{
+  "resumo": {
+    "batalhas": 1030, "vitorias": 652, "derrotas": 377, "winrate_pct": 63,
+    "trofeus_delta": 3527, "dias_rastreados": 245,
+    "inicio": "2025-11-15", "fim": "2026-07-17"
+  },
+  "mais_jogados": [
+    {"brawler": "EMZ", "jogos": 103, "winrate_pct": 57, "trofeus_delta": 253},
+    {"brawler": "BROCK", "jogos": 94, "winrate_pct": 55, "trofeus_delta": 248},
+    {"brawler": "SPIKE", "jogos": 48, "winrate_pct": 52, "trofeus_delta": 98},
+    {"brawler": "BO", "jogos": 40, "winrate_pct": 55, "trofeus_delta": 35},
+    {"brawler": "JACKY", "jogos": 36, "winrate_pct": 61, "trofeus_delta": 22},
+    {"brawler": "RICO", "jogos": 32, "winrate_pct": 56, "trofeus_delta": 95},
+    {"brawler": "GROM", "jogos": 29, "winrate_pct": 72, "trofeus_delta": 67},
+    {"brawler": "JESSIE", "jogos": 29, "winrate_pct": 62, "trofeus_delta": 21}
+  ],
+  "melhor_performer": {"brawler": "STARR NOVA", "winrate_pct": 100, "jogos": 6}
+}
