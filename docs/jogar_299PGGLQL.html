@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jogar agora — SNK | andreidl</title>
+  <style>/* ============================================================
+   API do Brawl — tema escuro estilo Brawl Stars
+   Paleta: navy profundo + amarelo Brawl (#ffce00) + azul (#3b9dff)
+   ============================================================ */
+
+:root {
+  --fundo: #12141f;
+  --fundo-grad: #1a1d2e;
+  --painel: #1f2335;
+  --painel-borda: #2d3250;
+  --painel-hover: #262b42;
+  --texto: #e8eaf6;
+  --texto-suave: #8b90ad;
+  --destaque: #ffce00;          /* amarelo Brawl Stars */
+  --destaque-escuro: #e0a800;
+  --azul: #3b9dff;
+  --roxo: #9b6dff;
+  --verde: #3ddc84;
+  --vermelho: #ff5c6c;
+  --sombra: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --raio: 12px;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(59, 157, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, rgba(255, 206, 0, 0.06), transparent 55%),
+    linear-gradient(180deg, var(--fundo-grad) 0%, var(--fundo) 320px);
+  background-attachment: fixed;
+  color: var(--texto);
+  line-height: 1.5;
+}
+
+/* ---------- header ---------- */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(18, 20, 31, 0.85);
+  backdrop-filter: blur(8px);
+  padding: 0.85rem 1.4rem;
+  border-bottom: 2px solid var(--destaque);
+  box-shadow: var(--sombra);
+}
+header a {
+  color: var(--destaque);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+header a:hover { color: #ffe15c; }
+
+main { max-width: 980px; margin: 0 auto; padding: 1.4rem 1.2rem 4rem; }
+
+/* ---------- tipografia ---------- */
+h1 {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0.8rem 0 0.4rem;
+}
+h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2.2rem 0 0.6rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--painel-borda);
+  color: var(--destaque);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 1.6rem 0 0.4rem;
+  color: var(--azul);
+}
+a { color: var(--azul); }
+a:hover { color: #7cbfff; }
+
+.tag { color: var(--texto-suave); font-size: 0.8em; font-weight: 500; }
+.erro { color: var(--vermelho); font-weight: 600; }
+.nota { color: var(--texto-suave); font-size: 0.88em; }
+.clube { color: var(--texto-suave); margin-top: 0; }
+
+/* ---------- busca (home) ---------- */
+.busca { display: flex; gap: 0.6rem; margin: 1.2rem 0 1.8rem; }
+.busca input {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: var(--raio);
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  font-size: 1.05rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.busca input::placeholder { color: var(--texto-suave); }
+.busca input:focus {
+  outline: none;
+  border-color: var(--destaque);
+  box-shadow: 0 0 0 3px rgba(255, 206, 0, 0.18);
+}
+.busca button {
+  padding: 0.85rem 1.8rem;
+  border: none;
+  border-radius: var(--raio);
+  background: linear-gradient(180deg, #ffd93d, var(--destaque-escuro));
+  color: #1a1500;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #a87e00, var(--sombra);
+  transition: transform 0.1s, box-shadow 0.1s, filter 0.15s;
+}
+.busca button:hover { filter: brightness(1.08); }
+.busca button:active { transform: translateY(2px); box-shadow: 0 1px 0 #a87e00; }
+
+/* ---------- lista de recentes ---------- */
+.recentes { list-style: none; padding: 0; margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.recentes li a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.65rem 1rem;
+  text-decoration: none;
+  color: var(--texto);
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.recentes li a:hover {
+  background: var(--painel-hover);
+  border-color: var(--destaque);
+  transform: translateX(3px);
+}
+
+/* ---------- cartões de stats ---------- */
+.cartoes { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 1rem 0; }
+.cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+  box-shadow: var(--sombra);
+  transition: border-color 0.15s, transform 0.1s;
+}
+.cartao:hover { border-color: var(--destaque); transform: translateY(-2px); }
+.cartao b { font-size: 1.45rem; color: var(--destaque); font-weight: 800; }
+.cartao span {
+  font-size: 0.76rem;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.15rem;
+}
+
+/* ---------- tabelas ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1.6rem;
+  font-size: 0.9rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  box-shadow: var(--sombra);
+}
+thead { background: rgba(0, 0, 0, 0.25); }
+th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--painel-borda); }
+tbody tr:last-child td { border-bottom: none; }
+th {
+  color: var(--texto-suave);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+tbody tr { transition: background 0.12s; }
+tbody tr:hover { background: var(--painel-hover); }
+
+tr.vitoria td:last-child { color: var(--verde); font-weight: 700; }
+tr.derrota td:last-child { color: var(--vermelho); font-weight: 700; }
+tr.vitoria { box-shadow: inset 3px 0 0 var(--verde); }
+tr.derrota { box-shadow: inset 3px 0 0 var(--vermelho); }
+td.bom { color: var(--verde); font-weight: 700; }
+td.ruim { color: var(--vermelho); font-weight: 700; }
+
+/* ---------- gráficos SVG ---------- */
+.grafico {
+  width: 100%;
+  height: 170px;
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  margin: 0.5rem 0;
+  box-shadow: var(--sombra);
+}
+
+/* ---------- página de erro ---------- */
+.painel-erro {
+  background: var(--painel);
+  border: 1px solid var(--vermelho);
+  border-radius: var(--raio);
+  padding: 1.4rem 1.6rem;
+  margin: 1.5rem 0;
+  box-shadow: var(--sombra);
+}
+.painel-erro h1 { margin-top: 0; }
+
+/* ---------- responsivo ---------- */
+@media (max-width: 640px) {
+  h1 { font-size: 1.5rem; }
+  .cartao { min-width: calc(50% - 0.35rem); flex: 1; }
+  table { display: block; overflow-x: auto; white-space: nowrap; }
+  .busca { flex-direction: column; }
+  .busca button { width: 100%; }
+}
+
+/* ---------- abas ranked × troféus ---------- */
+.abas {
+  display: flex; gap: 0.5rem; margin: 0.8rem 0 0.4rem;
+}
+.abas a {
+  padding: 0.45rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--painel-borda);
+  background: var(--painel);
+  color: var(--texto);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+.abas a:hover { border-color: var(--destaque); }
+.abas a.ativa {
+  background: var(--destaque);
+  color: #1a1500;
+  border-color: var(--destaque);
+}
+
+/* ---------- painel Jogar agora ---------- */
+.eventos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 0.9rem;
+  margin: 1.2rem 0;
+}
+@media (max-width: 640px) { .eventos-grid { grid-template-columns: 1fr; } }
+.evento-cartao {
+  background: linear-gradient(180deg, var(--painel-hover), var(--painel));
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 1rem 1.2rem;
+  box-shadow: var(--sombra);
+  display: flex; flex-direction: column; gap: 0.55rem;
+}
+.evento-cartao:hover { border-color: var(--destaque); }
+.evento-topo { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.evento-topo b {
+  color: var(--destaque); text-transform: uppercase; font-size: 1.05rem;
+  letter-spacing: 0.03em;
+}
+.evento-topo .mapa { color: var(--azul); font-weight: 600; }
+.evento-numeros { font-weight: 700; font-size: 0.95rem; }
+.evento-linha { font-size: 0.9rem; line-height: 1.6; }
+.evento-linha .rotulo {
+  display: block; color: var(--texto-suave); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.recentes li { display: flex; align-items: center; gap: 0.4rem; }
+.recentes li > a:first-child { flex: 1; }
+.jogar-link { font-size: 1.2rem; text-decoration: none; }
+
+/* ---------- seletor de time (Jogar agora) ---------- */
+.time-form {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;
+  background: var(--painel);
+  border: 1px solid var(--painel-borda);
+  border-radius: var(--raio);
+  padding: 0.7rem 1rem;
+  margin: 1rem 0;
+}
+.time-form .rotulo { color: var(--texto-suave); font-size: 0.8rem; text-transform: uppercase; }
+.time-opcao { display: flex; align-items: center; gap: 0.3rem; font-size: 0.9rem; cursor: pointer; }
+.time-form button {
+  padding: 0.4rem 1rem; border: none; border-radius: 999px;
+  background: var(--verde); color: #06281a; font-weight: 800; cursor: pointer;
+}
+.distribuicao { border-left: 3px solid var(--verde); padding-left: 0.6rem; }
+
+/* ---------- barras de winrate (leitura de relance) ---------- */
+.wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
+.wr-barra {
+  flex: 1; height: 8px; min-width: 70px; max-width: 110px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px; overflow: hidden;
+}
+.wr-preenchido { display: block; height: 100%; border-radius: 4px; }
+.wr-alto  { background: var(--verde); }
+.wr-medio { background: var(--destaque); }
+.wr-baixo { background: var(--vermelho); }
+.wr-texto { font-weight: 700; font-variant-numeric: tabular-nums; }
+.wr-amostra-fraca .wr-preenchido { opacity: 0.35; }
+.wr-amostra-fraca .wr-texto { color: var(--texto-suave); }
+
+/* ---------- tabelas recolhíveis ---------- */
+details.recolhivel > summary {
+  cursor: pointer; color: var(--azul); font-weight: 600;
+  padding: 0.4rem 0; list-style: none; font-size: 0.9rem;
+}
+details.recolhivel > summary::before { content: "▸ "; }
+details.recolhivel[open] > summary::before { content: "▾ "; }
+
+/* ---------- destaque da melhor aposta (Jogar agora) ---------- */
+.evento-cartao.melhor-aposta {
+  border-color: var(--verde);
+  box-shadow: 0 0 0 1px var(--verde), var(--sombra);
+}
+.melhor-aposta-selo {
+  align-self: flex-start;
+  background: var(--verde); color: #06281a;
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.06em; padding: 0.15rem 0.6rem; border-radius: 999px;
+}
+.evento-numeros .wr-destaque { font-size: 1.6rem; font-weight: 800; }
+
+/* ---------- acessórios recomendados ---------- */
+.picks-lista { list-style: none; padding: 0; margin: 0.3rem 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.picks-lista li { line-height: 1.5; }
+.acess { display: inline-flex; flex-wrap: wrap; gap: 0.3rem; margin-left: 0.3rem; vertical-align: middle; }
+.acess-item {
+  font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+  border: 1px solid var(--painel-borda); white-space: nowrap;
+}
+.acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
+.acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }
+</style>
+</head>
+<body>
+  <header><a href="index.html">⭐ API do Brawl</a></header>
+  <main><p class="nota" style="text-align:center">📸 Foto do clã — atualizada quando o dono publica. Versão ao vivo roda no PC dele.</p>
+<h1>🎮 Jogar agora <span class="tag">SNK | andreidl #299PGGLQL</span></h1>
+<p class="nota">Eventos ativos ordenados pelos modos em que VOCÊ vai melhor.
+  Meta de 2026-07-17 17:06:50. <a href="jogador_299PGGLQL.html">← perfil completo</a></p>
+
+
+
+
+
+
+<div class="eventos-grid">
+
+  <div class="evento-cartao melhor-aposta">
+    
+    <span class="melhor-aposta-selo">⭐ sua melhor aposta agora</span>
+    
+    <div class="evento-topo">
+      <b>DUO SHOWDOWN</b>
+      <span class="mapa">Truth</span>
+      <time datetime="2026-07-17 20:00:00Z" class="nota">até 20:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">85.3%</span>
+      <span class="nota">no modo (265j)</span>
+      
+      
+      <span class="nota"> · </span><span class="wr-celula" title="66.7% em 12 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span> <span class="nota">neste mapa (12j)</span>
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>MAX</b><span class="nota"> 93.3%/15j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.4%)">SP: Run N Gun ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.4%)">Gadget: Phase Shifter ✓</span></span></li>
+      
+      <li><b>STARR NOVA</b><span class="nota"> 100.0%/6j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Gadget recomendado">Gadget: FLOATY TIME</span></span></li>
+      
+      <li><b>BOLT</b><span class="nota"> 100.0%/6j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="Gadget recomendado (76.3%)">Gadget: Oil Change ✓</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time do clube neste modo</span>
+      SNK | andreidl + SNK |camilacgs <span class="bom">63.6%</span>
+      <span class="nota">(11j — COLT + MEG (9j, 67%))</span>
+    </div>
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      BOLT + STARR NOVA <span class="nota">(820 vit.)</span> · EDGAR + SURGE <span class="nota">(770 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      BOLT <span class="nota">78.9%</span> · PEARL <span class="nota">78.7%</span> · MOE <span class="nota">78.4%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>TRIO SHOWDOWN</b>
+      <span class="mapa">Truth</span>
+      <time datetime="2026-07-17 20:00:00Z" class="nota">até 20:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">100.0%</span>
+      <span class="nota">no modo (5j)</span>
+      
+      
+      <span class="nota"> · </span><span class="wr-celula" title="66.7% em 12 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span> <span class="nota">neste mapa (12j)</span>
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>BROCK</b><span class="nota"> 55.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.1%)">SP: Rocket No. 4 ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.0%)">Gadget: Rocket Fuel ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (61.6%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      <li><b>EDGAR</b><span class="nota"> 62.5% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.2%)">SP: Fisticuffs ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.2%)">Gadget: Hardcore ✓</span><span class="acess-item acess-ok" title="Gear recomendado (61.8%)">Gear: Damage ✓</span></span></li>
+      
+      <li><b>COLT</b><span class="nota"> 71.4% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (60.0%)">SP: Slick Boots ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (60.8%)">Gadget: Speedloader ✓</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      BOLT + BOLT + BOLT <span class="nota">(71 vit.)</span> · BROCK + GRAY + MEG <span class="nota">(49 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      BUSTER <span class="nota">82.3%</span> · EVE <span class="nota">80.4%</span> · GROM <span class="nota">80.0%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>BRAWL BALL</b>
+      <span class="mapa">Bustling Business</span>
+      <time datetime="2026-07-18 08:00:00Z" class="nota">até 08:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">65.2%</span>
+      <span class="nota">no modo (89j)</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>CLANCY</b><span class="nota"> 65.0%/20j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (67.6%)">SP: Pumping Up ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (67.3%)">Gadget: Tactical Retreat ✓</span><span class="acess-item acess-alerta" title="O melhor é Gadget Cooldown (65.7%) — você não tem; equipe DAMAGE">Gear: DAMAGE ⚠️</span></span></li>
+      
+      <li><b>JACKY</b><span class="nota"> 65.8%/38j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (67.9%)">SP: Hardy Hard Hat ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (67.3%)">Gadget: Pneumatic Booster ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (68.1%) — você não tem; equipe DAMAGE">Gear: DAMAGE ⚠️</span></span></li>
+      
+      <li><b>BIBI</b><span class="nota"> 100.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.4%)">SP: Batting Stance ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (64.1%)">Gadget: Extra Sticky ✓</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time do clube neste modo</span>
+      SNK | andreidl + SNK |camilacgs <span class="bom">75.0%</span>
+      <span class="nota">(4j — JACKY + EMZ (4j, 75%))</span>
+    </div>
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      BIBI + MORTIS + SURGE <span class="nota">(540 vit.)</span> · EDGAR + MORTIS + SURGE <span class="nota">(520 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      BOLT <span class="nota">81.0%</span> · STARR NOVA <span class="nota">76.6%</span> · R-T <span class="nota">76.3%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>KNOCKOUT</b>
+      <span class="mapa">Healthy Middle Ground</span>
+      <time datetime="2026-07-17 20:00:00Z" class="nota">até 20:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">52.9%</span>
+      <span class="nota">no modo (204j)</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>BROCK</b><span class="nota"> 59.6%/57j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.1%)">SP: Rocket No. 4 ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.0%)">Gadget: Rocket Fuel ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (61.6%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      <li><b>MINA</b><span class="nota"> 69.2%/13j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (65.8%)">SP: Blown Away ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (66.0%)">Gadget: Windmill ✓</span></span></li>
+      
+      <li><b>GROM</b><span class="nota"> 58.3%/12j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.5%)">SP: X-factor ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.7%)">Gadget: Watchtower ✓</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      DARRYL + SHELLY + TICK <span class="nota">(35 vit.)</span> · BUSTER + MORTIS + TRUNK <span class="nota">(34 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      BOLT <span class="nota">89.7%</span> · STARR NOVA <span class="nota">89.3%</span> · DAMIAN <span class="nota">89.0%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>KNOCKOUT</b>
+      <span class="mapa">Opening Move</span>
+      <time datetime="2026-07-18 02:00:00Z" class="nota">até 02:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">52.9%</span>
+      <span class="nota">no modo (204j)</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>BROCK</b><span class="nota"> 59.6%/57j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.1%)">SP: Rocket No. 4 ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.0%)">Gadget: Rocket Fuel ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (61.6%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      <li><b>GROM</b><span class="nota"> 58.3%/12j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.5%)">SP: X-factor ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.7%)">Gadget: Watchtower ✓</span></span></li>
+      
+      <li><b>RICO</b><span class="nota"> 50.0%/14j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (60.4%)">SP: Robo Retreat ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (61.5%)">Gadget: Bouncy Castle ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (59.4%) — você não tem; equipe DAMAGE">Gear: DAMAGE ⚠️</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      BROCK + EDGAR + PIPER <span class="nota">(220 vit.)</span> · BOLT + BROCK + KIT <span class="nota">(190 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      DAMIAN <span class="nota">82.9%</span> · DOUG <span class="nota">81.2%</span> · BOLT <span class="nota">81.1%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>HEIST</b>
+      <span class="mapa">Hot Tubs</span>
+      <time datetime="2026-07-18 18:00:00Z" class="nota">até 18:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">57.6%</span>
+      <span class="nota">no modo (66j)</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>COLETTE</b><span class="nota"> 69.2%/13j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (62.9%)">SP: Mass Tax ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (62.6%)">Gadget: Gotcha! ✓</span><span class="acess-item acess-ok" title="Gear recomendado (61.7%)">Gear: Shield ✓</span></span></li>
+      
+      <li><b>NITA</b><span class="nota"> 75.0%/8j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (66.7%)">SP: Hyper Bear ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (66.1%)">Gadget: Bear Paws ✓</span><span class="acess-item acess-alerta" title="O melhor é Shield (65.7%) — você não tem; equipe DAMAGE">Gear: DAMAGE ⚠️</span></span></li>
+      
+      <li><b>JESSIE</b><span class="nota"> 50.0%/4j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.5%)">SP: Shocky ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (64.2%)">Gadget: Recoil Spring ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (65.3%) — você não tem; equipe DAMAGE">Gear: DAMAGE ⚠️</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      8-BIT + CHUCK + COLT <span class="nota">(130 vit.)</span> · 8-BIT + CHUCK + JESSIE <span class="nota">(110 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      LUMI <span class="nota">76.9%</span> · BULL <span class="nota">75.9%</span> · MELODIE <span class="nota">73.4%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>GEM GRAB</b>
+      <span class="mapa">Gem Fort</span>
+      <time datetime="2026-07-18 00:00:00Z" class="nota">até 00:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">56.9%</span>
+      <span class="nota">no modo (65j)</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>EMZ</b><span class="nota"> 72.2%/18j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.0%)">SP: Hype ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.4%)">Gadget: Friendzoner ✓</span><span class="acess-item acess-ok" title="Gear recomendado (63.4%)">Gear: Shield ✓</span></span></li>
+      
+      <li><b>EDGAR</b><span class="nota"> 100.0%/2j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.2%)">SP: Fisticuffs ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.2%)">Gadget: Hardcore ✓</span><span class="acess-item acess-ok" title="Gear recomendado (61.8%)">Gear: Damage ✓</span></span></li>
+      
+      <li><b>BO</b><span class="nota"> 43.8%/16j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.3%)">SP: Snare A Bear ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (64.9%)">Gadget: Super Totem ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (63.5%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time do clube neste modo</span>
+      SNK | andreidl + SNK |camilacgs + SNK | BIGBOSS <span class="bom">66.7%</span>
+      <span class="nota">(3j — EMZ + BROCK + STARR NOVA (2j, 50%))</span>
+    </div>
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      EDGAR + GRIFF + KENJI <span class="nota">(350 vit.)</span> · EDGAR + EMZ + GRIFF <span class="nota">(230 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      NORI <span class="nota">81.9%</span> · OLLIE <span class="nota">78.2%</span> · BOLT <span class="nota">77.4%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>BOUNTY</b>
+      <span class="mapa">No Excuses</span>
+      <time datetime="2026-07-19 08:00:00Z" class="nota">até 08:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">54.6%</span>
+      <span class="nota">no modo (97j)</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>GROM</b><span class="nota"> 90.9%/11j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.5%)">SP: X-factor ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.7%)">Gadget: Watchtower ✓</span></span></li>
+      
+      <li><b>BROCK</b><span class="nota"> 50.0%/30j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.1%)">SP: Rocket No. 4 ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.0%)">Gadget: Rocket Fuel ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (61.6%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      <li><b>PIPER</b><span class="nota"> 57.1%/7j</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (60.7%)">SP: Snappy Sniping ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (61.2%)">Gadget: Homemade Recipe ✓</span><span class="acess-item acess-ok" title="Gear recomendado (60.0%)">Gear: Shield ✓</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time do clube neste modo</span>
+      SNK | andreidl + SNK |camilacgs + SNK | BIGBOSS <span class="bom">55.6%</span>
+      <span class="nota">(9j — BROCK + BELLE + COLETTE (3j, 67%))</span>
+    </div>
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      BYRON + MANDY + PIPER <span class="nota">(130 vit.)</span> · BYRON + NANI + PIPER <span class="nota">(110 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      DAMIAN <span class="nota">89.0%</span> · MOE <span class="nota">88.6%</span> · SAM <span class="nota">88.3%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>SOLO SHOWDOWN</b>
+      <span class="mapa">Truth</span>
+      <time datetime="2026-07-17 20:00:00Z" class="nota">até 20:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">60.0%</span>
+      <span class="nota">no modo (15j)</span>
+      
+      
+      <span class="nota"> · </span><span class="wr-celula" title="66.7% em 12 jogos">
+  <span class="wr-barra"><span class="wr-preenchido wr-alto" style="width: 66.7%"></span></span>
+  <span class="wr-texto">66.7%</span>
+</span> <span class="nota">neste mapa (12j)</span>
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>BIBI</b><span class="nota"> 100.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.4%)">SP: Batting Stance ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (64.1%)">Gadget: Extra Sticky ✓</span></span></li>
+      
+      <li><b>EDGAR</b><span class="nota"> 62.5% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.2%)">SP: Fisticuffs ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.2%)">Gadget: Hardcore ✓</span><span class="acess-item acess-ok" title="Gear recomendado (61.8%)">Gear: Damage ✓</span></span></li>
+      
+      <li><b>KIT</b><span class="nota"> 80.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.7%)">SP: Overly Attached ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (65.0%)">Gadget: Cheeseburger ✓</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      BOLT <span class="nota">77.9%</span> · DAMIAN <span class="nota">77.4%</span> · FINX <span class="nota">77.1%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>DUELS</b>
+      <span class="mapa">Warrior&#39;s Way</span>
+      <time datetime="2026-07-18 16:00:00Z" class="nota">até 16:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="wr-destaque bom">66.7%</span>
+      <span class="nota">no modo (3j)</span>
+      
+      
+    </div>
+
+    
+
+    
+
+    
+
+    
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>BRAWL ARENA</b>
+      <span class="mapa">Silver Highlands</span>
+      <time datetime="2026-07-18 14:00:00Z" class="nota">até 14:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="nota">sem histórico no modo</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>BROCK</b><span class="nota"> 55.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.1%)">SP: Rocket No. 4 ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.0%)">Gadget: Rocket Fuel ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (61.6%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      <li><b>BOLT</b><span class="nota"> 100.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="Gadget recomendado (76.3%)">Gadget: Oil Change ✓</span></span></li>
+      
+      <li><b>JESSIE</b><span class="nota"> 62.1% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (64.5%)">SP: Shocky ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (64.2%)">Gadget: Recoil Spring ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (65.3%) — você não tem; equipe DAMAGE">Gear: DAMAGE ⚠️</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    <div class="evento-linha"><span class="rotulo">Melhor time global NESTE MAPA (brawltime, amostra mundial)</span>
+      BOLT + DAMIAN + KIT <span class="nota">(240 vit.)</span> · 8-BIT + BROCK + SURGE <span class="nota">(100 vit.)</span>
+    </div>
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta do MAPA</span>
+      
+      ANGELO <span class="nota">85.4%</span> · JUJU <span class="nota">84.4%</span> · STU <span class="nota">83.3%</span>
+      
+    </div>
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>WIPEOUT 5V5</b>
+      <span class="mapa">Slippery road</span>
+      <time datetime="2026-07-18 12:00:00Z" class="nota">até 12:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="nota">sem histórico no modo</span>
+      
+      
+    </div>
+
+    
+
+    
+
+    
+
+    
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>BRAWL HOCKEY</b>
+      <span class="mapa">Arabesque</span>
+      <time datetime="2026-07-18 10:00:00Z" class="nota">até 10:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="nota">sem histórico no modo</span>
+      
+      
+    </div>
+
+    
+
+    
+
+    
+
+    
+    
+  </div>
+
+  <div class="evento-cartao">
+    
+    <div class="evento-topo">
+      <b>WIPEOUT</b>
+      <span class="mapa">Palette Hangout</span>
+      <time datetime="2026-07-18 04:00:00Z" class="nota">até 04:00 UTC</time>
+    </div>
+
+    <div class="evento-numeros">
+      
+      <span class="nota">sem histórico no modo</span>
+      
+      
+    </div>
+
+    
+    <div class="evento-linha"><span class="rotulo">Seus picks (com o que equipar)</span>
+      <ul class="picks-lista">
+      
+      <li><b>BOLT</b><span class="nota"> 100.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="Gadget recomendado (76.3%)">Gadget: Oil Change ✓</span></span></li>
+      
+      <li><b>MANDY</b><span class="nota"> 83.3% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (61.9%)">SP: Hard Candy ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (61.6%)">Gadget: Caramelize ✓</span></span></li>
+      
+      <li><b>BROCK</b><span class="nota"> 55.0% geral</span>
+        <span class="acess"><span class="acess-item acess-ok" title="Hypercharge liberada">⚡ hyper</span><span class="acess-item acess-ok" title="SP recomendado (63.1%)">SP: Rocket No. 4 ✓</span><span class="acess-item acess-ok" title="Gadget recomendado (63.0%)">Gadget: Rocket Fuel ✓</span><span class="acess-item acess-alerta" title="O melhor é Vision (61.6%) — você não tem; equipe SHIELD">Gear: SHIELD ⚠️</span></span></li>
+      
+      </ul>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+    <div class="evento-linha"><span class="rotulo">Topo do meta global do modo</span>
+      
+      BOLT · NORI · MANDY
+      
+    </div>
+    
+  </div>
+
+</div>
+</main>
+</body>
+</html>
