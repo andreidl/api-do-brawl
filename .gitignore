@@ -4,8 +4,3 @@ __pycache__/
 venv/
 data/
 .pytest_cache/
-
-# lixo de sincronizacao
-_*.tar.gz
-_to_delete*
-backups/

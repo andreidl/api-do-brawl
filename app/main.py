@@ -183,6 +183,8 @@ def _tendencias_meta_seguro() -> dict | None:
     conexao = db.conectar()
     try:
         return indicadores_meta.tendencias_meta(conexao)
+    except sqlite3.Error:
+        return None  # nunca derrubar a página do jogador por causa das tendências
     finally:
         conexao.close()
 
@@ -463,7 +465,10 @@ def jogar_agora(request: Request, tag: str, time: str | None = None):
 
     def _acess_meta(brawler_nome: str) -> dict | None:
         if brawler_nome not in _cache_acess:
-            _cache_acess[brawler_nome] = brawltime.coletar_acessorios_brawler(brawler_nome)
+            try:
+                _cache_acess[brawler_nome] = brawltime.coletar_acessorios_brawler(brawler_nome)
+            except Exception:
+                _cache_acess[brawler_nome] = None  # nunca derrubar o Jogar agora
         return _cache_acess[brawler_nome]
 
     brawler_do_dono = {b["nome"]: b for b in perfil["brawlers"]}

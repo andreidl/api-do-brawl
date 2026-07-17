@@ -115,18 +115,33 @@ def _colunas(conexao: sqlite3.Connection, tabela: str) -> list[str]:
     return [l[1] for l in conexao.execute(f"PRAGMA table_info({tabela})").fetchall()]
 
 
+def _tabela_existe(conexao: sqlite3.Connection, tabela: str) -> bool:
+    return conexao.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (tabela,)
+    ).fetchone() is not None
+
+
 def _migrar_para_batalhas_globais(conexao: sqlite3.Connection) -> None:
     """Migra o schema antigo (batalhas por dono) para o global (uma linha por
-    batalha física + participantes em batalha_jogadores). Roda uma única vez."""
-    if "tag" not in _colunas(conexao, "batalhas"):
+    batalha física + participantes em batalha_jogadores).
+
+    RESUMÍVEL: se um crash interromper no meio, os dados ficam preservados em
+    batalhas_antigas/bj_antigas e a cópia (idempotente) recomeça na reconexão.
+    """
+    precisa_renomear: bool = "tag" in _colunas(conexao, "batalhas")
+    tem_orfao: bool = _tabela_existe(conexao, "batalhas_antigas")
+    if not precisa_renomear and not tem_orfao:
         return  # já migrado (ou banco novo)
 
-    conexao.execute("ALTER TABLE batalhas RENAME TO batalhas_antigas")
-    tem_bj: bool = "aliado" in _colunas(conexao, "batalha_jogadores")
-    if tem_bj:
-        conexao.execute("ALTER TABLE batalha_jogadores RENAME TO bj_antigas")
-    conexao.executescript(_SCHEMA)
+    if precisa_renomear:
+        # executescript comita implicitamente — mas os dados antigos já estão
+        # a salvo em *_antigas; a cópia abaixo é idempotente e resumível.
+        conexao.execute("ALTER TABLE batalhas RENAME TO batalhas_antigas")
+        if "aliado" in _colunas(conexao, "batalha_jogadores"):
+            conexao.execute("ALTER TABLE batalha_jogadores RENAME TO bj_antigas")
+        conexao.executescript(_SCHEMA)
 
+    tem_bj: bool = _tabela_existe(conexao, "bj_antigas")
     for antiga in conexao.execute("SELECT * FROM batalhas_antigas").fetchall():
         resultado: str | None = antiga["resultado"]
         # convenção da migração: time 0 = time do dono da consulta antiga
@@ -167,7 +182,8 @@ def _migrar_para_batalhas_globais(conexao: sqlite3.Connection) -> None:
                          power = COALESCE(excluded.power, power),
                          trofeus = COALESCE(excluded.trofeus, trofeus),
                          resultado = COALESCE(batalha_jogadores.resultado, excluded.resultado),
-                         star_player = MAX(batalha_jogadores.star_player, excluded.star_player)""",
+                         star_player = MAX(COALESCE(batalha_jogadores.star_player, 0),
+                                           COALESCE(excluded.star_player, 0))""",
                     (j["hash"], j["tag_jogador"], j["nick"], j["brawler"], j["power"],
                      j["trofeus"], time_j, res_j,
                      antiga["trofeus_delta"] if j["eu"] else None, j["star_player"]),
@@ -423,6 +439,7 @@ def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> lis
     """Ranking de todos os jogadores conhecidos no banco (consultados ou não):
     batalhas decididas, winrate, taxa de star player e troféus máximos vistos.
     Só entra quem tem >= minimo_jogos batalhas decididas."""
+    minimo_jogos = max(1, minimo_jogos)  # nunca 0 → evita divisão por zero
     linhas = conexao.execute(
         """SELECT bj.tag_jogador AS tag,
                   MAX(bj.nick) AS nick,

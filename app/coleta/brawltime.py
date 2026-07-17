@@ -3,6 +3,7 @@
 Falha aqui NUNCA derruba a consulta principal — retorna None.
 """
 import json
+import re
 import urllib.parse
 
 import httpx
@@ -201,8 +202,12 @@ def parsear_acessorios_brawler(html: str) -> dict | None:
 
 
 def coletar_acessorios_brawler(nome: str) -> dict | None:
-    """Melhores acessórios do brawler no brawltime (cache 24 h). None em falha."""
-    url: str = f"https://brawltime.ninja/tier-list/brawler/{_slug_brawler(nome)}"
+    """Melhores acessórios do brawler no brawltime (cache 24 h). None em QUALQUER
+    falha (fonte complementar — nunca derruba a página)."""
+    try:
+        url: str = f"https://brawltime.ninja/tier-list/brawler/{_slug_brawler(nome)}"
+    except Exception:
+        return None
     corpo: str | None = cache.obter(url, TTL_ACESSORIOS_SEG)
     if corpo is None:
         try:

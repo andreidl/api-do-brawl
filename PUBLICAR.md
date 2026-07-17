@@ -11,14 +11,14 @@ Consulta de tag nova e dados minuto-a-minuto continuam só na versão local (seu
    inteiro ver, use **público**.
 2. Na pasta do projeto, ligue o repositório (troque SEU-USUARIO/SEU-REPO):
    ```
-   git remote add origin https://github.com/SEU-USUARIO/SEU-REPO.git
+   git remote add origin https://github.com/andreidl/api-do-brawl.git
    git branch -M main
    git push -u origin main
    ```
 3. No GitHub: **Settings → Pages → Build and deployment → Source: Deploy from a branch**,
    Branch: **main** / pasta **/docs** → Save.
 4. Em ~1 minuto seu site fica no ar em:
-   `https://SEU-USUARIO.github.io/SEU-REPO/`
+   `https://andreidl.github.io/api-do-brawl/`
 
 ## Atualizar o site (sempre que quiser)
 

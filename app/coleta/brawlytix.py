@@ -51,7 +51,7 @@ def parsear_conta(html: str) -> dict | None:
     return {
         "skill_score": float(m_skill.group(1)) if m_skill else None,
         "skill_rotulo": m_skill.group(2) if m_skill else None,
-        "valor_conta": int(m_valor.group(1).replace(",", "")) if m_valor else None,
+        "valor_conta": int(float(m_valor.group(1).replace(",", ""))) if m_valor else None,
         "stats": stats,
         # atalhos dos destaques
         "horas_jogadas": stats.get("Hours Spent"),

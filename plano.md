@@ -57,6 +57,16 @@
 
 ## CONCLUÍDO
 
+- [x] 17/07/2026 — **Revisão holística (4 revisores em paralelo) + correções**. Bugs corrigidos:
+  - 🔴 CRÍTICO: `meta._fator_meta_v2` dividia o percentil (já 0–1) por 100 → peso do meta nos picks era ~0. Corrigido; o meta volta a pesar 50%.
+  - 🔴 CRÍTICO: `brawltime.py` sem `import re` → `coletar_acessorios_brawler` dava NameError sempre → "Jogar agora" caía com 500 em produção. Corrigido + coleta e `_acess_meta` blindados (nunca derrubam a página).
+  - 🟠 `exportar.py`: links "Jogar agora" dos não-donos apontavam para arquivos inexistentes (404 no site). Agora só o dono tem link ativo.
+  - 🟠 Migração de banco resumível (crash no meio não perde mais dados; tabelas *_antigas órfãs são retomadas).
+  - 🟠 `cache.salvar` atômico (tmp+rename) — sem HTML parcial com rastreio concorrente.
+  - 🟡 `_tendencias_meta_seguro` agora captura erro de SQLite; `ranking_jogadores` guarda mínimo≥1; `_queda_trofeus` tolera snapshot antigo sem troféus; header de showdown sem Victory/Defeat infere pelo delta; brawlytix aceita valor com decimal; star_player na migração com COALESCE.
+  - Revisores confirmaram corretos: dedup de batalhas, JOINs sem duplicação, Wilson, composições, detecção de reset, tratamento de erro não-fatal. **85 testes passando (5 novos de regressão).**
+
+
 - [x] 17/07/2026 — **Acessórios: o que equipar** (foco do produto). Parser do brawlace estendido p/ capturar NOMES de star powers/gadgets/gears que cada jogador possui. Nova fonte `brawltime.ninja/tier-list/brawler/{slug}` (SSR raspável) com o melhor SP/gadget/gear por brawler (global). `cruzar_acessorios` junta os dois: cada pick do "Jogar agora" mostra "SP: X ✓ / Gadget: Y ⚠️ / Gear / ⚡hyper" — verde se você tem o recomendado, amarelo se falta. Aplicado aos picks e à distribuição de time.
 
 - [x] 17/07/2026 — **Publicação estática (GitHub Pages)**. `app/exportar.py` gera `docs/` navegável (home + perfis + Jogar agora), CSS embutido, links reescritos, interatividade neutralizada, banner "foto do clã". `publicar.bat` (2 cliques: raspa → gera → git push) + guia `PUBLICAR.md`. Trade-off aceito: foto atualizada na publicação; ao vivo só local. **81 testes passando.**

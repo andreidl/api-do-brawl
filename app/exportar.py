@@ -68,7 +68,8 @@ def exportar(dono: str = DONO_PADRAO) -> None:
     for j in jogadores:
         s = _slug(j["tag"])
         mapa[f"/jogador/{s}"] = f"jogador_{s}.html"
-        mapa[f"/jogar/{s}"] = f"jogar_{s}.html"
+    # só o dono tem página "Jogar agora" estática; os demais links viram inertes
+    mapa[f"/jogar/{_slug(dono)}"] = f"jogar_{_slug(dono)}.html"
 
     def salvar(rota: str, arquivo: str) -> bool:
         r = cliente.get(rota)

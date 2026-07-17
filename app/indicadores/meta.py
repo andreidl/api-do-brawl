@@ -58,7 +58,7 @@ def score_vs_meta(meta: dict, batalhas: list[dict]) -> dict | None:
 def _fator_meta_v2(posicao: int, total: int, wr_mapa: float | None) -> float:
     """Meta do MAPA (brawltime, winrate ajustado) quando disponível: 60% mapa
     + 40% modo. Sem dados do mapa: só o percentil do modo."""
-    base_modo: float = _percentil(posicao, total) / 100
+    base_modo: float = _percentil(posicao, total)  # já 0–1 (1º lugar = 1.0)
     if wr_mapa is None:
         return base_modo
     # winrates ajustados reais ficam ~40-85% → normaliza para 0-1

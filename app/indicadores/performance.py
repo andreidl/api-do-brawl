@@ -81,17 +81,19 @@ def _queda_trofeus(brawlers: list[dict], minimo_max: int = 100) -> list[dict]:
     """Brawlers mais distantes do próprio pico — candidatos a recuperar troféus."""
     quedas: list[dict] = []
     for b in brawlers:
-        if b["trofeus_max"] < minimo_max:
+        tmax = b.get("trofeus_max")
+        tatual = b.get("trofeus")
+        if tmax is None or tatual is None or tmax < minimo_max:
             continue
-        queda: int = b["trofeus_max"] - b["trofeus"]
+        queda: int = tmax - tatual
         if queda <= 0:
             continue
         quedas.append({
             "nome": b["nome"],
-            "trofeus": b["trofeus"],
-            "trofeus_max": b["trofeus_max"],
+            "trofeus": tatual,
+            "trofeus_max": tmax,
             "queda": queda,
-            "queda_pct": round(queda / b["trofeus_max"] * 100, 1),
+            "queda_pct": round(queda / tmax * 100, 1),
         })
     quedas.sort(key=lambda q: q["queda"], reverse=True)
     return quedas[:10]

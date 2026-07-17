@@ -344,14 +344,24 @@ def _parsear_batalhas(soup: BeautifulSoup, tag: str) -> list[dict]:
         if not modo:  # sem prefixo 'RANKED - '
             tipo, modo = "TROPHIES", modo_bruto
 
+        # Varre TODOS os tokens após o modo, sem assumir posição fixa — assim
+        # funciona mesmo em showdown de troféus que omite Victory/Defeat.
         duracao_seg: int | None = None
         trofeus_delta: int | None = None
-        for parte in partes[2:]:
+        resultado: str | None = None
+        for parte in partes[1:]:
             m = _RE_DURACAO.match(parte)
             if m:
                 duracao_seg = int(m.group(1)) * 60 + int(m.group(2))
             elif _RE_TROFEUS_DELTA.match(parte):
                 trofeus_delta = int(parte)
+            elif parte in ("Victory", "Defeat", "Draw") or parte.startswith("Rank"):
+                resultado = parte
+        if resultado is None and rank_showdown is not None and trofeus_delta is not None:
+            # showdown sem Victory/Defeat explícito → infere pelo sinal do delta
+            resultado = "Victory" if trofeus_delta > 0 else ("Defeat" if trofeus_delta < 0 else "Draw")
+        if resultado is None:
+            resultado = partes[1]  # fallback ao formato clássico
 
         tempo = header.find("time")
         mapa_img = header.find("img", attrs={"data-map-name": True})
@@ -362,7 +372,7 @@ def _parsear_batalhas(soup: BeautifulSoup, tag: str) -> list[dict]:
             "ocorrida_em": str(tempo.get("datetime")) if tempo else None,
             "tipo": tipo.strip(),
             "modo": modo.strip(),
-            "resultado": partes[1],
+            "resultado": resultado,
             "mapa": str(mapa_img.get("data-map-name")) if mapa_img else None,
             "duracao_seg": duracao_seg,
             "trofeus_delta": trofeus_delta,

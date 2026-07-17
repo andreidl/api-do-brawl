@@ -421,12 +421,12 @@ def test_picks_personalizados_pesam_desempenho():
         {"nome": "MEU_MAIN", "power": 11, "trofeus": 1100},
         {"nome": "NUNCA_JOGUEI", "power": 11, "trofeus": 500},
     ]
-    # jogador domina MEU_MAIN (28V/32j) e vai mal de TOP_META (2V/10j)
+    # jogador domina MEU_MAIN (28V/32j) e vai mal de TOP_META (2V/10j) NO MODO
     batalhas = (
-        [{"brawler": "MEU_MAIN", "resultado": "Victory"}] * 28
-        + [{"brawler": "MEU_MAIN", "resultado": "Defeat"}] * 4
-        + [{"brawler": "TOP_META", "resultado": "Victory"}] * 2
-        + [{"brawler": "TOP_META", "resultado": "Defeat"}] * 8
+        [{"brawler": "MEU_MAIN", "resultado": "Victory", "modo": "GEM GRAB"}] * 28
+        + [{"brawler": "MEU_MAIN", "resultado": "Defeat", "modo": "GEM GRAB"}] * 4
+        + [{"brawler": "TOP_META", "resultado": "Victory", "modo": "GEM GRAB"}] * 2
+        + [{"brawler": "TOP_META", "resultado": "Defeat", "modo": "GEM GRAB"}] * 8
     )
     sug = sugestoes_por_evento(meta, eventos, brawlers, batalhas)
     picks = sug[0]["picks"]
@@ -434,11 +434,15 @@ def test_picks_personalizados_pesam_desempenho():
     assert picks[0]["winrate_seu"] == 87.5
     nunca = next(p for p in picks if p["brawler"] == "NUNCA_JOGUEI")
     assert nunca["winrate_seu"] is None
-    # longo prazo também conta
+    # longo prazo também é contado no desempenho do jogador
     lp = [{"brawler": "NUNCA_JOGUEI", "vitorias": 40, "derrotas": 10}]
     sug2 = sugestoes_por_evento(meta, eventos, brawlers, [], lp)
-    top2 = sug2[0]["picks"][0]
-    assert top2["brawler"] == "NUNCA_JOGUEI" and top2["jogos_seus"] == 50
+    nunca2 = next(p for p in sug2[0]["picks"] if p["brawler"] == "NUNCA_JOGUEI")
+    assert nunca2["jogos_seus"] == 50 and nunca2["winrate_seu"] == 80.0
+    # e um brawler com 80% de histórico pontua acima de outro sem histórico de mesma posição
+    assert nunca2["score_pick"] > sugestoes_por_evento(
+        meta, eventos, [{"nome": "NUNCA_JOGUEI", "power": 11, "trofeus": 500}], [], []
+    )[0]["picks"][0]["score_pick"]
 
 
 def test_distribuir_brawlers_sem_repetir():
@@ -678,3 +682,67 @@ def test_cruzar_acessorios():
     assert r["gadget"]["equipar"] == "FRIENDZONER"          # equipa o que tem
     assert r["hypercharge"] is True
     assert cruzar_acessorios(None, meta) is None
+
+
+# ---------------------------------------------------------------------------
+# Correções da revisão holística (17/07/2026)
+# ---------------------------------------------------------------------------
+
+def test_fator_meta_v2_escala_correta():
+    from app.indicadores.meta import _fator_meta_v2
+    # 1º lugar sem mapa deve valer ~1.0 (não 0.01); 8º de 10 ~0.3
+    assert _fator_meta_v2(1, 10, None) == 1.0
+    assert 0.25 < _fator_meta_v2(8, 10, None) < 0.35
+    # com mapa: mistura 60/40, valor razoável (não saturado em 0.6)
+    v = _fator_meta_v2(1, 10, 82.0)
+    assert 0.7 < v <= 1.0
+
+
+def test_coletar_acessorios_nao_quebra():
+    # antes faltava import re → NameError; agora slug funciona e falha vira None
+    from app.coleta import brawltime
+    assert brawltime._slug_brawler("MR. P") == "mr-p"
+    assert brawltime._slug_brawler("8-BIT") == "8-bit"
+    assert brawltime._slug_brawler("LARRY & LAWRIE") == "larry-lawrie"
+
+
+def test_migracao_resumivel(tmp_path):
+    """Se a migração for interrompida (tabelas *_antigas órfãs), a reconexão
+    completa a cópia sem perder dados."""
+    import sqlite3 as s3
+    caminho = tmp_path / "interrompida.db"
+    con = s3.connect(caminho)
+    con.row_factory = s3.Row
+    # simula estado pós-crash: schema novo + batalhas_antigas órfã (não copiada)
+    con.executescript(db._SCHEMA)
+    con.executescript("""
+        CREATE TABLE batalhas_antigas (
+          hash TEXT PRIMARY KEY, tag TEXT, ocorrida_em TEXT, modo TEXT, tipo TEXT,
+          mapa TEXT, brawler TEXT, resultado TEXT, duracao_seg INTEGER,
+          trofeus_delta INTEGER, star_player INTEGER);
+        INSERT INTO batalhas_antigas VALUES
+          ('f'||substr('0000000000000000000000000000000000000000',1,39),
+           '#Z', '2026-07-01T00:00:00Z', 'GEM GRAB', 'TROPHIES', 'M', 'EMZ',
+           'Victory', 100, 8, 1);
+    """)
+    con.commit(); con.close()
+    con = db.conectar(caminho)  # deve RESUMIR a migração
+    assert not db._tabela_existe(con, "batalhas_antigas")  # concluída
+    b = db.batalhas_do_jogador(con, "#Z")
+    assert len(b) == 1 and b[0]["resultado"] == "Victory"
+    con.close()
+
+
+def test_showdown_solo_sem_victory_infere_pelo_delta():
+    html = """<html><body>
+    <div id="ef34567890123456789012345678901234567890">
+      <div class="card-header">RANKED | RANK 2 - SOLO SHOWDOWN |  +8 | 01:20 |
+        <time datetime="2026-07-17T13:00:00Z">now</time></div>
+      <div class="card-body"><div class="row"><div class="col-md-6"><div class="shadow m-1 p-3">
+        <img class="icon-medium" title="EMZ"><a data-bs-player-tag="#S1" href="#">eu</a><hr>
+      </div></div></div></div>
+    </div></body></html>"""
+    b = brawlace.parsear_batalhas_html(html, "#S1")[0]
+    assert b["modo"] == "SOLO SHOWDOWN" and b["rank_showdown"] == 2
+    assert b["resultado"] == "Victory"      # inferido do +8
+    assert b["trofeus_delta"] == 8 and b["duracao_seg"] == 80
