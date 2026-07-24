@@ -136,11 +136,17 @@ def parsear_meta(html: str) -> dict:
             tds = tr.find_all("td")
             if len(tds) < 4:
                 continue
+            # A seção "TEAMS" (melhores duplas/trios) vem sem posição numérica no
+            # 1º td — não é ranking de brawler; pula em vez de derrubar todo o meta.
+            pos_texto: str = tds[0].get_text(strip=True)
+            star_texto: str = tds[2].get_text(strip=True)
+            if not re.search(r"\d", pos_texto) or not re.search(r"\d", star_texto):
+                continue
             pct_texto: str = tds[3].get_text(strip=True).replace("%", "").strip()
             try:
                 pct = float(pct_texto)
             except ValueError:
-                raise ErroParsing(f"meta {nome_modo}: pct inválido {pct_texto!r}")
+                continue  # linha sem % válido — pula, não derruba o modo inteiro
             linhas.append({
                 "posicao": _numero(tds[0].get_text(strip=True)),
                 "brawler": tds[1].get_text(" ", strip=True),
@@ -362,6 +368,13 @@ def _parsear_batalhas(soup: BeautifulSoup, tag: str) -> list[dict]:
             resultado = "Victory" if trofeus_delta > 0 else ("Defeat" if trofeus_delta < 0 else "Draw")
         if resultado is None:
             resultado = partes[1]  # fallback ao formato clássico
+
+        # type="ranked" da API da Supercell = ladder NORMAL de troféus — o brawlace
+        # renderiza "RANKED - MODO" para ela. Quem dá/tira troféu é só a ladder; o
+        # modo competitivo Ranked NÃO mexe em troféu. Logo, delta de troféu presente
+        # ⇒ é TROFÉU, não competitivo. (Showdown de troféu já vira TROPHIES acima.)
+        if trofeus_delta is not None:
+            tipo = "TROPHIES"
 
         tempo = header.find("time")
         mapa_img = header.find("img", attrs={"data-map-name": True})

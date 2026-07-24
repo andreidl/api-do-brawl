@@ -47,6 +47,34 @@ def test_meta_ranking_ordenado_e_completo(meta: dict):
         assert posicoes == sorted(posicoes), modo
 
 
+# --- formato NOVO do brawlace (23/07/2026): 5 colunas + seção TEAMS ----------
+
+@pytest.fixture(scope="module")
+def meta_novo() -> dict:
+    html: str = (FIXTURES / "meta_2026-07-23_teams.html").read_text(encoding="utf-8")
+    return brawlace.parsear_meta(html)
+
+
+def test_meta_novo_pula_secao_teams(meta_novo: dict):
+    """A seção 'TEAMS' tem 1º td vazio e NÃO é ranking de brawler — deve ser
+    ignorada sem derrubar toda a coleta (bug que quebrou o meta desde 17/07)."""
+    assert "TEAMS" not in meta_novo["modos"]
+    assert "BRAWL BALL" in meta_novo["modos"]
+    assert "HOT ZONE" in meta_novo["modos"]
+
+
+def test_meta_novo_5_colunas_e_separador_milhar(meta_novo: dict):
+    bb = meta_novo["modos"]["BRAWL BALL"]
+    assert bb[0]["brawler"] == "SURGE"
+    assert bb[0]["star_player"] == 14480   # '14,480' com separador de milhar
+    assert bb[0]["star_player_pct"] == 6.67
+    assert bb[0]["posicao"] == 1
+
+
+def test_meta_novo_data(meta_novo: dict):
+    assert meta_novo["data"] == "2026-07-23 16:56:55"
+
+
 # --- parsear_eventos ---------------------------------------------------------
 
 def test_eventos_ativos(eventos: list[dict]):

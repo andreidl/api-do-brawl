@@ -29,7 +29,8 @@
 <p class="nota">Todo mundo que já apareceu nas batalhas do banco (mín. 5 decididas).
   O filtro por clube ativa na próxima consulta de um membro.</p>
 {% endif %}
-<table>
+<button type="button" class="btn-copiar" onclick="copiarRanking()">📋 Copiar ranking (WhatsApp)</button>
+<table id="tabela-ranking">
   <thead><tr><th>#</th><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th><th>Troféus (visto)</th></tr></thead>
   <tbody>
     {% for r in ranking %}
@@ -38,12 +39,27 @@
       <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a> <span class="tag">{{ r.tag }}</span></td>
       <td>{{ r.jogos }}</td>
       <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
-      <td>{{ r.star_pct }}%</td>
+      <td>{{ r.stars }} ⭐ <span class="nota">({{ r.star_pct }}%)</span></td>
       <td>{{ "{:,}".format(r.trofeus).replace(",", ".") if r.trofeus else "—" }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+<script>
+function copiarRanking() {
+  const titulo = {{ (("🐍 RANKING " + clube.nome) if clube else "🏆 RANKING") | tojson }};
+  const linhas = [titulo, ""];
+  {% for r in ranking %}
+  linhas.push("{{ loop.index }}º {{ r.nick }} — {{ r.winrate }}% WR · {{ r.stars }}⭐ · {{ r.jogos }} jogos");
+  {% endfor %}
+  const texto = linhas.join("\n");
+  navigator.clipboard.writeText(texto).then(() => {
+    const b = document.querySelector(".btn-copiar");
+    const orig = b.textContent; b.textContent = "✅ Copiado!";
+    setTimeout(() => { b.textContent = orig; }, 2000);
+  });
+}
+</script>
 {% endif %}
 
 {% if composicoes and (composicoes.duplas or composicoes.trios) %}

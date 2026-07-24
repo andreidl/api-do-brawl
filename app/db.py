@@ -100,6 +100,7 @@ def conectar(caminho: Path | None = None) -> sqlite3.Connection:
     _migrar_para_batalhas_globais(conexao)
     conexao.executescript(_SCHEMA)
     _reparar_showdown_mal_parseado(conexao)
+    _reclassificar_tipo_por_delta(conexao)
     if "rank" not in _colunas(conexao, "batalha_jogadores"):
         conexao.execute("ALTER TABLE batalha_jogadores ADD COLUMN rank INTEGER")
         conexao.commit()
@@ -226,6 +227,25 @@ def _reparar_showdown_mal_parseado(conexao: sqlite3.Connection) -> None:
                 "UPDATE batalhas SET modo = ?, tipo = 'TROPHIES' WHERE hash = ?",
                 (modo_novo, linha["hash"]),
             )
+    conexao.commit()
+
+
+def _reclassificar_tipo_por_delta(conexao: sqlite3.Connection) -> None:
+    """Reparo idempotente: batalhas que MOVERAM troféu são de TROFÉU, não Ranked.
+
+    O brawlace rotula a ladder normal como 'RANKED - MODO' (é o type='ranked' da
+    API da Supercell), mas quem dá/tira troféu é só a ladder — o modo competitivo
+    Ranked não mexe em troféu. Toda batalha com trophyChange (delta ≠ 0) em algum
+    participante é, portanto, de TROFÉU. Só faz UPGRADE (nunca marca competitivo
+    como troféu sem delta), então é seguro rodar a cada conexão."""
+    conexao.execute(
+        """UPDATE batalhas SET tipo = 'TROPHIES'
+           WHERE tipo <> 'TROPHIES'
+             AND hash IN (
+               SELECT hash FROM batalha_jogadores
+               WHERE trofeus_delta IS NOT NULL AND trofeus_delta <> 0
+             )"""
+    )
     conexao.commit()
 
 
@@ -460,6 +480,7 @@ def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> lis
             "jogos": l["decididas"],
             "vitorias": l["vitorias"],
             "winrate": round(l["vitorias"] / l["decididas"] * 100, 1),
+            "stars": l["stars"] or 0,
             "star_pct": round((l["stars"] or 0) / l["decididas"] * 100, 1),
             "trofeus": l["trofeus"],
         })

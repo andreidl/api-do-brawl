@@ -4,9 +4,12 @@ ACUMULADO de batalhas do SQLite, não só as 25 do site (CLAUDE.md §4).
 Winrate = vitórias / (vitórias + derrotas). Draws e resultados de showdown
 ('Rank N') ficam fora do denominador.
 """
+import re
+
 import pandas as pd
 
 LIMIAR_AMOSTRA_PEQUENA: int = 20
+_RE_RANKED_PTS = re.compile(r"\((\d[\d,]*)\)")
 
 
 def calcular_indicadores(
@@ -26,10 +29,14 @@ def calcular_indicadores(
         "partidas_decididas": int(len(decididas)),
         "amostra_pequena": len(decididas) < LIMIAR_AMOSTRA_PEQUENA,
         "winrate_geral": _winrate(decididas),
+        "forma_recente": _forma_recente(decididas),
         "por_modo": _agrupado(decididas, "modo"),
+        "por_mapa": _agrupado(decididas, "mapa"),
         "por_brawler": _agrupado(decididas, "brawler"),
+        "melhor_brawler_por_modo": _melhor_brawler_por_modo(decididas),
         "queda_trofeus": _queda_trofeus(brawlers),
         "evolucao": _evolucao(snapshots),
+        "evolucao_ranked": _evolucao_ranked(snapshots),
         "resets_temporada": detectar_resets(snapshots, batalhas),
         "longo_prazo": _longo_prazo(historico_diario or []),
     }
@@ -65,16 +72,92 @@ def _winrate(decididas: pd.DataFrame) -> float | None:
 
 
 def _agrupado(decididas: pd.DataFrame, coluna: str) -> list[dict]:
-    """Winrate e uso agrupados por modo ou por brawler, mais jogados primeiro."""
-    if decididas.empty:
+    """Winrate e uso agrupados por modo ou por brawler, mais jogados primeiro.
+
+    Inclui 'stars' (vezes que o jogador foi Star Player) quando o dado existir —
+    só ocorre em 3v3; showdown não tem star player, então soma 0 ali."""
+    if decididas.empty or coluna not in decididas.columns:
         return []
-    grupos = decididas.groupby(coluna)["resultado"].agg(
+    grupo = decididas.groupby(coluna)
+    grupos = grupo["resultado"].agg(
         partidas="count", vitorias=lambda r: int((r == "Victory").sum())
-    ).reset_index()
+    )
+    if "star_player" in decididas.columns:
+        grupos["stars"] = grupo["star_player"].apply(
+            lambda s: int(pd.to_numeric(s, errors="coerce").fillna(0).sum())
+        )
+    if "duracao_seg" in decididas.columns:
+        grupos["duracao_media"] = grupo["duracao_seg"].apply(
+            lambda s: (lambda v: int(v.mean()) if not v.empty else None)
+            (pd.to_numeric(s, errors="coerce").dropna())
+        )
+    grupos = grupos.reset_index()
     grupos["winrate"] = (grupos["vitorias"] / grupos["partidas"] * 100).round(1)
     grupos["uso_pct"] = (grupos["partidas"] / len(decididas) * 100).round(1)
     grupos = grupos.sort_values(["partidas", "winrate"], ascending=False)
-    return grupos.rename(columns={coluna: "nome"}).to_dict("records")
+    registros = grupos.rename(columns={coluna: "nome"}).to_dict("records")
+    for r in registros:  # NaN de duração (grupo sem tempo) → None; e vira int
+        d = r.get("duracao_media")
+        r["duracao_media"] = None if d is None or pd.isna(d) else int(d)
+    return registros
+
+
+def _melhor_brawler_por_modo(decididas: pd.DataFrame, minimo: int = 3) -> list[dict]:
+    """Para cada modo, o brawler seu com melhor winrate (Wilson) — ≥ `minimo` jogos.
+
+    Responde de relance 'nesse modo, com o que eu vou melhor?'."""
+    if decididas.empty or not {"modo", "brawler"} <= set(decididas.columns):
+        return []
+    df = decididas[decididas["brawler"].notna()]
+    if df.empty:
+        return []
+    g = df.groupby(["modo", "brawler"]).agg(
+        jogos=("resultado", "size"),
+        vitorias=("resultado", lambda r: int((r == "Victory").sum())),
+    ).reset_index()
+    g = g[g["jogos"] >= minimo]
+    if g.empty:
+        return []
+    g["wilson"] = g.apply(lambda r: wilson(int(r["vitorias"]), int(r["jogos"])), axis=1)
+    g["winrate"] = (g["vitorias"] / g["jogos"] * 100).round(1)
+    melhores = g.sort_values("wilson", ascending=False).groupby("modo").first().reset_index()
+    melhores = melhores.sort_values("jogos", ascending=False)
+    return [
+        {"modo": r["modo"], "brawler": r["brawler"],
+         "jogos": int(r["jogos"]), "winrate": float(r["winrate"])}
+        for _, r in melhores.iterrows()
+    ]
+
+
+def _forma_recente(decididas: pd.DataFrame) -> dict | None:
+    """Forma atual: winrate das últimas 20 partidas, dos últimos 7 dias e a
+    sequência (streak) de vitórias/derrotas em andamento."""
+    if decididas.empty or "ocorrida_em" not in decididas.columns:
+        return None
+    d = decididas.dropna(subset=["ocorrida_em"]).sort_values("ocorrida_em")
+    if d.empty:
+        return None
+    ult20 = d.tail(20)
+    from datetime import datetime, timezone, timedelta
+    limite: str = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()[:19]
+    ult7 = d[d["ocorrida_em"].str[:19] >= limite]
+    seq = list(d["resultado"])[::-1]  # mais recente primeiro
+    tipo: str = seq[0]
+    streak_n: int = 0
+    for r in seq:
+        if r == tipo:
+            streak_n += 1
+        else:
+            break
+    return {
+        "ultimas_20_jogos": int(len(ult20)),
+        "ultimas_20_wr": round(float((ult20["resultado"] == "Victory").mean()) * 100, 1),
+        "dias7_jogos": int(len(ult7)),
+        "dias7_wr": (round(float((ult7["resultado"] == "Victory").mean()) * 100, 1)
+                     if len(ult7) else None),
+        "streak_tipo": tipo,
+        "streak_n": streak_n,
+    }
 
 
 def _queda_trofeus(brawlers: list[dict], minimo_max: int = 100) -> list[dict]:
@@ -97,6 +180,37 @@ def _queda_trofeus(brawlers: list[dict], minimo_max: int = 100) -> list[dict]:
         })
     quedas.sort(key=lambda q: q["queda"], reverse=True)
     return quedas[:10]
+
+
+def _evolucao_ranked(snapshots: list[dict]) -> dict | None:
+    """Evolução dos rank points do modo competitivo Ranked ao longo do tempo.
+
+    Extrai o número entre parênteses de `ranked_atual` ('GOLD I (1601)' → 1601)
+    e monta a série (1 ponto por dia, o último do dia). Acumula conforme os
+    snapshots são gravados a cada consulta/rodada do rastreador."""
+    if not snapshots:
+        return None
+    por_dia: dict[str, dict] = {}
+    for s in sorted(snapshots, key=lambda x: x["criado_em"]):
+        ra: str | None = s.get("ranked_atual")
+        if not ra:
+            continue
+        m = _RE_RANKED_PTS.search(ra)
+        if not m:
+            continue
+        dia: str = s["criado_em"][:10]
+        por_dia[dia] = {"dia": dia, "pontos": int(m.group(1).replace(",", "")),
+                        "rotulo": ra}
+    if not por_dia:
+        return None
+    serie: list[dict] = [por_dia[d] for d in sorted(por_dia)]
+    return {
+        "serie": serie,
+        "atual": serie[-1]["pontos"],
+        "atual_rotulo": serie[-1]["rotulo"],
+        "pico": max(p["pontos"] for p in serie),
+        "dias": len(serie),
+    }
 
 
 def _evolucao(snapshots: list[dict]) -> list[dict]:
@@ -127,31 +241,34 @@ def social(jogadores: list[dict]) -> dict:
         return {"matchups": [], "parceiros": [], "batalhas_cobertas": 0}
     df = df[df["resultado"].isin(["Victory", "Defeat"])]
     if df.empty:
-        return {"matchups": [], "parceiros": [], "batalhas_cobertas": 0}
+        return {"matchups": [], "melhores_matchups": [], "parceiros": [],
+                "batalhas_cobertas": 0}
     df["vitoria"] = (df["resultado"] == "Victory").astype(int)
+
+    # winrate geral do jogador nas batalhas cobertas — base para o "lift" de parceiro
+    batalhas_nivel = df.drop_duplicates("hash")[["hash", "vitoria"]]
+    wr_geral: float = round(float(batalhas_nivel["vitoria"].mean()) * 100, 1)
 
     inimigos = df[(df["aliado"] == 0) & df["brawler"].notna()]
     matchups: list[dict] = []
+    melhores_matchups: list[dict] = []
     if not inimigos.empty:
-        grupo = inimigos.groupby("brawler").agg(
-            jogos=("hash", "nunique"),
-            vitorias=("vitoria", "sum"),
-            enfrentados=("hash", "size"),
-        )
         # winrate POR BATALHA (uma batalha pode ter o mesmo brawler 2x no time inimigo)
         por_batalha = inimigos.drop_duplicates(["hash", "brawler"])
         g2 = por_batalha.groupby("brawler").agg(
             jogos=("hash", "size"), vitorias=("vitoria", "sum")
         )
         g2 = g2[g2["jogos"] >= MINIMO_JOGOS_MATCHUP]
-        for brawler, linha in g2.iterrows():
-            matchups.append({
-                "brawler": str(brawler),
-                "jogos": int(linha["jogos"]),
-                "vitorias": int(linha["vitorias"]),
-                "winrate": round(linha["vitorias"] / linha["jogos"] * 100, 1),
-            })
-        matchups.sort(key=lambda m: -wilson(m["jogos"] - m["vitorias"], m["jogos"]))
+        todos: list[dict] = [{
+            "brawler": str(brawler),
+            "jogos": int(linha["jogos"]),
+            "vitorias": int(linha["vitorias"]),
+            "winrate": round(linha["vitorias"] / linha["jogos"] * 100, 1),
+        } for brawler, linha in g2.iterrows()]
+        # sofre mais: menor winrate primeiro (Wilson das DERROTAS no topo)
+        matchups = sorted(todos, key=lambda m: -wilson(m["jogos"] - m["vitorias"], m["jogos"]))
+        # domina mais: maior winrate primeiro (Wilson das VITÓRIAS no topo)
+        melhores_matchups = sorted(todos, key=lambda m: -wilson(m["vitorias"], m["jogos"]))
 
     aliados = df[(df["aliado"] == 1) & (df["eu"] == 0)]
     parceiros: list[dict] = []
@@ -163,18 +280,28 @@ def social(jogadores: list[dict]) -> dict:
         )
         g = g[g["jogos"] >= MINIMO_JOGOS_MATCHUP]
         for tag_p, linha in g.iterrows():
+            # lift: sua winrate COM esse parceiro vs. SEM ele (nas batalhas cobertas)
+            hashes_com = set(aliados[aliados["tag_jogador"] == tag_p]["hash"])
+            sem = batalhas_nivel[~batalhas_nivel["hash"].isin(hashes_com)]
+            wr_com: float = round(linha["vitorias"] / linha["jogos"] * 100, 1)
+            wr_sem: float | None = (round(float(sem["vitoria"].mean()) * 100, 1)
+                                    if len(sem) else None)
             parceiros.append({
                 "tag": str(tag_p),
                 "nick": str(linha["nick"]),
                 "jogos": int(linha["jogos"]),
                 "vitorias": int(linha["vitorias"]),
-                "winrate": round(linha["vitorias"] / linha["jogos"] * 100, 1),
+                "winrate": wr_com,
+                "winrate_sem": wr_sem,
+                "lift": (round(wr_com - wr_sem, 1) if wr_sem is not None else None),
             })
         parceiros.sort(key=lambda p: -wilson(p["vitorias"], p["jogos"]))
 
     return {
         "matchups": matchups,
+        "melhores_matchups": melhores_matchups,
         "parceiros": parceiros,
+        "wr_geral": wr_geral,
         "batalhas_cobertas": int(df["hash"].nunique()),
     }
 

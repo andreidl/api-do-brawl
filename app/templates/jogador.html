@@ -171,16 +171,57 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   <div class="cartao"><b>{{ indicadores.winrate_geral }}%</b><span>Winrate geral</span></div>
   {% endif %}
   <div class="cartao"><b>{{ indicadores.partidas }}</b><span>Batalhas no histórico</span></div>
+  {% set fr = indicadores.forma_recente %}
+  {% if fr %}
+  <div class="cartao"><b class="{{ 'bom' if fr.ultimas_20_wr >= 50 else 'ruim' }}">{{ fr.ultimas_20_wr }}%</b><span>Últimas {{ fr.ultimas_20_jogos }} partidas</span></div>
+  {% if fr.dias7_wr is not none %}
+  <div class="cartao"><b class="{{ 'bom' if fr.dias7_wr >= 50 else 'ruim' }}">{{ fr.dias7_wr }}%</b><span>Últimos 7 dias ({{ fr.dias7_jogos }}j)</span></div>
+  {% endif %}
+  <div class="cartao"><b class="{{ 'bom' if fr.streak_tipo == 'Victory' else 'ruim' }}">{{ fr.streak_n }}{{ '🔥' if fr.streak_tipo == 'Victory' and fr.streak_n >= 3 }}</b><span>{{ 'Vitórias' if fr.streak_tipo == 'Victory' else 'Derrotas' }} seguidas</span></div>
+  {% endif %}
 </section>
 
+{% macro dur(seg) -%}
+{% if seg %}{{ (seg // 60) }}:{{ "%02d" % (seg % 60) }}{% else %}<span class="nota">—</span>{% endif %}
+{%- endmacro %}
 {% if indicadores.por_modo %}
 <h3>Winrate por modo</h3>
 <table>
-  <thead><tr><th>Modo</th><th>Partidas</th><th>Vitórias</th><th>Winrate</th></tr></thead>
+  <thead><tr><th>Modo</th><th>Partidas</th><th>Vitórias</th><th>Winrate</th><th>⭐ Star</th><th>Duração méd.</th></tr></thead>
   <tbody>
     {% for m in indicadores.por_modo %}
     <tr><td>{{ m.nome }}</td><td>{{ m.partidas }}</td><td>{{ m.vitorias }}</td>
-        <td>{{ barra_wr(m.winrate, m.partidas) }}</td></tr>
+        <td>{{ barra_wr(m.winrate, m.partidas) }}</td>
+        <td>{% if m.stars %}{{ m.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td>
+        <td>{{ dur(m.duracao_media) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if indicadores.melhor_brawler_por_modo %}
+<h3>Seu melhor brawler em cada modo <span class="nota">(mín. 3 jogos)</span></h3>
+<table>
+  <thead><tr><th>Modo</th><th>Melhor brawler seu</th><th>Jogos</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for m in indicadores.melhor_brawler_por_modo %}
+    <tr><td>{{ m.modo }}</td><td><b>{{ m.brawler }}</b></td><td>{{ m.jogos }}</td>
+        <td>{{ barra_wr(m.winrate, m.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if indicadores.por_mapa %}
+<h3>Winrate por mapa <span class="nota">(onde você vai melhor/pior)</span></h3>
+<table>
+  <thead><tr><th>Mapa</th><th>Partidas</th><th>Winrate</th><th>⭐ Star</th><th>Duração méd.</th></tr></thead>
+  <tbody>
+    {% for m in indicadores.por_mapa %}
+    <tr><td>{{ m.nome }}</td><td>{{ m.partidas }}</td>
+        <td>{{ barra_wr(m.winrate, m.partidas) }}</td>
+        <td>{% if m.stars %}{{ m.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td>
+        <td>{{ dur(m.duracao_media) }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -189,11 +230,12 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 {% if indicadores.por_brawler %}
 <h3>Performance por brawler</h3>
 <table>
-  <thead><tr><th>Brawler</th><th>Partidas</th><th>Uso</th><th>Winrate</th></tr></thead>
+  <thead><tr><th>Brawler</th><th>Partidas</th><th>Uso</th><th>Winrate</th><th>⭐ Star</th></tr></thead>
   <tbody>
     {% for b in indicadores.por_brawler %}
     <tr><td>{{ b.nome }}</td><td>{{ b.partidas }}</td><td>{{ b.uso_pct }}%</td>
-        <td>{{ barra_wr(b.winrate, b.partidas) }}</td></tr>
+        <td>{{ barra_wr(b.winrate, b.partidas) }}</td>
+        <td>{% if b.stars %}{{ b.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -241,6 +283,30 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   (o rastreamento automático cuida disso).</p>
 {% endif %}
 
+{% set er = indicadores.evolucao_ranked %}
+{% if er and filtro_tipo != 'trofeus' %}
+<h3>Evolução do Ranked 🎖️</h3>
+<section class="cartoes">
+  <div class="cartao"><b>{{ er.atual_rotulo }}</b><span>Ranked atual</span></div>
+  <div class="cartao"><b>{{ "{:,}".format(er.pico).replace(",", ".") }}</b><span>Pico de rank points</span></div>
+</section>
+{% if er.serie | length >= 2 %}
+{% set rp = er.serie %}
+{% set rmin = rp | map(attribute="pontos") | min %}
+{% set rmax = rp | map(attribute="pontos") | max %}
+{% set rfaixa = (rmax - rmin) if rmax > rmin else 1 %}
+<svg viewBox="0 0 600 160" class="grafico" preserveAspectRatio="none">
+  <polyline fill="none" stroke="#c084fc" stroke-width="2" points="
+    {%- for p in rp %}
+    {{ (loop.index0 / (rp | length - 1) * 580 + 10) | round(1) }},{{ (140 - (p.pontos - rmin) / rfaixa * 120) | round(1) }}
+    {%- endfor %}" />
+</svg>
+<p class="nota">{{ rp[0].dia }} ({{ rp[0].pontos }}) → {{ rp[-1].dia }} ({{ rp[-1].pontos }}) rank points</p>
+{% else %}
+<p class="nota">A curva do ranked aparece a partir do 2º dia de dados — o rastreamento acumula.</p>
+{% endif %}
+{% endif %}
+
 {% if correlacao %}
 <h2>Meta atual e recomendações</h2>
 <p class="nota">Meta global de {{ correlacao.data_meta }} (brawlace.com, % de Star Player por modo)</p>
@@ -284,6 +350,21 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   </tbody>
 </table>
 {% endif %}
+
+{% if correlacao.meta_ociosos %}
+<h3>Brawlers fortes no meta que você tem e quase não joga</h3>
+<p class="nota">Você tem estes (power ≥ 9), estão no topo do meta atual, mas você jogou ≤ 5 vezes — picks de graça na mesa.</p>
+<table>
+  <thead><tr><th>Brawler</th><th>Power</th><th>Melhor no meta</th><th>Modo</th><th>Seus jogos</th></tr></thead>
+  <tbody>
+    {% for o in correlacao.meta_ociosos %}
+    <tr><td><b>{{ o.brawler }}</b></td><td>{{ o.power }}</td>
+        <td class="bom">#{{ o.posicao_meta }} ({{ o.star_player_pct }}%)</td>
+        <td>{{ o.modo }}</td><td>{{ o.jogos_seus }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
 {% endif %}
 
 {% if star %}
@@ -312,11 +393,24 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   gravadas (acumula a cada consulta; batalhas antigas não têm esse detalhe).</p>
 
 {% if social.matchups %}
-<h3>Contra quais brawlers você mais sofre (mín. {{ 2 }} jogos)</h3>
+<h3>Contra quais brawlers você mais sofre <span class="nota">(mín. 2 jogos)</span></h3>
 <table>
   <thead><tr><th>Brawler inimigo</th><th>Jogos contra</th><th>Suas vitórias</th><th>Winrate</th></tr></thead>
   <tbody>
-    {% for m in social.matchups %}
+    {% for m in social.matchups[:10] %}
+    <tr><td>{{ m.brawler }}</td><td>{{ m.jogos }}</td><td>{{ m.vitorias }}</td>
+        <td>{{ barra_wr(m.winrate, m.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if social.melhores_matchups %}
+<h3>Contra quais brawlers você mais domina <span class="nota">(mín. 2 jogos)</span></h3>
+<table>
+  <thead><tr><th>Brawler inimigo</th><th>Jogos contra</th><th>Suas vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for m in social.melhores_matchups[:10] %}
     <tr><td>{{ m.brawler }}</td><td>{{ m.jogos }}</td><td>{{ m.vitorias }}</td>
         <td>{{ barra_wr(m.winrate, m.jogos) }}</td></tr>
     {% endfor %}
@@ -325,14 +419,16 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 {% endif %}
 
 {% if social.parceiros %}
-<h3>Parceiros de time</h3>
+<h3>Parceiros de time <span class="nota">(lift = sua winrate com ele − sem ele; base geral {{ social.wr_geral }}%)</span></h3>
 <table>
-  <thead><tr><th>Jogador</th><th>Jogos juntos</th><th>Vitórias</th><th>Winrate juntos</th></tr></thead>
+  <thead><tr><th>Jogador</th><th>Jogos juntos</th><th>Winrate juntos</th><th>Winrate sem ele</th><th>Lift</th></tr></thead>
   <tbody>
     {% for p in social.parceiros %}
     <tr><td><a href="/jogador/{{ p.tag.lstrip('#') }}">{{ p.nick }}</a> <span class="tag">{{ p.tag }}</span></td>
-        <td>{{ p.jogos }}</td><td>{{ p.vitorias }}</td>
-        <td>{{ barra_wr(p.winrate, p.jogos) }}</td></tr>
+        <td>{{ p.jogos }}</td>
+        <td>{{ barra_wr(p.winrate, p.jogos) }}</td>
+        <td>{% if p.winrate_sem is not none %}{{ p.winrate_sem }}%{% else %}<span class="nota">—</span>{% endif %}</td>
+        <td class="{{ 'bom' if p.lift and p.lift > 0 else ('ruim' if p.lift and p.lift < 0 else '') }}">{% if p.lift is not none %}{{ "+" if p.lift > 0 }}{{ p.lift }}{% else %}<span class="nota">—</span>{% endif %}</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -402,9 +498,14 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 {% endif %}
 
 {% set todas = historico_batalhas if historico_batalhas is defined and historico_batalhas else perfil.batalhas %}
-<h2>Últimas batalhas ({{ [todas | length, 25] | min }} de {{ todas | length }} no banco)</h2>
+{% macro cel_delta(d) -%}
+<td class="{{ 'bom' if d and d > 0 else ('ruim' if d and d < 0 else '') }}">{% if d is not none %}{{ "+" if d > 0 }}{{ d }}{% else %}<span class="nota">—</span>{% endif %}</td>
+{%- endmacro %}
+{% set saldo_25 = todas[:25] | map(attribute="trofeus_delta") | select("integer") | sum %}
+<h2>Últimas batalhas ({{ [todas | length, 25] | min }} de {{ todas | length }} no banco)
+  <span class="nota">— saldo destas {{ [todas | length, 25] | min }}: {{ "+" if saldo_25 > 0 }}{{ saldo_25 }} 🏆</span></h2>
 <table>
-  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Resultado</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Troféus</th><th>Resultado</th></tr></thead>
   <tbody>
     {% for b in todas[:25] %}
     <tr class="{{ 'vitoria' if b.resultado == 'Victory' or b.rank == 1 else ('derrota' if b.resultado == 'Defeat' else '') }}">
@@ -413,6 +514,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
       <td>{{ b.modo }}</td>
       <td>{{ b.mapa or "?" }}</td>
       <td>{{ b.brawler or "?" }}{% if b.star_player %} ⭐{% endif %}</td>
+      {{ cel_delta(b.trofeus_delta) }}
       <td>{% if b.rank %}{{ b.rank }}º lugar{% if b.resultado %} <span class="nota">({{ b.resultado }})</span>{% endif %}{% else %}{{ b.resultado or "—" }}{% endif %}</td>
     </tr>
     {% endfor %}
@@ -423,7 +525,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 <details class="recolhivel">
 <summary>mostrar as outras {{ todas | length - 25 }} batalhas do banco</summary>
 <table>
-  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Resultado</th></tr></thead>
+  <thead><tr><th>Quando</th><th>Tipo</th><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Troféus</th><th>Resultado</th></tr></thead>
   <tbody>
     {% for b in todas[25:] %}
     <tr class="{{ 'vitoria' if b.resultado == 'Victory' or b.rank == 1 else ('derrota' if b.resultado == 'Defeat' else '') }}">
@@ -432,6 +534,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
       <td>{{ b.modo }}</td>
       <td>{{ b.mapa or "?" }}</td>
       <td>{{ b.brawler or "?" }}{% if b.star_player %} ⭐{% endif %}</td>
+      {{ cel_delta(b.trofeus_delta) }}
       <td>{% if b.rank %}{{ b.rank }}º lugar{% if b.resultado %} <span class="nota">({{ b.resultado }})</span>{% endif %}{% else %}{{ b.resultado or "—" }}{% endif %}</td>
     </tr>
     {% endfor %}

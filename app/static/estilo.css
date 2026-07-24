@@ -305,6 +305,13 @@ td.ruim { color: var(--vermelho); font-weight: 700; }
 }
 .distribuicao { border-left: 3px solid var(--verde); padding-left: 0.6rem; }
 
+.btn-copiar {
+  padding: 0.4rem 1rem; margin-bottom: 0.6rem; border: none; border-radius: 999px;
+  background: var(--verde); color: #06281a; font-weight: 700; cursor: pointer;
+  font-size: 0.9rem;
+}
+.btn-copiar:hover { filter: brightness(1.08); }
+
 /* ---------- barras de winrate (leitura de relance) ---------- */
 .wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
 .wr-barra {

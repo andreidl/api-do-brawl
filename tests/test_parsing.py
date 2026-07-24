@@ -125,6 +125,22 @@ def test_delta_de_trofeus_quando_presente(perfil: dict):
     assert any(b["trofeus_delta"] == -4 for b in com_delta)
 
 
+def test_tipo_trofeu_quando_ha_delta(perfil: dict):
+    """Batalha com trophyChange (delta) é de TROFÉU, mesmo o brawlace rotulando
+    'RANKED - MODO' (type='ranked' da API = ladder normal de troféus)."""
+    com_delta = [b for b in perfil["batalhas"] if b["trofeus_delta"] is not None]
+    assert com_delta, "fixture deveria ter ao menos uma batalha com delta"
+    for b in com_delta:
+        assert b["tipo"] == "TROPHIES", b
+
+
+def test_tipo_ranked_sem_delta_permanece_ranked(perfil: dict):
+    """Sem delta de troféu = modo competitivo Ranked (não move troféu)."""
+    primeira = perfil["batalhas"][0]  # HOT ZONE 17/07, header sem '±'
+    assert primeira["trofeus_delta"] is None
+    assert primeira["tipo"] == "RANKED"
+
+
 # --- gráfico de troféus (passado registrado pelo brawlace) -------------------
 
 def test_grafico_trofeus(perfil: dict):

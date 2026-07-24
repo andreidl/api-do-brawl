@@ -178,6 +178,43 @@ def sugestoes_por_evento(
     return sugestoes
 
 
+def brawlers_meta_ociosos(
+    meta: dict, batalhas: list[dict], brawlers_jogador: list[dict],
+    historico_lp: list[dict] | None = None,
+    top_n: int = 6, max_jogos: int = 5,
+) -> list[dict]:
+    """Brawlers que VOCÊ tem (power ≥ mínimo), fortes no meta atual (top `top_n`
+    de algum modo), mas que você quase não joga (≤ `max_jogos` partidas). São
+    picks 'de graça' que você está deixando na mesa."""
+    modos_meta: dict = meta.get("modos", {})
+    do_jogador: dict[str, dict] = {b["nome"]: b for b in brawlers_jogador}
+    stats: dict[str, dict] = _stats_por_brawler(batalhas or [], historico_lp)
+
+    # melhor colocação de cada brawler no meta (menor posição) e em qual modo
+    melhor: dict[str, tuple] = {}
+    for modo, ranking in modos_meta.items():
+        for linha in ranking[:top_n]:
+            b = linha["brawler"]
+            if b not in melhor or linha["posicao"] < melhor[b][0]:
+                melhor[b] = (linha["posicao"], modo, linha["star_player_pct"])
+
+    ociosos: list[dict] = []
+    for b, (pos, modo, star_pct) in melhor.items():
+        meu = do_jogador.get(b)
+        if meu is None or meu.get("power", 0) < POWER_MINIMO_SUGESTAO:
+            continue
+        jogos: int = stats.get(b, {}).get("jogos", 0)
+        if jogos > max_jogos:
+            continue
+        ociosos.append({
+            "brawler": b, "power": meu["power"], "trofeus": meu.get("trofeus"),
+            "posicao_meta": pos, "modo": modo, "star_player_pct": star_pct,
+            "jogos_seus": jogos,
+        })
+    ociosos.sort(key=lambda x: (x["posicao_meta"], -x["power"]))
+    return ociosos[:12]
+
+
 def calcular_meta_jogador(
     meta: dict, eventos: list[dict], batalhas: list[dict],
     brawlers_jogador: list[dict],
@@ -189,6 +226,8 @@ def calcular_meta_jogador(
         "score": score_vs_meta(meta, batalhas),
         "sugestoes": sugestoes_por_evento(meta, eventos, brawlers_jogador,
                                           batalhas, historico_lp, historico_modo),
+        "meta_ociosos": brawlers_meta_ociosos(meta, batalhas, brawlers_jogador,
+                                              historico_lp),
     }
 
 

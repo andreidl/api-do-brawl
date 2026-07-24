@@ -10,6 +10,19 @@ from app.coleta import brawlace
 
 ARQUIVO_LOG: Path = Path(__file__).resolve().parents[1] / "data" / "rastreio.log"
 
+# Membros reais do clã Snake que rastreamos SEMPRE — mesmo antes de alguém abrir
+# o perfil deles no app. Assim os jogos EM DUPLA com eles são capturados também
+# pela janela de 25 partidas DELES, não só pela do dono da consulta (ver §"jogos
+# juntos"). Rastrear o roster inteiro (~30) seria crawl em massa e fere a regra
+# "só a tag consultada" do CLAUDE.md §3.5 — aqui ficam só os usuários reais.
+TAGS_CLA_FIXAS: list[str] = [
+    "#299PGGLQL",   # SNK | andreidl (dono)
+    "#9029RVG2J",   # SNK | BIGBOSS
+    "#28GY9QJVC",   # SNK|gustavo
+    "#2QLLLGV0R0",  # SNK |camilacgs
+    "#89R22LV2Y",   # LoganKL
+]
+
 
 def _log(mensagem: str) -> None:
     linha: str = f"{datetime.now().isoformat(timespec='seconds')} {mensagem}"
@@ -24,9 +37,11 @@ def rastrear_uma_vez() -> None:
     de rastreio embutida no app (app.main)."""
     conexao = db.conectar()
     try:
-        tags: list[str] = [
+        tags_banco: list[str] = [
             linha["tag"] for linha in conexao.execute("SELECT tag FROM jogadores")
         ]
+        # união preservando ordem: primeiro os fixos do clã, depois o resto do banco
+        tags: list[str] = list(dict.fromkeys(TAGS_CLA_FIXAS + tags_banco))
         if not tags:
             _log("nenhum jogador no banco ainda — nada a rastrear")
             return
