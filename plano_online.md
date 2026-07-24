@@ -139,13 +139,26 @@ que consertamos hoje some — a regra vira direta pela API).
   `/etc/apidobrawl.env`. Passo-a-passo em `deploy/DEPLOY.md`.
 - **Valida:** `https://SEU.duckdns.org` abre qualquer tag, 24/7, sem hibernar.
 
-### Fase 4 — Meta / picks (scraping à parte)
-- **Eu faço:** primeiro **testar** se brawlace/brawltime respondem do IP da VM.
-  - Se **sim**: rastreador da VM raspa o meta e grava no Postgres.
-  - Se **não** (provável p/ brawltime): o **PC do usuário** raspa o meta quando
-    ligado e grava no MESMO Postgres; o app público só **lê**. O core (API) fica
-    sempre fresco; o meta fica "foto" na cadência do PC.
-- **Valida:** seções de meta/picks aparecem no site público.
+### Fase 4 — API oficial no core + meta ✅ FEITA (24/07/2026)
+**4a — core na API oficial (resolveu a lentidão):** descobrimos que `oficial.py`
+(Fase 1) nunca tinha sido ligado no app — `main.py`/`rastrear.py` usavam só
+scraping. Abrir jogador demorava (perfil + ~7 scrapes de batalha-por-modo +
+brawltime + brawlytix + meta, tudo sequencial). Trocamos perfil/clube pra
+`oficial.py` (JSON rápido/estável) e **removemos o scraping batalha-por-modo**.
+brawltime/brawlytix viraram **best-effort** (`_seguro`, não quebram a página).
+Os 3 chamadores de `_consultar` capturam `oficial.ErroColeta/TagInvalida`.
+
+**4b — meta (testado da VM):**
+- **brawlace (meta): FUNCIONA da VM** (1422 linhas, 14 modos) → a própria VM
+  alimenta o meta no Postgres pelo timer de 2h; o app lê de lá.
+- **brawltime: bloqueado no IP da VM** (datacenter) — funciona no PC. Decisão:
+  **deixar vazio** no site público por ora (best-effort). Revisitar se quiser os
+  picks/winrate-por-mapa (aí o PC alimentaria).
+- **brawlytix: morto** — retorna None até no PC (site mudou/caiu). Deixado vazio.
+
+**Obs de performance:** os writes do rastreador na VM ainda são lentos (~10-15s
+por jogador) porque `salvar_batalhas` faz muitos upserts individuais por batalha
+via o pooler remoto (round-trip por statement). Candidato a otimização (batch).
 
 ## 4. CONTAS E SEGREDOS (só você cria; eu ligo via env)
 
