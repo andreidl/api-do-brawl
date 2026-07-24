@@ -1,0 +1,229 @@
+[
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260725T080000.000Z",
+    "slotId": 1,
+    "event": {
+      "id": 15000025,
+      "mode": "brawlBall",
+      "modeId": 5,
+      "map": "Triple Dribble"
+    }
+  },
+  {
+    "startTime": "20260723T200000.000Z",
+    "endTime": "20260724T200000.000Z",
+    "slotId": 2,
+    "event": {
+      "id": 15000944,
+      "mode": "soloShowdown",
+      "modeId": 6,
+      "map": "Skull Creek"
+    }
+  },
+  {
+    "startTime": "20260724T000000.000Z",
+    "endTime": "20260725T000000.000Z",
+    "slotId": 3,
+    "event": {
+      "id": 15000011,
+      "mode": "gemGrab",
+      "modeId": 0,
+      "map": "Undermine"
+    }
+  },
+  {
+    "startTime": "20260723T180000.000Z",
+    "endTime": "20260724T180000.000Z",
+    "slotId": 4,
+    "event": {
+      "id": 15001170,
+      "mode": "heist",
+      "modeId": 2,
+      "map": "Quintillion"
+    }
+  },
+  {
+    "startTime": "20260723T200000.000Z",
+    "endTime": "20260724T200000.000Z",
+    "slotId": 5,
+    "event": {
+      "id": 15000945,
+      "mode": "duoShowdown",
+      "modeId": 9,
+      "map": "Skull Creek"
+    }
+  },
+  {
+    "startTime": "20260724T020000.000Z",
+    "endTime": "20260725T020000.000Z",
+    "slotId": 6,
+    "event": {
+      "id": 15001018,
+      "mode": "knockout",
+      "modeId": 20,
+      "map": "Double Decker"
+    }
+  },
+  {
+    "startTime": "20260723T080000.000Z",
+    "endTime": "20260725T080000.000Z",
+    "slotId": 8,
+    "event": {
+      "id": 15000968,
+      "mode": "soloShowdown",
+      "modeId": 6,
+      "map": "Safety Center",
+      "modifiers": [
+        "unknown",
+        "showdown+"
+      ]
+    }
+  },
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260726T080000.000Z",
+    "slotId": 10,
+    "event": {
+      "id": 15000919,
+      "mode": "brawlBall5V5",
+      "modeId": 32,
+      "map": "Stockpile Stadium",
+      "modifiers": [
+        "unknown"
+      ]
+    }
+  },
+  {
+    "startTime": "20260723T160000.000Z",
+    "endTime": "20260724T160000.000Z",
+    "slotId": 15,
+    "event": {
+      "id": 15000460,
+      "mode": "tagTeam",
+      "modeId": 24,
+      "map": "No Surrender"
+    }
+  },
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260727T080000.000Z",
+    "slotId": 20,
+    "event": {
+      "id": 15000082,
+      "mode": "bounty",
+      "modeId": 3,
+      "map": "Layer Cake"
+    }
+  },
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260727T080000.000Z",
+    "slotId": 21,
+    "event": {
+      "id": 15000300,
+      "mode": "hotZone",
+      "modeId": 17,
+      "map": "Ring of Fire"
+    }
+  },
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260727T080000.000Z",
+    "slotId": 22,
+    "event": {
+      "id": 15000703,
+      "mode": "knockout",
+      "modeId": 20,
+      "map": "New Horizons"
+    }
+  },
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260727T080000.000Z",
+    "slotId": 23,
+    "event": {
+      "id": 15000118,
+      "mode": "brawlBall",
+      "modeId": 5,
+      "map": "Pinball Dreams"
+    }
+  },
+  {
+    "startTime": "20260724T080000.000Z",
+    "endTime": "20260727T080000.000Z",
+    "slotId": 24,
+    "event": {
+      "id": 15000018,
+      "mode": "heist",
+      "modeId": 2,
+      "map": "Kaboom Canyon"
+    }
+  },
+  {
+    "startTime": "20260724T100000.000Z",
+    "endTime": "20260725T100000.000Z",
+    "slotId": 33,
+    "event": {
+      "id": 15001265,
+      "mode": "airHockey",
+      "modeId": 45,
+      "map": "Nullscapes"
+    }
+  },
+  {
+    "startTime": "20260723T200000.000Z",
+    "endTime": "20260724T200000.000Z",
+    "slotId": 39,
+    "event": {
+      "id": 15000946,
+      "mode": "trioShowdown",
+      "modeId": 38,
+      "map": "Skull Creek"
+    }
+  },
+  {
+    "startTime": "20260724T140000.000Z",
+    "endTime": "20260725T140000.000Z",
+    "slotId": 41,
+    "event": {
+      "id": 15001242,
+      "mode": "brawlArena",
+      "modeId": 48,
+      "map": "Silver Highlands"
+    }
+  },
+  {
+    "startTime": "20260724T120000.000Z",
+    "endTime": "20260725T120000.000Z",
+    "slotId": 43,
+    "event": {
+      "id": 15001162,
+      "mode": "knockout5V5",
+      "modeId": 35,
+      "map": "Rastermind"
+    }
+  },
+  {
+    "startTime": "20260724T040000.000Z",
+    "endTime": "20260725T040000.000Z",
+    "slotId": 42,
+    "event": {
+      "id": 15000384,
+      "mode": "basketBrawl",
+      "modeId": 22,
+      "map": "Ball Hog"
+    }
+  },
+  {
+    "startTime": "20260724T140000.000Z",
+    "endTime": "20260724T160000.000Z",
+    "slotId": 55,
+    "event": {
+      "id": 15000143,
+      "mode": "brawlBall",
+      "modeId": 5,
+      "map": "Beach Ball"
+    }
+  }
+]

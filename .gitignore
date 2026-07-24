@@ -4,6 +4,9 @@ __pycache__/
 venv/
 .pytest_cache/
 
+# segredos (token da API, DATABASE_URL) — NUNCA no git
+.env
+
 # data/ fica fora do git, EXCETO o banco (dados insubstituíveis — backup versionado).
 # cache/, logs e WAL/SHM continuam ignorados (transitórios).
 data/*
