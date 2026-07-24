@@ -1,13 +1,38 @@
 # API do Brawl — Guia de Contexto Completo para Claude
 
 > Leia este arquivo inteiro antes de qualquer modificação no projeto.
-> **Última atualização: 24/07/2026 — conserto do meta, ~20 estatísticas novas, banco versionado.**
+> **Última atualização: 24/07/2026 — MIGRAÇÃO EM ANDAMENTO para público/online/grátis (API oficial + Oracle + Supabase). Fase 1 concluída.**
 
 ## IMPORTANTE — PLANO DE TRABALHO
 
-**Leia `plano.md` no início de cada sessão.**
-Esse arquivo contém a fila priorizada de tudo que falta (P0→P3).
-Ao terminar uma tarefa, marque `[x]` e atualize a seção "CONCLUÍDO" com a data.
+**Leia `plano.md`** (fila do dia a dia, P0→P3) **e `plano_online.md`** (migração
+para o app público/online/grátis — arquitetura, fases, decisões) no início de
+cada sessão. Ao terminar uma tarefa, marque `[x]` e atualize a data.
+
+---
+
+## 0-B. MIGRAÇÃO PÚBLICO/ONLINE/GRÁTIS (decidida 24/07/2026) — ver `plano_online.md`
+
+Objetivo: site **público** (qualquer visitante, qualquer tag, ao vivo), **online
+24/7** e **grátis**. Decisões fechadas:
+
+- **Fonte core: API OFICIAL** do Brawl Stars (JSON) via `app/coleta/oficial.py`
+  (NÃO é mais o brawlace para o core). Requer `BRAWL_API_TOKEN` (developer.brawlstars.com)
+  com o IP de saída registrado na key. **IPv4 forçado** (`local_address 0.0.0.0`).
+  Token via `.env` (gitignored) ou variável de ambiente. Ver `.env.example`.
+- **Meta/picks**: seguem por SCRAPING (brawlace/brawltime) à parte — a API oficial
+  não tem meta. Se o IP da VM for bloqueado, o **PC do usuário** alimenta o meta no Postgres.
+- **Banco: Postgres grátis (Supabase)** — só o clã acumula; visitante vê ao vivo
+  (25 batalhas) sem gravar. Dev local mantém SQLite (`DATABASE_URL` ausente = SQLite).
+- **Host: Oracle Always Free**, VM **AMD micro**, **IP fixo** (dispensa proxy
+  RoyaleAPI), **DuckDNS + Caddy** (HTTPS grátis), systemd 24/7.
+- **Fases**: (1) coleta oficial ✅ FEITA · (2) Postgres + import do brawl.db ·
+  (3) deploy na VM · (4) meta/picks. Detalhes e riscos em `plano_online.md`.
+
+**Fase 1 (feita):** `oficial.py` mapeia o JSON da API pro MESMO formato de dicts
+do brawlace → `db.py`/indicadores/templates funcionam sem mudança. Sem hash de
+batalha na API → chave global sintética `sha1(battleTime + tags ordenadas)`.
+`tests/test_oficial.py` (11 testes offline com fixtures `oficial_*.json`).
 
 ---
 
@@ -42,7 +67,9 @@ Ao terminar uma tarefa, marque `[x]` e atualize a seção "CONCLUÍDO" com a dat
 Site web em Python onde o usuário digita a **tag de um jogador de Brawl Stars**
 (ex: `#299PGGLQL`) e recebe:
 
-1. **Coleta** — dados públicos do jogador raspados da web (sem chave da API oficial)
+1. **Coleta** — perfil e batalhas via **API oficial** (`app/coleta/oficial.py`,
+   token `BRAWL_API_TOKEN`); meta/picks ainda por scraping (brawlace/brawltime).
+   Histórico: até 24/07 era SQLite local; migrando p/ Postgres público (ver §0-B).
 2. **Indicadores de performance** — winrate geral e por modo, performance por
    brawler, evolução de troféus ao longo do tempo
 3. **Meta** — melhores brawlers por modo/mapa no meta atual, **correlacionados**
@@ -84,6 +111,11 @@ filas, Docker ou frontend framework. Um app FastAPI só, HTML server-side.
 | Indicadores | Todos os 4: winrate por modo, performance por brawler, evolução de troféus, score vs meta |
 | Tag de teste | `#299PGGLQL` (perfil do usuário: **SNK \| andreidl**) |
 
+> ⚠️ **REVISADO em 24/07/2026 (ver §0-B):** "Fonte = scraping brawlace" e
+> "Persistência = SQLite local" foram **substituídos** — o core agora é a **API
+> oficial** e o histórico está migrando para **Postgres (Supabase)**. O brawlace
+> segue só para meta/picks. As demais decisões de 17/07 continuam válidas.
+
 ---
 
 ## 2. STACK E ESTRUTURA
@@ -98,7 +130,8 @@ C:\projetos\api-do-brawl\
     main.py                  — FastAPI: rotas web + rotas /api
     db.py                    — schema SQLite + upserts (banco em data/brawl.db)
     coleta\
-      brawlace.py            — scraper: perfil, meta, eventos
+      oficial.py             — API OFICIAL (perfil, battlelog, clube, eventos) — CORE novo
+      brawlace.py            — scraper (agora só p/ meta; perfil/eventos migrando p/ oficial.py)
       cache.py               — cache de requisições em disco com TTL
     indicadores\
       performance.py         — KPIs com pandas (parte 2)
@@ -109,7 +142,10 @@ C:\projetos\api-do-brawl\
     fixtures\                — HTMLs reais salvos p/ testar parsing offline
   data\                      — brawl.db (VERSIONADO como backup) + cache (ignorado)
   backups\                   — dumps .db antigos (versionados)
+  .env                       — SEGREDOS (BRAWL_API_TOKEN, DATABASE_URL) — FORA do git
+  .env.example               — modelo do .env (versionado, sem segredos)
   plano.md                   — fila de trabalho priorizada
+  plano_online.md            — plano da migração público/online/grátis
   requirements.txt
 ```
 
@@ -414,6 +450,9 @@ batalhas novas → calcula indicadores → cache/scrape meta → correlaciona �
   logs e WAL/SHM ficam fora do git; fixtures de teste DENTRO do git. O backup só
   atualiza quando o `.db` é commitado — fazer `PRAGMA wal_checkpoint(TRUNCATE)` antes
 - Sem ORM, sem async desnecessário, sem framework de frontend — simplicidade primeiro
+- **SEGREDOS nunca no git**: `BRAWL_API_TOKEN`, `DATABASE_URL`, senhas → só no
+  `.env` (gitignored) ou variável de ambiente. `oficial.py` lê do env/`.env`.
+  Nunca imprimir o token no chat/logs. Em produção (VM) usar variável de ambiente.
 - **Nunca** usar `--no-verify` nos commits; **nunca** adicionar `Co-Authored-By`
 
 ## 9. RISCOS CONHECIDOS
