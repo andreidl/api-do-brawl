@@ -31,7 +31,7 @@
 {% endif %}
 <button type="button" class="btn-copiar" onclick="copiarRanking()">📋 Copiar ranking (WhatsApp)</button>
 <table id="tabela-ranking">
-  <thead><tr><th>#</th><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th><th>Troféus (visto)</th></tr></thead>
+  <thead><tr><th>#</th><th>Jogador</th><th>Batalhas</th><th>Winrate</th><th>Star player</th><th>Troféus ganhos</th></tr></thead>
   <tbody>
     {% for r in ranking %}
     <tr>
@@ -40,7 +40,7 @@
       <td>{{ r.jogos }}</td>
       <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
       <td>{{ r.stars }} ⭐ <span class="nota">({{ r.star_pct }}%)</span></td>
-      <td>{{ "{:,}".format(r.trofeus).replace(",", ".") if r.trofeus else "—" }}</td>
+      <td class="{{ 'bom' if r.trofeus_ganhos > 0 else ('ruim' if r.trofeus_ganhos < 0 else '') }}">{{ ("+" if r.trofeus_ganhos > 0 else "") ~ "{:,}".format(r.trofeus_ganhos).replace(",", ".") }}</td>
     </tr>
     {% endfor %}
   </tbody>

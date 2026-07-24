@@ -689,8 +689,10 @@ def historico_score_meta(conexao: sqlite3.Connection, tag: str) -> list[dict]:
 
 def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> list[dict]:
     """Ranking de todos os jogadores conhecidos no banco (consultados ou não):
-    batalhas decididas, winrate, taxa de star player e troféus máximos vistos.
-    Só entra quem tem >= minimo_jogos batalhas decididas."""
+    batalhas decididas, winrate, taxa de star player e troféus GANHOS (soma dos
+    deltas das partidas registradas — só conta os deltas conhecidos, i.e., das
+    batalhas em que o jogador foi consultado). Só entra quem tem >= minimo_jogos
+    batalhas decididas."""
     minimo_jogos = max(1, minimo_jogos)  # nunca 0 → evita divisão por zero
     linhas = conexao.execute(
         """SELECT bj.tag_jogador AS tag,
@@ -698,7 +700,7 @@ def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> lis
                   SUM(CASE WHEN bj.resultado IN ('Victory','Defeat') THEN 1 ELSE 0 END) AS decididas,
                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
                   SUM(bj.star_player) AS stars,
-                  MAX(bj.trofeus) AS trofeus
+                  SUM(bj.trofeus_delta) AS trofeus_ganhos
            FROM batalha_jogadores bj
            GROUP BY bj.tag_jogador
            HAVING SUM(CASE WHEN bj.resultado IN ('Victory','Defeat') THEN 1 ELSE 0 END) >= ?""",
@@ -714,7 +716,8 @@ def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> lis
             "winrate": round(l["vitorias"] / l["decididas"] * 100, 1),
             "stars": l["stars"] or 0,
             "star_pct": round((l["stars"] or 0) / l["decididas"] * 100, 1),
-            "trofeus": l["trofeus"],
+            # Postgres SUM() volta Decimal; normaliza p/ int (SQLite já é int).
+            "trofeus_ganhos": int(l["trofeus_ganhos"] or 0),
         })
     from app.indicadores.performance import wilson  # import local evita ciclo
     ranking.sort(key=lambda r: -wilson(r["vitorias"], r["jogos"]))
