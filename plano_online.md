@@ -104,7 +104,23 @@ que consertamos hoje some — a regra vira direta pela API).
 - **Limitação conhecida:** `app/importar_brawlify.py` (import manual do histórico
   Brawlify) ainda é SQLite-only — roda no PC local; portar pra PG fica p/ depois.
 
-### Fase 3 — Deploy na VM Oracle (público, 24/7) — ARTEFATOS PRONTOS (24/07/2026)
+### Fase 3 — Deploy público 24/7 ✅ FEITA (24/07/2026) — https://clasnake.duckdns.org
+- **No ar:** VM **Google Cloud e2-micro** (`us-central1`, IP `34.56.27.80`),
+  Ubuntu, FastAPI/uvicorn sob systemd (`Restart=always`, boot automático), HTTPS
+  automático via Caddy, domínio **`clasnake.duckdns.org`** (DuckDNS). Rastreador
+  por systemd timer 2h. `setup.sh` rodou com `AJUSTAR_IPTABLES=0`.
+- **Gotcha resolvido (importante):** o host **direto** do Supabase
+  (`db.<ref>.supabase.co`) só responde por **IPv6** no free; a VM GCP é só IPv4
+  → "Network is unreachable". Solução: `DATABASE_URL` usa o **Session pooler**
+  (`postgres.<ref>@aws-0-<região>.pooler.supabase.com:5432`), que é IPv4.
+- **Firewall:** GCP 80/443 abertos pelos checkboxes Allow HTTP/HTTPS na VM.
+- **Token:** key nova com IP `34.56.27.80` na allowlist (a antiga não deixava
+  editar IP). Segredos só em `/etc/apidobrawl.env` (600, fora do git).
+- **Pendências pós-deploy:** (1) trocar a senha do Postgres (foi exposta no chat);
+  (2) opcional: reservar o IP como estático + DuckDNS auto-update (Parte C do
+  `DEPLOY.md`). (3) rastreador ainda usa scraping brawlace — ver Fase 4.
+
+### Fase 3 (histórico) — artefatos de deploy
 - **Feito (código):** pacote de deploy em `deploy/` — `setup.sh` (provisiona
   Ubuntu: Python+venv, Caddy, clone do repo, units systemd, Caddyfile, iptables
   80/443, sobe tudo — idempotente), units web + rastreador (systemd timer 2h),

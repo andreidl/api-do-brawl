@@ -299,16 +299,26 @@ def conectar(caminho: Path | None = None):
 
 
 def _conectar_postgres(url: str) -> _ConexaoPG:
-    """Conexão Postgres com o schema criado (idempotente) — sem as migrações
-    legadas do SQLite (banco Postgres nasce já no schema atual, via import)."""
+    """Só abre a conexão — SEM DDL/migração. Rodar schema/UPDATE a cada conexão
+    pegaria lock e seria lento (é 1 conexão por request). O schema é garantido
+    UMA vez por `garantir_schema_pg` (no import e no startup do app)."""
     if psycopg is None:
         raise RuntimeError("DATABASE_URL definida mas psycopg não está instalado "
                            "(pip install 'psycopg[binary]')")
-    conexao = _ConexaoPG(psycopg.connect(url, row_factory=_dict_row))
-    conexao.executescript(_SCHEMA_PG)
-    conexao.commit()
-    _reclassificar_tipo_por_delta(conexao)  # SQL portável; roda nos dois backends
-    return conexao
+    return _ConexaoPG(psycopg.connect(url, row_factory=_dict_row))
+
+
+def garantir_schema_pg(conexao: _ConexaoPG) -> None:
+    """Cria o schema Postgres se ainda não existir + roda a reclassificação uma
+    única vez. Deve rodar só no import e no startup do app — NUNCA a cada conexão
+    (o DDL e o UPDATE pegam lock; sob concorrência causam timeout)."""
+    existe = conexao.execute(
+        "SELECT to_regclass('public.jogadores') AS t"
+    ).fetchone()["t"]
+    if existe is None:
+        conexao.executescript(_SCHEMA_PG)
+        conexao.commit()
+    _reclassificar_tipo_por_delta(conexao)  # SQL portável; no-op se nada a mudar
 
 
 def _colunas(conexao: sqlite3.Connection, tabela: str) -> list[str]:

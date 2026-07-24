@@ -58,7 +58,8 @@ def importar(forcar: bool = False) -> None:
 
     sq = sqlite3.connect(db.CAMINHO_BANCO)
     sq.row_factory = sqlite3.Row
-    pg = db.conectar()  # DATABASE_URL presente → Postgres (garante o schema)
+    pg = db.conectar()  # DATABASE_URL presente → Postgres
+    db.garantir_schema_pg(pg)  # cria as tabelas se ainda não existirem
 
     try:
         existentes = _total_no_postgres(pg, TABELAS)

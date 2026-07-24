@@ -12,6 +12,14 @@ LIMIAR_AMOSTRA_PEQUENA: int = 20
 _RE_RANKED_PTS = re.compile(r"\((\d[\d,]*)\)")
 
 
+def _int_col(serie: pd.Series) -> pd.Series:
+    """Coage a Series p/ int64. No pandas 3.0 uma coluna vinda de `agg` com lambda
+    (ou de um groupby que resultou VAZIO) pode sair com dtype object/str — e aí
+    `coluna / coluna` seguido de `.round()` estoura com 'Expected numeric dtype'.
+    Passar por aqui garante numérico antes de qualquer divisão."""
+    return pd.to_numeric(serie, errors="coerce").fillna(0).astype("int64")
+
+
 def calcular_indicadores(
     batalhas: list[dict],
     brawlers: list[dict],
@@ -98,6 +106,8 @@ def _agrupado(decididas: pd.DataFrame, coluna: str) -> list[dict]:
             (pd.to_numeric(s, errors="coerce").dropna())
         )
     grupos = grupos.reset_index()
+    grupos["partidas"] = _int_col(grupos["partidas"])
+    grupos["vitorias"] = _int_col(grupos["vitorias"])
     grupos["winrate"] = (grupos["vitorias"] / grupos["partidas"] * 100).round(1)
     grupos["uso_pct"] = (grupos["partidas"] / len(decididas) * 100).round(1)
     grupos = grupos.sort_values(["partidas", "winrate"], ascending=False)
@@ -121,6 +131,8 @@ def _melhor_brawler_por_modo(decididas: pd.DataFrame, minimo: int = 3) -> list[d
         jogos=("resultado", "size"),
         vitorias=("resultado", lambda r: int((r == "Victory").sum())),
     ).reset_index()
+    g["jogos"] = _int_col(g["jogos"])
+    g["vitorias"] = _int_col(g["vitorias"])
     g = g[g["jogos"] >= minimo]
     if g.empty:
         return []
@@ -151,6 +163,8 @@ def _cruz_brawler(decididas: pd.DataFrame, chave: str, minimo: int = 2) -> list[
     if tem_star:
         agg["stars"] = ("star_player", lambda s: int(pd.to_numeric(s, errors="coerce").fillna(0).sum()))
     g = df.groupby([chave, "brawler"]).agg(**agg).reset_index()
+    g["jogos"] = _int_col(g["jogos"])
+    g["vitorias"] = _int_col(g["vitorias"])
     g = g[g["jogos"] >= minimo]
     if g.empty:
         return []
@@ -262,6 +276,8 @@ def _brawler_detalhado(decididas: pd.DataFrame) -> list[dict]:
         ).reset_index()
         if gg.empty:
             return []
+        gg["jogos"] = _int_col(gg["jogos"])
+        gg["vit"] = _int_col(gg["vit"])
         gg["winrate"] = (gg["vit"] / gg["jogos"] * 100).round(1)
         gg = gg.sort_values(["jogos", "winrate"], ascending=False)
         return [{"nome": str(r[col]), "jogos": int(r["jogos"]),

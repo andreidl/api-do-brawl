@@ -38,6 +38,15 @@ def _loop_rastreio() -> None:
 
 @contextlib.asynccontextmanager
 async def _ciclo_de_vida(app: FastAPI):
+    # No modo Postgres, garante o schema UMA vez no boot (não a cada conexão).
+    if db._database_url():
+        con = db.conectar()
+        try:
+            db.garantir_schema_pg(con)
+        except db.ErrosBanco as erro:
+            print(f"[startup] aviso ao garantir schema Postgres: {erro}")
+        finally:
+            con.close()
     if os.environ.get("BRAWL_RASTREIO", "1") == "1":
         threading.Thread(target=_loop_rastreio, daemon=True).start()
     yield
