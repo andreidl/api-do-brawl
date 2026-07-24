@@ -2,5 +2,11 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-data/
 .pytest_cache/
+
+# data/ fica fora do git, EXCETO o banco (dados insubstituíveis — backup versionado).
+# cache/, logs e WAL/SHM continuam ignorados (transitórios).
+data/*
+!data/brawl.db
+data/brawl.db-wal
+data/brawl.db-shm
