@@ -312,6 +312,28 @@ td.ruim { color: var(--vermelho); font-weight: 700; }
 }
 .btn-copiar:hover { filter: brightness(1.08); }
 
+/* ---------- índice navegável (âncoras na mesma página) ---------- */
+.indice {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  background: var(--painel); border: 1px solid var(--painel-borda);
+  border-radius: var(--raio); padding: 0.8rem 0.9rem; margin: 1rem 0 1.4rem;
+}
+.indice-linha { display: flex; flex-wrap: wrap; gap: 0.4rem 0.5rem; align-items: center; }
+.indice-sub { padding-top: 0.5rem; border-top: 1px dashed var(--painel-borda); }
+.indice-titulo { font-weight: 700; color: var(--texto-suave); margin-right: 0.2rem; }
+.indice-titulo a { color: var(--texto-suave); text-decoration: underline; }
+.indice a {
+  font-size: 0.85rem; padding: 0.22rem 0.6rem; border-radius: 999px;
+  background: rgba(255, 206, 0, 0.10); color: var(--destaque);
+  text-decoration: none; border: 1px solid rgba(255, 206, 0, 0.22);
+}
+.indice-sub a { font-size: 0.8rem; background: rgba(59, 157, 255, 0.10);
+  color: var(--azul); border-color: rgba(59, 157, 255, 0.22); }
+.indice a:hover { filter: brightness(1.15); }
+h2[id], h3[id] { scroll-margin-top: 14px; }
+.tabela-modo-brawler { margin-bottom: 0.7rem; }
+.cab-modo { text-align: left; background: rgba(255, 206, 0, 0.08); color: var(--destaque); }
+
 /* ---------- barras de winrate (leitura de relance) ---------- */
 .wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
 .wr-barra {

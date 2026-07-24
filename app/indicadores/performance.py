@@ -34,6 +34,7 @@ def calcular_indicadores(
         "por_mapa": _agrupado(decididas, "mapa"),
         "por_brawler": _agrupado(decididas, "brawler"),
         "melhor_brawler_por_modo": _melhor_brawler_por_modo(decididas),
+        "modo_x_brawler": _modo_x_brawler(decididas),
         "queda_trofeus": _queda_trofeus(brawlers),
         "evolucao": _evolucao(snapshots),
         "evolucao_ranked": _evolucao_ranked(snapshots),
@@ -127,6 +128,42 @@ def _melhor_brawler_por_modo(decididas: pd.DataFrame, minimo: int = 3) -> list[d
          "jogos": int(r["jogos"]), "winrate": float(r["winrate"])}
         for _, r in melhores.iterrows()
     ]
+
+
+def _modo_x_brawler(decididas: pd.DataFrame, minimo: int = 2) -> list[dict]:
+    """Winrate de CADA brawler dentro de CADA modo (mín. `minimo` jogos).
+
+    Retorna [{modo, jogos_modo, brawlers: [{brawler, jogos, winrate, stars}]}],
+    modos mais jogados primeiro; dentro do modo, brawlers mais jogados primeiro."""
+    if decididas.empty or not {"modo", "brawler"} <= set(decididas.columns):
+        return []
+    df = decididas[decididas["brawler"].notna()]
+    if df.empty:
+        return []
+    tem_star = "star_player" in df.columns
+    agg = {"jogos": ("resultado", "size"),
+           "vitorias": ("resultado", lambda r: int((r == "Victory").sum()))}
+    if tem_star:
+        agg["stars"] = ("star_player", lambda s: int(pd.to_numeric(s, errors="coerce").fillna(0).sum()))
+    g = df.groupby(["modo", "brawler"]).agg(**agg).reset_index()
+    g = g[g["jogos"] >= minimo]
+    if g.empty:
+        return []
+    g["winrate"] = (g["vitorias"] / g["jogos"] * 100).round(1)
+    jogos_por_modo = g.groupby("modo")["jogos"].sum().to_dict()
+    grupos: list[dict] = []
+    for modo in sorted(jogos_por_modo, key=lambda m: -jogos_por_modo[m]):
+        linhas = g[g["modo"] == modo].sort_values(["jogos", "winrate"], ascending=False)
+        grupos.append({
+            "modo": modo,
+            "jogos_modo": int(jogos_por_modo[modo]),
+            "brawlers": [{
+                "brawler": r["brawler"], "jogos": int(r["jogos"]),
+                "winrate": float(r["winrate"]),
+                "stars": int(r["stars"]) if tem_star else 0,
+            } for _, r in linhas.iterrows()],
+        })
+    return grupos
 
 
 def _forma_recente(decididas: pd.DataFrame) -> dict | None:

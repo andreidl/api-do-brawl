@@ -22,36 +22,46 @@ def score_vs_meta(meta: dict, batalhas: list[dict]) -> dict | None:
     """Média ponderada (por partidas) do percentil de cada dupla modo+brawler
     que o jogador jogou. Retorna score 0–100 + detalhamento."""
     modos_meta: dict = meta.get("modos", {})
-    pesos: dict[tuple[str, str], int] = {}
+    pesos: dict[tuple[str, str], int] = {}                # (modo, brawler) → score
+    pesos_mapa: dict[tuple[str, str, str], int] = {}      # (modo, brawler, mapa) → detalhes
     for b in batalhas:
         modo, brawler = b.get("modo"), b.get("brawler")
         if not modo or not brawler or modo not in modos_meta:
             continue
         pesos[(modo, brawler)] = pesos.get((modo, brawler), 0) + 1
+        mapa = b.get("mapa") or "—"
+        pesos_mapa[(modo, brawler, mapa)] = pesos_mapa.get((modo, brawler, mapa), 0) + 1
     if not pesos:
         return None
 
-    detalhes: list[dict] = []
-    soma: float = 0.0
-    peso_total: int = 0
-    for (modo, brawler), partidas in pesos.items():
+    def _posicao_pct(modo: str, brawler: str) -> tuple[int | None, int, float]:
         ranking = modos_meta[modo]
         total = len(ranking)
         entrada = next((r for r in ranking if r["brawler"] == brawler), None)
         posicao = entrada["posicao"] if entrada else total  # fora do ranking = último
-        pct = _percentil(posicao, total)
+        return (posicao if entrada else None), total, _percentil(posicao, total)
+
+    # score: média ponderada por (modo, brawler) — inalterado pela quebra por mapa
+    soma: float = 0.0
+    peso_total: int = 0
+    for (modo, brawler), partidas in pesos.items():
+        _, _, pct = _posicao_pct(modo, brawler)
         soma += pct * partidas
         peso_total += partidas
+
+    # detalhes: uma linha por (modo, brawler, mapa) — mostra ONDE você jogou
+    detalhes: list[dict] = []
+    for (modo, brawler, mapa), partidas in pesos_mapa.items():
+        posicao, total, pct = _posicao_pct(modo, brawler)
         detalhes.append({
-            "modo": modo, "brawler": brawler, "partidas": partidas,
-            "posicao_meta": posicao if entrada else None,
-            "total_ranking": total,
+            "modo": modo, "mapa": mapa, "brawler": brawler, "partidas": partidas,
+            "posicao_meta": posicao, "total_ranking": total,
             "percentil": round(pct * 100, 1),
         })
     detalhes.sort(key=lambda d: d["partidas"], reverse=True)
     return {
         "score": round(soma / peso_total * 100, 1),
-        "detalhes": detalhes[:10],
+        "detalhes": detalhes[:15],
     }
 
 
