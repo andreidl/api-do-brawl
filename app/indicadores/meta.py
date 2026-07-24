@@ -251,7 +251,7 @@ def tendencias_meta(conexao) -> dict | None:
     Retorna None enquanto só houver 1 data coletada (precisa de histórico).
     """
     datas = [
-        linha[0] for linha in conexao.execute(
+        linha["data"] for linha in conexao.execute(
             "SELECT DISTINCT data FROM meta_snapshots ORDER BY data"
         ).fetchall()
     ]

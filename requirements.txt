@@ -6,4 +6,5 @@ lxml
 pandas
 jinja2
 python-multipart
+psycopg[binary]
 pytest

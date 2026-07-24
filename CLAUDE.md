@@ -1,7 +1,7 @@
 # API do Brawl — Guia de Contexto Completo para Claude
 
 > Leia este arquivo inteiro antes de qualquer modificação no projeto.
-> **Última atualização: 24/07/2026 — MIGRAÇÃO EM ANDAMENTO para público/online/grátis (API oficial + Oracle + Supabase). Fase 1 concluída.**
+> **Última atualização: 24/07/2026 — MIGRAÇÃO EM ANDAMENTO para público/online/grátis (API oficial + Oracle + Supabase). Fases 1-2 concluídas (coleta oficial + Postgres).**
 
 ## IMPORTANTE — PLANO DE TRABALHO
 
@@ -24,10 +24,20 @@ Objetivo: site **público** (qualquer visitante, qualquer tag, ao vivo), **onlin
   não tem meta. Se o IP da VM for bloqueado, o **PC do usuário** alimenta o meta no Postgres.
 - **Banco: Postgres grátis (Supabase)** — só o clã acumula; visitante vê ao vivo
   (25 batalhas) sem gravar. Dev local mantém SQLite (`DATABASE_URL` ausente = SQLite).
-- **Host: Oracle Always Free**, VM **AMD micro**, **IP fixo** (dispensa proxy
-  RoyaleAPI), **DuckDNS + Caddy** (HTTPS grátis), systemd 24/7.
-- **Fases**: (1) coleta oficial ✅ FEITA · (2) Postgres + import do brawl.db ·
-  (3) deploy na VM · (4) meta/picks. Detalhes e riscos em `plano_online.md`.
+- **Host: Google Cloud Always Free** (`e2-micro`, us-west1/central1/east1) —
+  trocado da Oracle em 24/07 (cadastro rejeitou). **IP fixo** (dispensa proxy
+  RoyaleAPI), **DuckDNS + Caddy** (HTTPS grátis), systemd 24/7. Oracle = apêndice.
+- **Fases**: (1) coleta oficial ✅ FEITA · (2) Postgres + import do brawl.db ✅ FEITA ·
+  (3) deploy na VM ⏳ artefatos prontos (`deploy/`), falta você criar a VM ·
+  (4) meta/picks. Detalhes e riscos em `plano_online.md`.
+
+**Fase 2 (feita):** `db.py` dual-backend — `conectar()` abre Postgres se
+`DATABASE_URL` estiver setada (e nenhum caminho passado), senão SQLite; passar
+caminho força SQLite (testes intactos). Wrapper `_ConexaoPG` traduz `?`→`%s`;
+SQL das funções virou portável (`ON CONFLICT`, `CASE` no lugar de `MAX(a,b)`,
+`HAVING` sem alias, colunas do `DO UPDATE` qualificadas). `db.ErrosBanco` cobre
+os dois backends nos `except`. Import: `python -m app.importar_para_postgres`
+(truncate-then-load idempotente). `importar_brawlify.py` segue SQLite-only (manual).
 
 **Fase 1 (feita):** `oficial.py` mapeia o JSON da API pro MESMO formato de dicts
 do brawlace → `db.py`/indicadores/templates funcionam sem mudança. Sem hash de
@@ -38,6 +48,24 @@ batalha na API → chave global sintética `sha1(battleTime + tags ordenadas)`.
 
 ## 0. CHANGELOG — SESSÃO 24/07/2026
 
+### Fase 2 — Postgres (dual-backend) + import
+- `db.py` portado para **dual-backend** (SQLite dev / Postgres produção). Wrapper
+  `_ConexaoPG`, tradução de placeholders, SQL portável, schema PG (`_SCHEMA_PG`).
+- `app/importar_para_postgres.py`: espelha `brawl.db` no Postgres (8.606 linhas).
+- `main.py`/`indicadores/meta.py`: `except db.ErrosBanco`, acesso a coluna nomeado,
+  `HAVING COUNT(*)` no lugar de alias. `requirements.txt`: `psycopg[binary]`.
+- Validado: 101 testes SQLite + leituras/escritas + home FastAPI contra Supabase.
+
+### Fase 3 — artefatos de deploy (pré-VM)
+- `deploy/`: `setup.sh` (provisiona Ubuntu idempotente), units systemd (web +
+  timer 2h do rastreador), `Caddyfile` gerado (HTTPS automático), `env.example`,
+  `DEPLOY.md` (runbook). `.gitattributes` força LF.
+- **Host: Google Cloud Always Free** (`e2-micro`) — trocado da Oracle (cadastro
+  rejeitou). `setup.sh` ganhou `AJUSTAR_IPTABLES=0` (GCP não bloqueia local);
+  firewall 80/443 nos checkboxes da VM. Oracle vira apêndice no `DEPLOY.md`.
+  Falta só você criar a VM.
+
+### FIXes anteriores da sessão
 - **FIX classificação RANKED × TROFÉUS**: a API da Supercell marca a ladder normal
   de troféus como `type="ranked"` (o brawlace mostra "RANKED - MODO"). O parser
   antes classificava tudo disso como Ranked competitivo. Agora usa o **delta de

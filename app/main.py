@@ -1,7 +1,6 @@
 """API do Brawl — app FastAPI. Rodar: uvicorn app.main:app --reload"""
 import contextlib
 import os
-import sqlite3
 import threading
 import time as time_mod
 from pathlib import Path
@@ -175,7 +174,7 @@ def _atualizar_clube(conexao, clube_tag: str | None) -> None:
         return
     try:
         db.salvar_clube(conexao, brawlace.coletar_clube(clube_tag))
-    except (brawlace.ErroColeta, brawlace.ErroParsing, sqlite3.OperationalError):
+    except (brawlace.ErroColeta, brawlace.ErroParsing, *db.ErrosBanco):
         pass
 
 
@@ -183,7 +182,7 @@ def _tendencias_meta_seguro() -> dict | None:
     conexao = db.conectar()
     try:
         return indicadores_meta.tendencias_meta(conexao)
-    except sqlite3.Error:
+    except db.ErrosBanco:
         return None  # nunca derrubar a página do jogador por causa das tendências
     finally:
         conexao.close()
@@ -209,7 +208,7 @@ def _correlacao_meta(perfil: dict, batalhas: list[dict],
             db.salvar_score_meta(conexao, perfil["tag"], correl["score"]["score"])
         # série de evolução do score (1 ponto/dia — acumula com o tempo)
         correl["evolucao_score"] = db.historico_score_meta(conexao, perfil["tag"])
-    except sqlite3.OperationalError:
+    except db.ErrosBanco:
         pass  # banco ocupado pelo rastreio — fica para a próxima
     finally:
         conexao.close()
@@ -424,7 +423,7 @@ def jogar_agora(request: Request, tag: str, time: str | None = None):
                           COUNT(*) AS jogos
                    FROM batalha_jogadores bj
                    WHERE bj.tag_jogador != ? AND bj.nick IS NOT NULL
-                   GROUP BY bj.tag_jogador HAVING jogos >= 3
+                   GROUP BY bj.tag_jogador HAVING COUNT(*) >= 3
                    ORDER BY jogos DESC""", (tag_norm,)
             )
         ]

@@ -1,0 +1,4 @@
+# Scripts de deploy rodam no Linux (VM Oracle) — forçar fim de linha LF mesmo
+# editando/clonando no Windows, senão o shebang e o systemd quebram.
+deploy/** text eol=lf
+*.sh text eol=lf

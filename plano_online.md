@@ -21,7 +21,7 @@ Decisões tomadas (24/07/2026) — TODAS fechadas:
 | Banco | **Postgres grátis (Supabase)** externo |
 | Dev local | **SQLite mantido** (`DATABASE_URL` ausente = SQLite; presente = Postgres) |
 | Backup do banco | **`pg_dump` periódico versionado** no repo |
-| Hospedagem | **Oracle Always Free**, VM **AMD micro** (E2.1.Micro), região **onde houver vaga** (tentar São Paulo) |
+| Hospedagem | **Google Cloud Always Free** (`e2-micro`, us-west1/central1/east1) — trocado da Oracle em 24/07 (cadastro rejeitou). Oracle vira alternativa. |
 | Deploy | usuário **dá acesso SSH**; eu configuro |
 | HTTPS/URL | **DuckDNS + Caddy** (subdomínio grátis + HTTPS automático) |
 | Proteção do endpoint público | **cache curto por tag + limite por IP** |
@@ -84,29 +84,44 @@ que consertamos hoje some — a regra vira direta pela API).
 - **Valida:** rodar local, comparar dados da API com o que o brawlace dava.
 - **Reversível:** brawlace continua no código; só adicionamos a fonte oficial.
 
-### Fase 2 — Persistência em Postgres
-- **Eu faço:** portar `app/db.py` de SQLite → Postgres (`psycopg`), SQL
-  parametrizado (`%s`), `INSERT ... ON CONFLICT`. Script de **importação única**
-  do `brawl.db` atual → Postgres (não perder o histórico já acumulado). Manter
-  o design de batalhas globais (hash único) e as tabelas novas
-  (`score_meta_historico`, `win_streak_max`).
-- **Você faz:** criar projeto no **Supabase** ou **Neon** (Postgres grátis),
-  me passar a `DATABASE_URL` via env (secret).
-- **Decisão em aberto:** dev local aponta pro mesmo Postgres da nuvem, OU
-  mantemos um modo SQLite local por retrocompatibilidade (`DATABASE_URL` ausente
-  = SQLite). Recomendo o 2º pra não depender de rede no dev.
-- **Valida:** app roda local contra o Postgres, dados batem com o import.
+### Fase 2 — Persistência em Postgres ✅ FEITA (24/07/2026)
+- **Feito:** `app/db.py` agora é **dual-backend**. `conectar()` abre Postgres
+  quando `DATABASE_URL` está setada e nenhum caminho é passado; senão SQLite
+  (passar caminho força SQLite → testes intactos). Wrapper `_ConexaoPG` imita a
+  fatia usada da API do sqlite3 e traduz `?`→`%s`. SQL das funções ficou portável
+  (`ON CONFLICT`, `CASE` no lugar de `MAX(a,b)`, sem alias em `HAVING`, colunas do
+  `DO UPDATE` qualificadas). `main.py`/`meta.py` ajustados (except `db.ErrosBanco`,
+  acesso a coluna nomeado). Schema PG com `GENERATED IDENTITY`, sem FKs reforçadas.
+- **Import:** `python -m app.importar_para_postgres [--forcar]` espelha o
+  `brawl.db` no Postgres (truncate-then-load idempotente; ids seriais regerados).
+  Import inicial: **8.606 linhas** (jogadores, snapshots, batalhas globais, meta,
+  histórico Brawlify, clube) preservadas.
+- **Decisão tomada:** dev local mantém **SQLite** (`DATABASE_URL` ausente) — não
+  depende de rede no dev; produção usa Postgres.
+- **Validado:** 101 testes SQLite verdes; leituras + escritas (`salvar_consulta`
+  idempotente, `salvar_score_meta` DO UPDATE) OK no Supabase; home FastAPI (`/`)
+  renderiza contra o Postgres.
+- **Limitação conhecida:** `app/importar_brawlify.py` (import manual do histórico
+  Brawlify) ainda é SQLite-only — roda no PC local; portar pra PG fica p/ depois.
 
-### Fase 3 — Deploy na VM Oracle (público, 24/7)
-- **Você faz:** criar conta **Oracle Cloud** (cartão só p/ verificação, sem
-  cobrança), subir uma VM **Always Free** (Ubuntu). Me dá acesso SSH ou segue
-  meu passo-a-passo. Registrar o **IP fixo da VM** no token da Supercell.
-  (Opcional: subdomínio grátis via **DuckDNS** pra ter HTTPS bonito.)
-- **Eu faço:** script de deploy — Python + repo + env (secrets) + **Caddy**
-  (HTTPS automático grátis) + **systemd** (app sempre no ar, reinício no boot)
-  + **systemd timer** pro rastreador. Config agnóstica pra você conseguir
-  refazer.
-- **Valida:** URL pública abre de qualquer lugar, sem hibernar.
+### Fase 3 — Deploy na VM Oracle (público, 24/7) — ARTEFATOS PRONTOS (24/07/2026)
+- **Feito (código):** pacote de deploy em `deploy/` — `setup.sh` (provisiona
+  Ubuntu: Python+venv, Caddy, clone do repo, units systemd, Caddyfile, iptables
+  80/443, sobe tudo — idempotente), units web + rastreador (systemd timer 2h),
+  `env.example` (`/etc/apidobrawl.env`), `DEPLOY.md` (runbook completo).
+  `.gitattributes` força LF nos scripts. Na VM o rastreador usa o **timer**
+  (`BRAWL_RASTREIO=0` desliga a thread embutida).
+- **Host trocado (24/07):** cadastro da Oracle rejeitou → **Google Cloud Always
+  Free** (`e2-micro`, us-west1/central1/east1). Grátis-para-sempre, 24/7, IP fixo,
+  SSH pelo navegador. Deploy reaproveitado 100% (`setup.sh` ganhou flag
+  `AJUSTAR_IPTABLES=0` p/ GCP; firewall 80/443 vai nos checkboxes da VM). Oracle
+  vira apêndice no `DEPLOY.md`.
+- **Falta (só você):** criar a VM `e2-micro` (Ubuntu, região do free tier),
+  marcar Allow HTTP/HTTPS, reservar IP estático, apontar o **DuckDNS** pro IP,
+  registrar o **IP da VM no token** da Supercell. Depois:
+  `DOMINIO=... AJUSTAR_IPTABLES=0 bash deploy/setup.sh` + preencher
+  `/etc/apidobrawl.env`. Passo-a-passo em `deploy/DEPLOY.md`.
+- **Valida:** `https://SEU.duckdns.org` abre qualquer tag, 24/7, sem hibernar.
 
 ### Fase 4 — Meta / picks (scraping à parte)
 - **Eu faço:** primeiro **testar** se brawlace/brawltime respondem do IP da VM.
