@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from app import db, rastrear
-from app.coleta import brawlace, brawltime, brawlytix
+from app.coleta import brawlace, brawltime, brawlytix, oficial
 from app.indicadores import meta as indicadores_meta
 from app.indicadores import performance
 
@@ -106,18 +106,13 @@ def buscar(tag: str = Form(...)):
     return RedirectResponse(f"/jogador/{tag_norm.lstrip('#')}", status_code=303)
 
 
-def _coletar_batalhas_por_modo(tag: str) -> list[dict]:
-    """Coleta turbo: battle log filtrado por modo (até 25 batalhas EXTRAS/modo).
-
-    Falha em um modo nunca derruba a consulta — só coleta menos.
-    """
-    extras: list[dict] = []
-    for modo in brawlace.MODOS_BATTLELOG:
-        try:
-            extras.extend(brawlace.coletar_battlelog_modo(tag, modo))
-        except (brawlace.ErroColeta, brawlace.ErroParsing):
-            continue
-    return extras
+def _seguro(fn):
+    """Executa `fn` e devolve None se der qualquer erro — para enriquecimentos
+    opcionais (brawltime/brawlytix) que nunca devem derrubar a página."""
+    try:
+        return fn()
+    except Exception:
+        return None
 
 
 def _filtrar_tipo(batalhas: list[dict], filtro: str | None) -> list[dict]:
@@ -130,19 +125,14 @@ def _filtrar_tipo(batalhas: list[dict], filtro: str | None) -> list[dict]:
 
 
 def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
-    """Coleta o perfil, grava no banco, calcula indicadores sobre o histórico."""
-    perfil: dict = brawlace.coletar_perfil(tag)
-    extras: list[dict] = _coletar_batalhas_por_modo(perfil["tag"])
+    """Coleta o perfil pela API OFICIAL (JSON rápido/estável), grava no banco e
+    calcula indicadores sobre o histórico acumulado. As 25 batalhas do battlelog
+    já vêm no perfil; o histórico extra vem do que o banco acumulou."""
+    perfil: dict = oficial.coletar_perfil(tag)
     conexao = db.conectar()
     try:
         gravacao: dict = db.salvar_consulta(conexao, perfil)
         _atualizar_clube(conexao, perfil.get("clube_tag"))
-        if extras:
-            gravacao["batalhas_novas"] += db.salvar_batalhas(
-                conexao, perfil["tag"], extras
-            )
-            conexao.commit()
-            gravacao["total_batalhas"] = db.contar_batalhas(conexao, perfil["tag"])
         historico: list[dict] = db.batalhas_do_jogador(conexao, perfil["tag"])
         snapshots: list[dict] = db.snapshots_do_jogador(conexao, perfil["tag"])
         diario: list[dict] = db.historico_diario_do_jogador(conexao, perfil["tag"])
@@ -157,8 +147,10 @@ def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
     indicadores: dict = performance.calcular_indicadores(
         historico, perfil["brawlers"], snapshots, diario
     )
-    extra: dict | None = brawltime.coletar_extra(perfil["tag"])
-    conta: dict | None = brawlytix.coletar_conta(perfil["tag"])
+    # Enriquecimentos por scraping (a API oficial não tem): best-effort — se o
+    # brawltime/brawlytix falhar ou for bloqueado na VM, a página não quebra.
+    extra: dict | None = _seguro(lambda: brawltime.coletar_extra(perfil["tag"]))
+    conta: dict | None = _seguro(lambda: brawlytix.coletar_conta(perfil["tag"]))
     correlacao: dict | None = _correlacao_meta(perfil, historico, brawlers_lp,
                                                brawlers_modo)
     tendencias: dict | None = _tendencias_meta_seguro()
@@ -182,8 +174,8 @@ def _atualizar_clube(conexao, clube_tag: str | None) -> None:
     if not clube_tag:
         return
     try:
-        db.salvar_clube(conexao, brawlace.coletar_clube(clube_tag))
-    except (brawlace.ErroColeta, brawlace.ErroParsing, *db.ErrosBanco):
+        db.salvar_clube(conexao, oficial.coletar_clube(clube_tag))
+    except (oficial.ErroColeta, oficial.TagInvalida, *db.ErrosBanco):
         pass
 
 
@@ -292,13 +284,13 @@ def pagina_jogador(request: Request, tag: str, atualizado: int = 0,
 
     try:
         dados: dict = _consultar(tag_norm, tipo)
-    except brawlace.TagInvalida as erro:
+    except (oficial.TagInvalida, brawlace.TagInvalida) as erro:
         return templates.TemplateResponse(
             request, "erro.html", {"mensagem": str(erro)}, status_code=404
         )
-    except brawlace.ErroColeta as erro:
+    except (oficial.ErroColeta, brawlace.ErroColeta) as erro:
         return templates.TemplateResponse(
-            request, "erro.html", {"mensagem": f"brawlace.com indisponível: {erro}"},
+            request, "erro.html", {"mensagem": f"Fonte de dados indisponível: {erro}"},
             status_code=502,
         )
     return templates.TemplateResponse(request, "jogador.html", dados)
@@ -309,9 +301,9 @@ def api_refrescar(tag: str):
     """Scraping + gravação em segundo plano (chamado pelo JS da página)."""
     try:
         dados: dict = _consultar(tag)
-    except brawlace.TagInvalida as erro:
+    except (oficial.TagInvalida, brawlace.TagInvalida) as erro:
         return JSONResponse({"erro": str(erro)}, status_code=404)
-    except brawlace.ErroColeta as erro:
+    except (oficial.ErroColeta, brawlace.ErroColeta) as erro:
         return JSONResponse({"erro": str(erro)}, status_code=502)
     return {"batalhas_novas": dados["gravacao"]["batalhas_novas"]}
 
@@ -335,9 +327,9 @@ def api_meta():
 def api_jogador(tag: str):
     try:
         dados: dict = _consultar(tag)
-    except brawlace.TagInvalida as erro:
+    except (oficial.TagInvalida, brawlace.TagInvalida) as erro:
         return JSONResponse({"erro": str(erro)}, status_code=404)
-    except brawlace.ErroColeta as erro:
+    except (oficial.ErroColeta, brawlace.ErroColeta) as erro:
         return JSONResponse({"erro": str(erro)}, status_code=502)
     return dados
 
