@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS snapshots (
   trofeus INTEGER, trofeus_max INTEGER, level INTEGER,
   vitorias_3v3 INTEGER, vitorias_solo INTEGER, vitorias_duo INTEGER,
   ranked_atual TEXT, ranked_max TEXT,
+  win_streak_max INTEGER,
   brawlers_json TEXT
 );
 -- UMA linha por batalha FÍSICA (o hash do brawlace é global: a mesma partida
@@ -108,6 +109,9 @@ def conectar(caminho: Path | None = None) -> sqlite3.Connection:
     if "ranked_atual" not in _colunas(conexao, "snapshots"):
         conexao.execute("ALTER TABLE snapshots ADD COLUMN ranked_atual TEXT")
         conexao.execute("ALTER TABLE snapshots ADD COLUMN ranked_max TEXT")
+        conexao.commit()
+    if "win_streak_max" not in _colunas(conexao, "snapshots"):
+        conexao.execute("ALTER TABLE snapshots ADD COLUMN win_streak_max INTEGER")
         conexao.commit()
     return conexao
 
@@ -271,13 +275,13 @@ def salvar_consulta(conexao: sqlite3.Connection, perfil: dict) -> dict:
     conexao.execute(
         """INSERT INTO snapshots (tag, criado_em, trofeus, trofeus_max, level,
                                   vitorias_3v3, vitorias_solo, vitorias_duo,
-                                  ranked_atual, ranked_max, brawlers_json)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                  ranked_atual, ranked_max, win_streak_max, brawlers_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             tag, agora,
             stats.get("trofeus"), stats.get("trofeus_max"), stats.get("level"),
             stats.get("vitorias_3v3"), stats.get("vitorias_solo"), stats.get("vitorias_duo"),
-            stats.get("ranked_atual"), stats.get("ranked_max"),
+            stats.get("ranked_atual"), stats.get("ranked_max"), stats.get("win_streak_max"),
             json.dumps(perfil["brawlers"], ensure_ascii=False),
         ),
     )
@@ -515,6 +519,7 @@ def perfil_do_banco(conexao: sqlite3.Connection, tag: str) -> dict | None:
             "vitorias_3v3": snapshot["vitorias_3v3"],
             "vitorias_solo": snapshot["vitorias_solo"],
             "vitorias_duo": snapshot["vitorias_duo"],
+            "win_streak_max": snapshot["win_streak_max"] if "win_streak_max" in snapshot.keys() else None,
         },
         "brawlers": json.loads(snapshot["brawlers_json"] or "[]"),
         "batalhas": batalhas_do_jogador(conexao, tag)[:25],

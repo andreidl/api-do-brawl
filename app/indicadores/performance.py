@@ -34,7 +34,12 @@ def calcular_indicadores(
         "por_mapa": _agrupado(decididas, "mapa"),
         "por_brawler": _agrupado(decididas, "brawler"),
         "melhor_brawler_por_modo": _melhor_brawler_por_modo(decididas),
-        "modo_x_brawler": _modo_x_brawler(decididas),
+        "modo_x_brawler": _cruz_brawler(decididas, "modo"),
+        "mapa_x_brawler": _cruz_brawler(decididas, "mapa"),
+        "brawler_detalhado": _brawler_detalhado(decididas),
+        "trofeus_por_brawler": _trofeus_por_brawler(decididas),
+        "por_periodo": _por_periodo(decididas),
+        "duracao_x_resultado": _duracao_x_resultado(decididas),
         "queda_trofeus": _queda_trofeus(brawlers),
         "evolucao": _evolucao(snapshots),
         "evolucao_ranked": _evolucao_ranked(snapshots),
@@ -130,14 +135,14 @@ def _melhor_brawler_por_modo(decididas: pd.DataFrame, minimo: int = 3) -> list[d
     ]
 
 
-def _modo_x_brawler(decididas: pd.DataFrame, minimo: int = 2) -> list[dict]:
-    """Winrate de CADA brawler dentro de CADA modo (mín. `minimo` jogos).
+def _cruz_brawler(decididas: pd.DataFrame, chave: str, minimo: int = 2) -> list[dict]:
+    """Winrate de CADA brawler dentro de CADA valor de `chave` (modo ou mapa).
 
-    Retorna [{modo, jogos_modo, brawlers: [{brawler, jogos, winrate, stars}]}],
-    modos mais jogados primeiro; dentro do modo, brawlers mais jogados primeiro."""
-    if decididas.empty or not {"modo", "brawler"} <= set(decididas.columns):
+    Retorna [{grupo, jogos, brawlers: [{brawler, jogos, winrate, stars}]}],
+    grupos mais jogados primeiro; dentro do grupo, brawlers mais jogados primeiro."""
+    if decididas.empty or not {chave, "brawler"} <= set(decididas.columns):
         return []
-    df = decididas[decididas["brawler"].notna()]
+    df = decididas[decididas["brawler"].notna() & decididas[chave].notna()]
     if df.empty:
         return []
     tem_star = "star_player" in df.columns
@@ -145,18 +150,18 @@ def _modo_x_brawler(decididas: pd.DataFrame, minimo: int = 2) -> list[dict]:
            "vitorias": ("resultado", lambda r: int((r == "Victory").sum()))}
     if tem_star:
         agg["stars"] = ("star_player", lambda s: int(pd.to_numeric(s, errors="coerce").fillna(0).sum()))
-    g = df.groupby(["modo", "brawler"]).agg(**agg).reset_index()
+    g = df.groupby([chave, "brawler"]).agg(**agg).reset_index()
     g = g[g["jogos"] >= minimo]
     if g.empty:
         return []
     g["winrate"] = (g["vitorias"] / g["jogos"] * 100).round(1)
-    jogos_por_modo = g.groupby("modo")["jogos"].sum().to_dict()
+    jogos_por_grupo = g.groupby(chave)["jogos"].sum().to_dict()
     grupos: list[dict] = []
-    for modo in sorted(jogos_por_modo, key=lambda m: -jogos_por_modo[m]):
-        linhas = g[g["modo"] == modo].sort_values(["jogos", "winrate"], ascending=False)
+    for val in sorted(jogos_por_grupo, key=lambda m: -jogos_por_grupo[m]):
+        linhas = g[g[chave] == val].sort_values(["jogos", "winrate"], ascending=False)
         grupos.append({
-            "modo": modo,
-            "jogos_modo": int(jogos_por_modo[modo]),
+            "grupo": val,
+            "jogos": int(jogos_por_grupo[val]),
             "brawlers": [{
                 "brawler": r["brawler"], "jogos": int(r["jogos"]),
                 "winrate": float(r["winrate"]),
@@ -164,6 +169,118 @@ def _modo_x_brawler(decididas: pd.DataFrame, minimo: int = 2) -> list[dict]:
             } for _, r in linhas.iterrows()],
         })
     return grupos
+
+
+def _trofeus_por_brawler(decididas: pd.DataFrame) -> list[dict]:
+    """Troféus LÍQUIDOS ganhos/perdidos com cada brawler (soma do trophyChange).
+
+    Só conta batalhas de troféu (com delta); ordena do mais lucrativo ao pior."""
+    if decididas.empty or not {"brawler", "trofeus_delta"}.issubset(decididas.columns):
+        return []
+    df = decididas.dropna(subset=["brawler", "trofeus_delta"])
+    df = df[pd.to_numeric(df["trofeus_delta"], errors="coerce").notna()]
+    if df.empty:
+        return []
+    df = df.assign(td=pd.to_numeric(df["trofeus_delta"], errors="coerce"))
+    g = df.groupby("brawler").agg(
+        jogos=("td", "size"), saldo=("td", "sum"),
+        ganho=("td", lambda s: int(s[s > 0].sum())),
+        perda=("td", lambda s: int(s[s < 0].sum())),
+    ).reset_index()
+    g = g.sort_values("saldo", ascending=False)
+    return [{"brawler": str(r["brawler"]), "jogos": int(r["jogos"]),
+             "saldo": int(r["saldo"]), "ganho": int(r["ganho"]),
+             "perda": int(r["perda"])} for _, r in g.iterrows()]
+
+
+def _por_periodo(decididas: pd.DataFrame) -> dict | None:
+    """Quando você joga melhor: winrate por dia da semana e por faixa de horário
+    (horário de Brasília, UTC-3)."""
+    if decididas.empty or "ocorrida_em" not in decididas.columns:
+        return None
+    d = decididas.dropna(subset=["ocorrida_em"]).copy()
+    dt = pd.to_datetime(d["ocorrida_em"], utc=True, errors="coerce") - pd.Timedelta(hours=3)
+    d = d[dt.notna()]
+    dt = dt.dropna()
+    if d.empty:
+        return None
+    d = d.assign(_h=dt.dt.hour.values, _dow=dt.dt.dayofweek.values)
+    d = d.assign(_vit=(d["resultado"] == "Victory").astype(int))
+
+    dias_nome = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"]
+    faixas = [("Madrugada (0-5h)", 0, 5), ("Manhã (6-11h)", 6, 11),
+              ("Tarde (12-17h)", 12, 17), ("Noite (18-23h)", 18, 23)]
+
+    def _linha(sub: pd.DataFrame, nome: str) -> dict | None:
+        if sub.empty:
+            return None
+        j = len(sub)
+        return {"nome": nome, "jogos": j,
+                "winrate": round(float(sub["_vit"].mean()) * 100, 1)}
+
+    por_dia = [x for i in range(7)
+               if (x := _linha(d[d["_dow"] == i], dias_nome[i]))]
+    por_faixa = [x for nome, a, b in faixas
+                 if (x := _linha(d[(d["_h"] >= a) & (d["_h"] <= b)], nome))]
+    return {"por_dia": por_dia, "por_faixa": por_faixa}
+
+
+def _duracao_x_resultado(decididas: pd.DataFrame) -> dict | None:
+    """Você ganha mais em partida curta ou longa? Duração média nas vitórias vs
+    derrotas (só 3v3/modos com duração; showdown fica fora)."""
+    if decididas.empty or "duracao_seg" not in decididas.columns:
+        return None
+    d = decididas.copy()
+    d = d.assign(_dur=pd.to_numeric(d["duracao_seg"], errors="coerce"))
+    d = d[d["_dur"].notna() & (d["_dur"] > 0)]
+    if d.empty:
+        return None
+    vit = d[d["resultado"] == "Victory"]["_dur"]
+    der = d[d["resultado"] == "Defeat"]["_dur"]
+    if vit.empty or der.empty:
+        return None
+    return {"vitoria_seg": int(vit.mean()), "derrota_seg": int(der.mean()),
+            "jogos": int(len(d))}
+
+
+def _brawler_detalhado(decididas: pd.DataFrame) -> list[dict]:
+    """Um bloco por brawler (para cards expansíveis): total + winrate por modo
+    e por mapa DAQUELE brawler. Mais jogados primeiro."""
+    if decididas.empty or "brawler" not in decididas.columns:
+        return []
+    df = decididas[decididas["brawler"].notna()]
+    if df.empty:
+        return []
+    total: int = len(decididas)
+    tem_star: bool = "star_player" in df.columns
+
+    def _sub(g: pd.DataFrame, col: str) -> list[dict]:
+        if col not in g.columns:
+            return []
+        gg = g.dropna(subset=[col]).groupby(col)["resultado"].agg(
+            jogos="size", vit=lambda r: int((r == "Victory").sum())
+        ).reset_index()
+        if gg.empty:
+            return []
+        gg["winrate"] = (gg["vit"] / gg["jogos"] * 100).round(1)
+        gg = gg.sort_values(["jogos", "winrate"], ascending=False)
+        return [{"nome": str(r[col]), "jogos": int(r["jogos"]),
+                 "winrate": float(r["winrate"])} for _, r in gg.iterrows()]
+
+    saida: list[dict] = []
+    for brawler, g in df.groupby("brawler"):
+        jogos: int = len(g)
+        vitorias: int = int((g["resultado"] == "Victory").sum())
+        stars: int = (int(pd.to_numeric(g["star_player"], errors="coerce").fillna(0).sum())
+                      if tem_star else 0)
+        saida.append({
+            "brawler": str(brawler), "jogos": jogos, "vitorias": vitorias,
+            "winrate": round(vitorias / jogos * 100, 1),
+            "uso_pct": round(jogos / total * 100, 1), "stars": stars,
+            "por_modo": _sub(g, "modo"), "por_mapa": _sub(g, "mapa"),
+        })
+    saida.sort(key=lambda x: -x["jogos"])
+    return saida
 
 
 def _forma_recente(decididas: pd.DataFrame) -> dict | None:
@@ -186,12 +303,21 @@ def _forma_recente(decididas: pd.DataFrame) -> dict | None:
             streak_n += 1
         else:
             break
+
+    def _saldo(sub: pd.DataFrame) -> int | None:
+        if "trofeus_delta" not in sub.columns:
+            return None
+        v = pd.to_numeric(sub["trofeus_delta"], errors="coerce").dropna()
+        return int(v.sum()) if not v.empty else None
+
     return {
         "ultimas_20_jogos": int(len(ult20)),
         "ultimas_20_wr": round(float((ult20["resultado"] == "Victory").mean()) * 100, 1),
+        "ultimas_20_saldo": _saldo(ult20),
         "dias7_jogos": int(len(ult7)),
         "dias7_wr": (round(float((ult7["resultado"] == "Victory").mean()) * 100, 1)
                      if len(ult7) else None),
+        "dias7_saldo": _saldo(ult7),
         "streak_tipo": tipo,
         "streak_n": streak_n,
     }
@@ -307,6 +433,25 @@ def social(jogadores: list[dict]) -> dict:
         # domina mais: maior winrate primeiro (Wilson das VITÓRIAS no topo)
         melhores_matchups = sorted(todos, key=lambda m: -wilson(m["vitorias"], m["jogos"]))
 
+    # rivais: contra quais JOGADORES (não brawlers) você mais se enfrenta — H2H
+    rivais: list[dict] = []
+    inimigos_j = df[(df["aliado"] == 0) & df["tag_jogador"].notna()]
+    if not inimigos_j.empty:
+        pb = inimigos_j.drop_duplicates(["hash", "tag_jogador"])
+        gr = pb.groupby("tag_jogador").agg(
+            jogos=("hash", "size"), vitorias=("vitoria", "sum"), nick=("nick", "last"))
+        gr = gr[gr["jogos"] >= 3]  # só rivais recorrentes
+        rivais = [{"tag": str(t), "nick": str(l["nick"]) if l["nick"] else str(t),
+                   "jogos": int(l["jogos"]), "vitorias": int(l["vitorias"]),
+                   "winrate": round(l["vitorias"] / l["jogos"] * 100, 1)}
+                  for t, l in gr.iterrows()]
+        rivais.sort(key=lambda r: -r["jogos"])
+        rivais = rivais[:12]
+
+    # seu brawler por batalha (para cruzar com parceiros)
+    meu_por_hash: dict = (df[df["eu"] == 1].drop_duplicates("hash")
+                          .set_index("hash")["brawler"].to_dict())
+
     aliados = df[(df["aliado"] == 1) & (df["eu"] == 0)]
     parceiros: list[dict] = []
     if not aliados.empty:
@@ -323,6 +468,17 @@ def social(jogadores: list[dict]) -> dict:
             wr_com: float = round(linha["vitorias"] / linha["jogos"] * 100, 1)
             wr_sem: float | None = (round(float(sem["vitoria"].mean()) * 100, 1)
                                     if len(sem) else None)
+            # seu melhor brawler ao lado desse parceiro (Wilson, mín. 2 jogos)
+            sub = batalhas_nivel[batalhas_nivel["hash"].isin(hashes_com)].copy()
+            sub["b"] = sub["hash"].map(meu_por_hash)
+            melhor_b: str | None = None
+            sb = sub.dropna(subset=["b"])
+            if not sb.empty:
+                gb = sb.groupby("b")["vitoria"].agg(j="size", v="sum")
+                gb = gb[gb["j"] >= 2]
+                if not gb.empty:
+                    melhor_b = max(gb.index, key=lambda b: wilson(int(gb.loc[b, "v"]), int(gb.loc[b, "j"])))
+                    melhor_b = f"{melhor_b} ({int(gb.loc[melhor_b, 'v'])}/{int(gb.loc[melhor_b, 'j'])})"
             parceiros.append({
                 "tag": str(tag_p),
                 "nick": str(linha["nick"]),
@@ -331,12 +487,14 @@ def social(jogadores: list[dict]) -> dict:
                 "winrate": wr_com,
                 "winrate_sem": wr_sem,
                 "lift": (round(wr_com - wr_sem, 1) if wr_sem is not None else None),
+                "melhor_brawler": melhor_b,
             })
         parceiros.sort(key=lambda p: -wilson(p["vitorias"], p["jogos"]))
 
     return {
         "matchups": matchups,
         "melhores_matchups": melhores_matchups,
+        "rivais": rivais,
         "parceiros": parceiros,
         "wr_geral": wr_geral,
         "batalhas_cobertas": int(df["hash"].nunique()),
@@ -353,6 +511,9 @@ def star_player(batalhas: list[dict]) -> dict | None:
         return None
     total: int = len(df)
     stars: int = int(df["star_player"].sum())
+    # star player mesmo perdendo — você carregou mas o time não acompanhou
+    stars_derrota: int = int(df[(df["star_player"] == 1) &
+                                (df["resultado"] == "Defeat")].shape[0])
 
     def _taxa(grupo_col: str) -> list[dict]:
         g = df.groupby(grupo_col).agg(jogos=("hash", "size"), stars=("star_player", "sum"))
@@ -368,6 +529,7 @@ def star_player(batalhas: list[dict]) -> dict | None:
     return {
         "total": total,
         "stars": stars,
+        "stars_derrota": stars_derrota,
         "taxa_geral": round(stars / total * 100, 1),
         "por_brawler": _taxa("brawler"),
         "por_modo": _taxa("modo"),

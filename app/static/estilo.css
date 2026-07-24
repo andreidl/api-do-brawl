@@ -334,6 +334,32 @@ h2[id], h3[id] { scroll-margin-top: 14px; }
 .tabela-modo-brawler { margin-bottom: 0.7rem; }
 .cab-modo { text-align: left; background: rgba(255, 206, 0, 0.08); color: var(--destaque); }
 
+/* ---------- cards de brawler expansíveis ---------- */
+.brawler-cards { display: flex; flex-direction: column; gap: 0.45rem; margin: 0.6rem 0 1.2rem; }
+.brawler-card {
+  background: var(--painel); border: 1px solid var(--painel-borda);
+  border-radius: 10px; overflow: hidden;
+}
+.brawler-card > summary {
+  display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;
+  padding: 0.6rem 0.85rem; cursor: pointer; list-style: none;
+}
+.brawler-card > summary::-webkit-details-marker { display: none; }
+.brawler-card > summary::before { content: "▸"; color: var(--texto-suave); transition: transform 0.15s; }
+.brawler-card[open] > summary::before { transform: rotate(90deg); }
+.brawler-card[open] > summary { border-bottom: 1px solid var(--painel-borda); }
+.bc-nome { font-weight: 700; min-width: 8rem; }
+.bc-uso { flex: 1; }
+.bc-wr { font-weight: 800; font-size: 1.05rem; }
+.bc-corpo { display: flex; flex-wrap: wrap; gap: 1.2rem; padding: 0.7rem 0.85rem; }
+.bc-bloco { flex: 1; min-width: 220px; }
+.bc-bloco table { margin-top: 0.3rem; }
+.bc-bloco td { padding: 0.25rem 0.4rem; }
+
+/* ---------- duas tabelas lado a lado ---------- */
+.lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }
+.lado-a-lado .meia { flex: 1; min-width: 260px; }
+
 /* ---------- barras de winrate (leitura de relance) ---------- */
 .wr-celula { display: inline-flex; align-items: center; gap: 0.5rem; min-width: 130px; }
 .wr-barra {
