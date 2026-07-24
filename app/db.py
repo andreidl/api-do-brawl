@@ -86,6 +86,11 @@ CREATE TABLE IF NOT EXISTS clube_membros (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_meta_snapshot
   ON meta_snapshots (data, modo, brawler);
+-- 1 ponto por dia: o score vs meta do jogador ao longo do tempo
+CREATE TABLE IF NOT EXISTS score_meta_historico (
+  tag TEXT, dia TEXT, score REAL,
+  PRIMARY KEY (tag, dia)
+);
 """
 
 
@@ -457,6 +462,25 @@ def salvar_meta(conexao: sqlite3.Connection, meta: dict) -> int:
             novas += cursor.rowcount
     conexao.commit()
     return novas
+
+
+def salvar_score_meta(conexao: sqlite3.Connection, tag: str, score: float | None) -> None:
+    """Grava o score vs meta do dia (1 ponto/dia; o último do dia prevalece)."""
+    if score is None:
+        return
+    conexao.execute(
+        "INSERT OR REPLACE INTO score_meta_historico (tag, dia, score) VALUES (?, ?, ?)",
+        (tag, _agora()[:10], round(float(score), 1)),
+    )
+    conexao.commit()
+
+
+def historico_score_meta(conexao: sqlite3.Connection, tag: str) -> list[dict]:
+    """Série diária do score vs meta do jogador (para o gráfico de evolução)."""
+    linhas = conexao.execute(
+        "SELECT dia, score FROM score_meta_historico WHERE tag = ? ORDER BY dia", (tag,)
+    ).fetchall()
+    return [{"dia": l["dia"], "score": l["score"]} for l in linhas]
 
 
 def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> list[dict]:

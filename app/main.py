@@ -198,17 +198,22 @@ def _correlacao_meta(perfil: dict, batalhas: list[dict],
         eventos: list[dict] = brawlace.coletar_eventos()
     except (brawlace.ErroColeta, brawlace.ErroParsing):
         return None
-    conexao = db.conectar()
-    try:
-        db.salvar_meta(conexao, dados_meta)
-    except sqlite3.OperationalError:
-        pass  # banco ocupado pelo rastreio — snapshot do meta fica p/ próxima
-    finally:
-        conexao.close()
-    return indicadores_meta.calcular_meta_jogador(
+    correl: dict = indicadores_meta.calcular_meta_jogador(
         dados_meta, eventos, batalhas, perfil["brawlers"], historico_lp,
         historico_modo,
     )
+    conexao = db.conectar()
+    try:
+        db.salvar_meta(conexao, dados_meta)
+        if correl.get("score"):
+            db.salvar_score_meta(conexao, perfil["tag"], correl["score"]["score"])
+        # série de evolução do score (1 ponto/dia — acumula com o tempo)
+        correl["evolucao_score"] = db.historico_score_meta(conexao, perfil["tag"])
+    except sqlite3.OperationalError:
+        pass  # banco ocupado pelo rastreio — fica para a próxima
+    finally:
+        conexao.close()
+    return correl
 
 
 def _consultar_do_banco(tag_norm: str, filtro_tipo: str | None = None) -> dict | None:

@@ -461,6 +461,21 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 <section class="cartoes">
   <div class="cartao"><b>{{ correlacao.score.score }}/100</b><span>Score vs meta</span></div>
 </section>
+{% if correlacao.evolucao_score and correlacao.evolucao_score | length >= 2 %}
+{% set sc = correlacao.evolucao_score %}
+{% set smin = sc | map(attribute="score") | min %}
+{% set smax = sc | map(attribute="score") | max %}
+{% set sfaixa = (smax - smin) if smax > smin else 1 %}
+<svg viewBox="0 0 600 160" class="grafico" preserveAspectRatio="none">
+  <polyline fill="none" stroke="#9b6dff" stroke-width="2" points="
+    {%- for p in sc %}
+    {{ (loop.index0 / (sc | length - 1) * 580 + 10) | round(1) }},{{ (140 - (p.score - smin) / sfaixa * 120) | round(1) }}
+    {%- endfor %}" />
+</svg>
+<p class="nota">Evolução do seu score vs meta: {{ sc[0].dia }} ({{ sc[0].score }}) → {{ sc[-1].dia }} ({{ sc[-1].score }})</p>
+{% elif correlacao.evolucao_score %}
+<p class="nota">📈 A curva de evolução do seu score vs meta aparece a partir do 2º dia — começou a acumular agora.</p>
+{% endif %}
 <p class="nota">Quanto maior, mais os brawlers que você joga estão fortes no meta
   dos modos em que você os joga.</p>
 <table>
