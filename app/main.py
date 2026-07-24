@@ -59,6 +59,8 @@ templates = Jinja2Templates(directory=DIR_APP / "templates")
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, erro: str | None = None):
+    """Landing enxuta: busca de tag + atalhos (clã, brawlers/meta) + status.
+    As estatísticas do clã ficam em /cla; as do meta em /brawler."""
     conexao = db.conectar()
     try:
         recentes = conexao.execute(
@@ -68,30 +70,82 @@ def home(request: Request, erro: str | None = None):
             "Tag inválida — use o formato #299PGGLQL (letras e números após o #)."
             if erro == "tag" else None
         )
-        todos = db.ranking_jogadores(conexao)
         clube: dict | None = db.clube_principal(conexao)
-        if clube:
-            ranking = [r for r in todos if r["tag"] in clube["membros"]]
-            fora_do_clube = [r for r in todos if r["tag"] not in clube["membros"]]
-        else:
-            ranking, fora_do_clube = todos, []
-        comp_clube = performance.composicoes_clube(
-            db.times_das_batalhas(conexao),
-            clube["membros"] if clube else None,
-        )
         return templates.TemplateResponse(
             request,
             "home.html",
             {
                 "recentes": [dict(r) for r in recentes],
                 "mensagem_erro": mensagem_erro,
-                "ranking": ranking,
                 "clube": clube,
-                "fora_do_clube": fora_do_clube,
-                "composicoes": comp_clube,
+                "tem_meta": db.data_meta_recente(conexao) is not None,
                 "pendencias_externas": db.tags_sem_historico_externo(conexao),
                 "rastreio_status": rastrear.ultima_rodada(),
             },
+        )
+    finally:
+        conexao.close()
+
+
+def _dados_cla(conexao) -> dict:
+    """Ranking dos membros + composições + conhecidos de fora — usado em /cla."""
+    todos = db.ranking_jogadores(conexao)
+    clube: dict | None = db.clube_principal(conexao)
+    if clube:
+        ranking = [r for r in todos if r["tag"] in clube["membros"]]
+        fora_do_clube = [r for r in todos if r["tag"] not in clube["membros"]]
+    else:
+        ranking, fora_do_clube = todos, []
+    comp_clube = performance.composicoes_clube(
+        db.times_das_batalhas(conexao),
+        clube["membros"] if clube else None,
+    )
+    return {
+        "ranking": ranking, "clube": clube,
+        "fora_do_clube": fora_do_clube, "composicoes": comp_clube,
+    }
+
+
+@app.get("/cla", response_class=HTMLResponse)
+def pagina_cla(request: Request):
+    conexao = db.conectar()
+    try:
+        return templates.TemplateResponse(request, "cla.html", _dados_cla(conexao))
+    finally:
+        conexao.close()
+
+
+@app.get("/brawler", response_class=HTMLResponse)
+def pagina_brawlers(request: Request):
+    """Índice do meta: todos os brawlers, mais fortes primeiro."""
+    conexao = db.conectar()
+    try:
+        return templates.TemplateResponse(
+            request, "brawlers.html",
+            {"brawlers": db.brawlers_no_meta(conexao),
+             "data_meta": db.data_meta_recente(conexao)},
+        )
+    finally:
+        conexao.close()
+
+
+@app.get("/brawler/{nome}", response_class=HTMLResponse)
+def pagina_brawler(request: Request, nome: str):
+    """Stats globais (meta) de um brawler: posição + % star player por modo."""
+    brawler = nome.upper()  # nome vem URL-decoded; no meta os nomes são MAIÚSCULOS
+    conexao = db.conectar()
+    try:
+        modos = db.meta_do_brawler(conexao, brawler)
+        if not modos:
+            return templates.TemplateResponse(
+                request, "erro.html",
+                {"mensagem": f"Sem dados de meta para '{brawler}'."},
+                status_code=404,
+            )
+        return templates.TemplateResponse(
+            request, "brawler.html",
+            {"brawler": brawler, "modos": modos,
+             "data_meta": db.data_meta_recente(conexao)},
         )
     finally:
         conexao.close()

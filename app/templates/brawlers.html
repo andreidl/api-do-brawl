@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}Meta dos brawlers — API do Brawl{% endblock %}
+{% block conteudo %}
+<h1>📊 Meta dos brawlers</h1>
+{% if data_meta %}<p class="nota">Meta mais recente: <code>{{ data_meta }}</code> · {{ brawlers | length }} brawlers · ordenados pela melhor posição entre os modos.</p>{% endif %}
+
+{% if brawlers %}
+<table>
+  <thead><tr><th>#</th><th>Brawler</th><th>Melhor posição</th><th>Modos no meta</th></tr></thead>
+  <tbody>
+    {% for b in brawlers %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td><a href="/brawler/{{ b.brawler | urlencode }}">{{ b.brawler }}</a></td>
+      <td>{{ b.melhor_pos }}º</td>
+      <td>{{ b.modos }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="nota">Meta ainda não coletado. O rastreador preenche a cada rodada.</p>
+{% endif %}
+{% endblock %}

@@ -13,3 +13,6 @@ data/*
 !data/brawl.db
 data/brawl.db-wal
 data/brawl.db-shm
+
+# dev local (config de maquina)
+.claude/launch.json

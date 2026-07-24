@@ -687,6 +687,43 @@ def historico_score_meta(conexao: sqlite3.Connection, tag: str) -> list[dict]:
     return [{"dia": l["dia"], "score": l["score"]} for l in linhas]
 
 
+def data_meta_recente(conexao: sqlite3.Connection) -> str | None:
+    """Data (timestamp texto) do snapshot de meta mais recente, ou None se vazio."""
+    linha = conexao.execute("SELECT MAX(data) AS d FROM meta_snapshots").fetchone()
+    return linha["d"] if linha else None
+
+
+def brawlers_no_meta(conexao: sqlite3.Connection) -> list[dict]:
+    """Todos os brawlers do meta (data mais recente), com a MELHOR posição entre
+    os modos e em quantos modos aparecem — para o índice `/brawler`. A→Z? Não:
+    ordena pela melhor posição (mais fortes primeiro)."""
+    linhas = conexao.execute(
+        """SELECT brawler,
+                  MIN(posicao) AS melhor_pos,
+                  COUNT(*) AS modos
+           FROM meta_snapshots
+           WHERE data = (SELECT MAX(data) FROM meta_snapshots)
+           GROUP BY brawler
+           ORDER BY MIN(posicao)""",
+    ).fetchall()
+    return [{"brawler": l["brawler"], "melhor_pos": l["melhor_pos"],
+             "modos": l["modos"]} for l in linhas]
+
+
+def meta_do_brawler(conexao: sqlite3.Connection, brawler: str) -> list[dict]:
+    """Posição + % de star player do brawler em cada modo, na data mais recente
+    do meta. Melhores modos (menor posição) primeiro. Lista vazia se não achar."""
+    linhas = conexao.execute(
+        """SELECT modo, star_player_pct, posicao
+           FROM meta_snapshots
+           WHERE brawler = ? AND data = (SELECT MAX(data) FROM meta_snapshots)
+           ORDER BY posicao""",
+        (brawler,),
+    ).fetchall()
+    return [{"modo": l["modo"], "star_player_pct": l["star_player_pct"],
+             "posicao": l["posicao"]} for l in linhas]
+
+
 def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> list[dict]:
     """Ranking de todos os jogadores conhecidos no banco (consultados ou não):
     batalhas decididas, winrate, taxa de star player e troféus GANHOS (soma dos

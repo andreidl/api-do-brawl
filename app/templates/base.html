@@ -7,7 +7,13 @@
   <link rel="stylesheet" href="/static/estilo.css">
 </head>
 <body>
-  <header><a href="/">⭐ API do Brawl</a></header>
+  <header>
+    <a href="/" class="marca">⭐ API do Brawl</a>
+    <nav class="menu">
+      <a href="/cla">🐍 Clã</a>
+      <a href="/brawler">📊 Meta</a>
+    </nav>
+  </header>
   <main>{% block conteudo %}{% endblock %}</main>
 </body>
 </html>

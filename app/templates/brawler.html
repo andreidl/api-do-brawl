@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titulo %}{{ brawler }} (meta) — API do Brawl{% endblock %}
+{% block conteudo %}
+<p class="nota"><a href="/brawler">← Todos os brawlers</a></p>
+<h1>📊 {{ brawler }}</h1>
+{% if data_meta %}<p class="nota">Posição no meta e taxa de star player por modo — meta de <code>{{ data_meta }}</code>.
+  Posição menor = mais forte no modo.</p>{% endif %}
+
+<table>
+  <thead><tr><th>Modo</th><th>Posição</th><th>Star player</th></tr></thead>
+  <tbody>
+    {% for m in modos %}
+    <tr>
+      <td>{{ m.modo }}</td>
+      <td class="{{ 'bom' if m.posicao <= 10 else ('ruim' if m.posicao > 30 else '') }}">{{ m.posicao }}º</td>
+      <td>{{ "%.2f"|format(m.star_player_pct) }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

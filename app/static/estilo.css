@@ -42,6 +42,11 @@ header {
   position: sticky;
   top: 0;
   z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
   background: rgba(18, 20, 31, 0.85);
   backdrop-filter: blur(8px);
   padding: 0.85rem 1.4rem;
@@ -57,6 +62,24 @@ header a {
   text-transform: uppercase;
 }
 header a:hover { color: #ffe15c; }
+header .menu { display: flex; gap: 1rem; }
+header .menu a { font-size: 0.9rem; color: var(--texto); }
+header .menu a:hover { color: var(--destaque); }
+
+/* ---------- cartões de atalho (home) ---------- */
+.atalhos { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.4rem 0; }
+.cartao-atalho {
+  flex: 1; min-width: 220px;
+  display: flex; flex-direction: column; gap: 0.3rem;
+  padding: 1rem 1.1rem;
+  background: var(--painel, #1b1e2b);
+  border: 1px solid #2a2e40; border-radius: 12px;
+  text-decoration: none; transition: border-color .15s, transform .15s;
+}
+.cartao-atalho:hover { border-color: var(--destaque); transform: translateY(-2px); }
+.cartao-atalho b { color: var(--destaque); font-size: 1.1rem; }
+.cartao-atalho span { color: var(--texto-suave); font-size: 0.9rem; }
+.cartao-atalho.desativado { opacity: 0.55; pointer-events: none; }
 
 main { max-width: 980px; margin: 0 auto; padding: 1.4rem 1.2rem 4rem; }
 
