@@ -442,6 +442,7 @@ td.comp-melhor { background: rgba(61, 220, 132, 0.14); color: var(--verde); }
 .caixa-dicas h3 { margin: 0 0 0.6rem; }
 .caixa-dicas ul { margin: 0; padding-left: 1.2rem; }
 .caixa-dicas li { margin: 0.35rem 0; }
+.abas-meta { flex-wrap: wrap; margin-bottom: 1rem; }
 @media (max-width: 640px) { .form-comparar input { min-width: 0; } }
 
 /* ---------- accordion de seções (página do jogador) ---------- */

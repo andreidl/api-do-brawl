@@ -146,18 +146,35 @@ def pagina_cla(request: Request):
 
 
 @app.get("/brawler", response_class=HTMLResponse)
-def pagina_brawlers(request: Request):
-    """Índice do meta: todos os brawlers como cards expansíveis (accordion) —
-    clicar abre o detalhe por modo na própria página, sem trocar de rota."""
+def pagina_brawlers(request: Request, modo: str | None = None):
+    """Índice do meta (accordion). Botões: Geral (força média) + eventos ativos.
+    Ao escolher um modo, reordena os brawlers pela posição NAQUELE modo."""
     conexao = db.conectar()
     try:
         dados = db.meta_todos_detalhado(conexao)
-        return templates.TemplateResponse(
-            request, "brawlers.html",
-            {"brawlers": dados["brawlers"], "data_meta": dados["data"]},
-        )
     finally:
         conexao.close()
+    brawlers = dados["brawlers"]
+    modos_meta = {m["modo"] for b in brawlers for m in b["modos"]}
+    # modos dos eventos ativos que também existem no meta (best-effort)
+    eventos = _seguro(lambda: oficial.coletar_eventos()) or []
+    modos_ativos: list[str] = []
+    for ev in eventos:
+        m = (ev.get("modo") or "").upper()
+        if m in modos_meta and m not in modos_ativos:
+            modos_ativos.append(m)
+    modo_sel = modo.upper() if modo else None
+    if modo_sel and modo_sel in modos_meta:
+        def _pos(b: dict):
+            return next((m["posicao"] for m in b["modos"] if m["modo"] == modo_sel), None)
+        brawlers = sorted((dict(b, pos_sel=_pos(b)) for b in brawlers if _pos(b) is not None),
+                          key=lambda b: b["pos_sel"])
+    else:
+        modo_sel = None
+    return templates.TemplateResponse(request, "brawlers.html", {
+        "brawlers": brawlers, "data_meta": dados["data"],
+        "modos_ativos": modos_ativos, "modo_sel": modo_sel,
+    })
 
 
 @app.get("/brawler/{nome}", response_class=HTMLResponse)

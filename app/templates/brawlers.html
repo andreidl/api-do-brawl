@@ -3,16 +3,28 @@
 {% block titulo %}Meta dos brawlers — API do Brawl{% endblock %}
 {% block conteudo %}
 <h1>📊 Meta dos brawlers</h1>
-{% if data_meta %}<p class="nota">Meta mais recente: <code>{{ data_meta }}</code> · {{ brawlers | length }} brawlers · ordenados pela <b>força geral</b> (posição média entre os modos — quem é bom em vários modos fica no topo). <b>Clique</b> num brawler para ver os modos onde ele é forte/fraco.</p>{% endif %}
+
+{% if modos_ativos %}
+<div class="abas abas-meta">
+  <a href="/brawler" class="{{ 'ativa' if not modo_sel }}">🌐 Geral</a>
+  {% for m in modos_ativos %}
+  <a href="/brawler?modo={{ m | urlencode }}" class="{{ 'ativa' if modo_sel == m }}">{{ m }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if data_meta %}<p class="nota">Meta mais recente: <code>{{ data_meta }}</code> · {{ brawlers | length }} brawlers ·
+  {% if modo_sel %}ordenados pela posição em <b>{{ modo_sel }}</b> (melhores no modo primeiro).{% else %}ordenados pela <b>força geral</b> (posição média entre os modos).{% endif %}
+  <b>Clique</b> num brawler para ver todos os modos.</p>{% endif %}
 
 {% if brawlers %}
 <div class="lista-brawlers">
   {% for b in brawlers %}
   <details class="brawler-card">
     <summary>
-      <span class="bc-pos">{{ loop.index }}º</span>
+      <span class="bc-pos">{% if modo_sel %}{{ b.pos_sel }}º{% else %}{{ loop.index }}º{% endif %}</span>
       <span class="bc-nome">{{ brawler_ico(b.brawler) }}</span>
-      <span class="bc-media nota">média {{ b.pos_media }}º · melhor {{ b.melhor_pos }}º</span>
+      <span class="bc-media nota">{% if modo_sel %}{{ modo_sel }}: {{ b.pos_sel }}º · {% endif %}média {{ b.pos_media }}º · melhor {{ b.melhor_pos }}º</span>
       <span class="bc-resumo">
         {%- if b.fortes %}<span class="chip-forte">🟢 {{ b.fortes | length }} forte{{ 's' if b.fortes|length > 1 }}</span>{% endif -%}
         {%- if b.fracos %}<span class="chip-fraco">🔴 {{ b.fracos | length }} fraco{{ 's' if b.fracos|length > 1 }}</span>{% endif -%}
