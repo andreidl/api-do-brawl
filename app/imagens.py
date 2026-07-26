@@ -12,6 +12,7 @@ CDN = "https://cdn.brawlify.com"
 _mapa_brawler: dict | None = None   # {NOME_NORMALIZADO: id}
 _mapa_sp: dict | None = None        # {NOME_NORMALIZADO: id} star powers
 _mapa_gadget: dict | None = None    # {NOME_NORMALIZADO: id} gadgets
+_totais: dict | None = None         # totais disponíveis no jogo (denominadores)
 
 
 def _norm(nome: str) -> str:
@@ -19,23 +20,36 @@ def _norm(nome: str) -> str:
 
 
 def _carregar() -> None:
-    global _mapa_brawler, _mapa_sp, _mapa_gadget
+    global _mapa_brawler, _mapa_sp, _mapa_gadget, _totais
     if _mapa_brawler is not None:
         return
     b_map, sp_map, g_map = {}, {}, {}
+    tot = {"brawlers": 0, "star_powers": 0, "gadgets": 0}
     try:
         for b in oficial.coletar_brawlers():
             if b.get("id") and b.get("name"):
                 b_map[_norm(b["name"])] = b["id"]
-            for s in b.get("star_powers", []):
+                tot["brawlers"] += 1
+            sps = b.get("star_powers", [])
+            tot["star_powers"] += len(sps)
+            for s in sps:
                 if s.get("id") and s.get("name"):
                     sp_map[_norm(s["name"])] = s["id"]
-            for g in b.get("gadgets", []):
+            gds = b.get("gadgets", [])
+            tot["gadgets"] += len(gds)
+            for g in gds:
                 if g.get("id") and g.get("name"):
                     g_map[_norm(g["name"])] = g["id"]
     except Exception:
         pass  # API fora / sem token → mapas vazios (templates mostram só o nome)
-    _mapa_brawler, _mapa_sp, _mapa_gadget = b_map, sp_map, g_map
+    _mapa_brawler, _mapa_sp, _mapa_gadget, _totais = b_map, sp_map, g_map, tot
+
+
+def totais_colecao() -> dict:
+    """Totais disponíveis no jogo (da API oficial) p/ os denominadores da
+    comparação: {brawlers, star_powers, gadgets}. 0 se o mapa não carregou."""
+    _carregar()
+    return dict(_totais or {"brawlers": 0, "star_powers": 0, "gadgets": 0})
 
 
 def img_brawler(nome: str) -> str:

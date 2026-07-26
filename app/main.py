@@ -207,6 +207,7 @@ def pagina_comparar(request: Request, a: str | None = None, b: str | None = None
     return templates.TemplateResponse(request, "comparar.html", {
         "a": dados["a"], "b": dados["b"], "tag_a": a or "", "tag_b": b or "",
         "erro_a": erros["a"], "erro_b": erros["b"],
+        "totais": imagens.totais_colecao(),
     })
 
 

@@ -10,6 +10,14 @@
 </tr>
 {%- endmacro %}
 
+{% macro linha_de(rotulo, va, vb, total) -%}
+<tr>
+  <th>{{ rotulo }}</th>
+  <td class="{{ 'comp-melhor' if va is not none and vb is not none and va > vb }}">{{ va or 0 }}{% if total %} <span class="nota">/ {{ total }}</span>{% endif %}</td>
+  <td class="{{ 'comp-melhor' if va is not none and vb is not none and vb > va }}">{{ vb or 0 }}{% if total %} <span class="nota">/ {{ total }}</span>{% endif %}</td>
+</tr>
+{%- endmacro %}
+
 {% block conteudo %}
 <h1>⚖️ Comparar jogadores</h1>
 <form method="get" action="/comparar" class="form-comparar">
@@ -36,10 +44,10 @@
     {{ linha('⭐ Star player (capturado)', a.star_pct, b.star_pct, '%') }}
     {{ linha('Batalhas capturadas', a.batalhas, b.batalhas) }}
     <tr class="comp-sub"><th colspan="3">Coleção</th></tr>
-    {{ linha('🎯 Brawlers liberados', a.brawlers_liberados, b.brawlers_liberados) }}
-    {{ linha('🔥 Brawlers no poder 11', a.power11, b.power11) }}
-    {{ linha('⭐ Poderes estrela', a.star_powers, b.star_powers) }}
-    {{ linha('🛠️ Gadgets', a.gadgets, b.gadgets) }}
+    {{ linha_de('🎯 Brawlers liberados', a.brawlers_liberados, b.brawlers_liberados, totais.brawlers) }}
+    {{ linha_de('🔥 Brawlers no poder 11', a.power11, b.power11, totais.brawlers) }}
+    {{ linha_de('⭐ Poderes estrela', a.star_powers, b.star_powers, totais.star_powers) }}
+    {{ linha_de('🛠️ Gadgets', a.gadgets, b.gadgets, totais.gadgets) }}
     {{ linha('⚙️ Gears', a.gears, b.gears) }}
     {{ linha('⚡ Hypercharges', a.hypercharges, b.hypercharges) }}
   </tbody>
