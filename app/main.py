@@ -182,9 +182,46 @@ def pagina_brawler(request: Request, nome: str):
         conexao.close()
 
 
+def _marco_n(resumo: dict, minimo: int) -> int:
+    for m in resumo.get("marcos_trofeus", []):
+        if m["min"] == minimo:
+            return m["n"]
+    return 0
+
+
+def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
+    """Dicas concretas para o jogador mais fraco, a partir dos gaps vs o mais forte."""
+    s: list[str] = []
+    def g(campo: str) -> int:
+        return (forte.get(campo) or 0) - (fraco.get(campo) or 0)
+    if g("brawlers_liberados") > 0:
+        s.append(f"Desbloqueie mais {g('brawlers_liberados')} brawler(s).")
+    if g("power11") > 0:
+        s.append(f"Suba {g('power11')} brawler(s) ao poder 11.")
+    if g("star_powers") > 0:
+        s.append(f"Desbloqueie mais {g('star_powers')} poder(es) estrela.")
+    if g("gadgets") > 0:
+        s.append(f"Desbloqueie mais {g('gadgets')} gadget(s).")
+    if g("hypercharges") > 0:
+        s.append(f"Adquira mais {g('hypercharges')} hypercharge(s).")
+    gap_1000 = _marco_n(forte, 1000) - _marco_n(fraco, 1000)
+    if gap_1000 > 0:
+        s.append(f"Leve mais {gap_1000} brawler(s) acima de 1000 troféus.")
+    if (fraco.get("winrate") is not None and forte.get("winrate") is not None
+            and forte["winrate"] - fraco["winrate"] >= 3):
+        s.append(f"Melhore o winrate ({fraco['winrate']}% vs {forte['winrate']}%) — "
+                 "jogue seus melhores brawlers por mapa (veja seu perfil).")
+    if (fraco.get("star_pct") is not None and forte.get("star_pct") is not None
+            and forte["star_pct"] - fraco["star_pct"] >= 3):
+        s.append(f"Aumente a taxa de star player ({fraco['star_pct']}% vs {forte['star_pct']}%).")
+    if not s:
+        s.append("As contas estão bem parelhas — continue jogando! 🎉")
+    return s
+
+
 @app.get("/comparar", response_class=HTMLResponse)
 def pagina_comparar(request: Request, a: str | None = None, b: str | None = None):
-    """Compara dois jogadores lado a lado (KPIs do banco)."""
+    """Compara dois jogadores lado a lado (KPIs do banco) + dicas p/ o mais fraco."""
     dados = {"a": None, "b": None}
     erros = {"a": None, "b": None}
     conexao = db.conectar()
@@ -204,10 +241,18 @@ def pagina_comparar(request: Request, a: str | None = None, b: str | None = None
                 dados[slot] = res
     finally:
         conexao.close()
+    sugestoes = fraco_nick = None
+    if dados["a"] and dados["b"]:
+        ta, tb = dados["a"].get("trofeus") or 0, dados["b"].get("trofeus") or 0
+        if ta != tb:
+            fraco, forte = (dados["a"], dados["b"]) if ta < tb else (dados["b"], dados["a"])
+            fraco_nick = fraco["nick"]
+            sugestoes = _sugestoes_melhoria(fraco, forte)
     return templates.TemplateResponse(request, "comparar.html", {
         "a": dados["a"], "b": dados["b"], "tag_a": a or "", "tag_b": b or "",
         "erro_a": erros["a"], "erro_b": erros["b"],
         "totais": imagens.totais_colecao(),
+        "sugestoes": sugestoes, "fraco_nick": fraco_nick,
     })
 
 

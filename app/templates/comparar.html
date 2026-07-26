@@ -50,8 +50,19 @@
     {{ linha_de('🛠️ Gadgets', a.gadgets, b.gadgets, totais.gadgets) }}
     {{ linha('⚙️ Gears', a.gears, b.gears) }}
     {{ linha('⚡ Hypercharges', a.hypercharges, b.hypercharges) }}
+    <tr class="comp-sub"><th colspan="3">Marcos de troféus (nº de brawlers)</th></tr>
+    {% for m in a.marcos_trofeus %}
+    {{ linha('🏆 ' ~ m.min ~ '+', m.n, b.marcos_trofeus[loop.index0].n) }}
+    {% endfor %}
   </tbody>
 </table>
+
+{% if sugestoes %}
+<div class="caixa-dicas">
+  <h3>💡 Como o <b>{{ fraco_nick }}</b> pode melhorar a conta</h3>
+  <ul>{% for d in sugestoes %}<li>{{ d }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
 <p class="nota">🟩 = melhor valor. "Capturado" = calculado das batalhas no nosso banco (não a conta inteira). Troféus/level/coleção vêm do último snapshot da conta.</p>
 {% elif not erro_a and not erro_b %}
 <p class="nota">Digite as duas tags e clique em <b>Comparar</b>. Os jogadores precisam ter sido consultados antes — se não aparecer, busque cada um na home primeiro.</p>

@@ -829,6 +829,10 @@ def resumo_comparacao(conexao: sqlite3.Connection, tag: str) -> dict | None:
     n_gr = sum(len(b.get("gears_nomes") or []) for b in brws)
     n_hyper = sum(1 for b in brws if b.get("hypercharge"))
     n_p11 = sum(1 for b in brws if b.get("power") == 11)
+    # brawlers por marco de troféus (contagem acumulada: >= cada limite)
+    trofeus_brw = [b.get("trofeus") or 0 for b in brws]
+    marcos = [{"min": m, "n": sum(1 for t in trofeus_brw if t >= m)}
+              for m in (2000, 1000, 750, 500, 250)]
     return {
         "tag": tag, "nick": perfil["nick"],
         "trofeus": stats.get("trofeus"),
@@ -840,6 +844,7 @@ def resumo_comparacao(conexao: sqlite3.Connection, tag: str) -> dict | None:
         "brawlers_liberados": len(brws),
         "power11": n_p11,
         "star_powers": n_sp, "gadgets": n_gd, "gears": n_gr, "hypercharges": n_hyper,
+        "marcos_trofeus": marcos,
     }
 
 
