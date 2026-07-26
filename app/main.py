@@ -211,6 +211,20 @@ def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
     s: list[str] = []
     def g(campo: str) -> int:
         return (forte.get(campo) or 0) - (fraco.get(campo) or 0)
+    def fmt(n: int) -> str:
+        return f"{n:,}".replace(",", ".")
+    # 1) troféus totais
+    if g("trofeus") > 0:
+        s.append(f"Suba os troféus totais: você tem {fmt(fraco.get('trofeus') or 0)}, "
+                 f"{forte['nick']} tem {fmt(forte.get('trofeus') or 0)} (faltam {fmt(g('trofeus'))}).")
+    # 2) marco de troféus mais alto onde ainda fica atrás (evita repetir os cumulativos)
+    for marco in (2000, 1000, 750, 500, 250):
+        gm = _marco_n(forte, marco) - _marco_n(fraco, marco)
+        if gm > 0:
+            s.append(f"Leve mais {gm} brawler(s) acima de {fmt(marco)} troféus "
+                     f"(você tem {_marco_n(fraco, marco)}, ele tem {_marco_n(forte, marco)}).")
+            break
+    # 3) coleção
     if g("brawlers_liberados") > 0:
         s.append(f"Desbloqueie mais {g('brawlers_liberados')} brawler(s).")
     if g("power11") > 0:
@@ -221,9 +235,7 @@ def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
         s.append(f"Desbloqueie mais {g('gadgets')} gadget(s).")
     if g("hypercharges") > 0:
         s.append(f"Adquira mais {g('hypercharges')} hypercharge(s).")
-    gap_1000 = _marco_n(forte, 1000) - _marco_n(fraco, 1000)
-    if gap_1000 > 0:
-        s.append(f"Leve mais {gap_1000} brawler(s) acima de 1000 troféus.")
+    # 4) desempenho
     if (fraco.get("winrate") is not None and forte.get("winrate") is not None
             and forte["winrate"] - fraco["winrate"] >= 3):
         s.append(f"Melhore o winrate ({fraco['winrate']}% vs {forte['winrate']}%) — "
