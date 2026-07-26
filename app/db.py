@@ -1034,11 +1034,24 @@ def salvar_clube(conexao: sqlite3.Connection, clube: dict) -> None:
     conexao.commit()
 
 
+# Clube fixo do app (clã Snake). Antes usávamos "o mais recentemente atualizado",
+# mas consultar um jogador de OUTRO clube trocava o principal (ex.: "crias").
+# Override por env CLUBE_TAG_PRINCIPAL se algum dia mudar de clã.
+CLUBE_TAG_PRINCIPAL: str = os.environ.get("CLUBE_TAG_PRINCIPAL", "#8LG0QGLC").strip()
+
+
 def clube_principal(conexao: sqlite3.Connection) -> dict | None:
-    """O clube conhecido mais recentemente atualizado (para o ranking da home)."""
-    linha = conexao.execute(
-        "SELECT * FROM clubes ORDER BY atualizado_em DESC LIMIT 1"
-    ).fetchone()
+    """O clã Snake (fixo por tag). Fallback: o clube mais recente, se a tag fixa
+    ainda não estiver no banco."""
+    linha = None
+    if CLUBE_TAG_PRINCIPAL:
+        linha = conexao.execute(
+            "SELECT * FROM clubes WHERE clube_tag = ?", (CLUBE_TAG_PRINCIPAL,)
+        ).fetchone()
+    if linha is None:
+        linha = conexao.execute(
+            "SELECT * FROM clubes ORDER BY atualizado_em DESC LIMIT 1"
+        ).fetchone()
     if linha is None:
         return None
     membros = conexao.execute(

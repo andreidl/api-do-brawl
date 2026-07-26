@@ -422,6 +422,7 @@ th.ordenavel:hover { color: var(--destaque); }
   margin-right: 0.4rem; border-radius: 6px; background: rgba(255,255,255,0.05);
 }
 h1 .ico-brawler, .bc-nome .ico-brawler { width: 34px; height: 34px; }
+.ico-acess { width: 18px; height: 18px; vertical-align: middle; margin-right: 0.25rem; }
 
 /* ---------- duas tabelas lado a lado ---------- */
 .lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }

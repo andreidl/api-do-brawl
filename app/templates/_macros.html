@@ -57,10 +57,11 @@
     {%- set it = a[tipo] if tipo in a else none -%}
     {%- if it and it.equipar -%}
       {%- set rotulo = {'star_power':'SP','gadget':'Gadget','gear':'Gear'}[tipo] -%}
+      {%- set img = img_star_power(it.equipar) if tipo == 'star_power' else (img_gadget(it.equipar) if tipo == 'gadget' else '') -%}
       {%- if it.possui_recomendado == false -%}
-        <span class="acess-item acess-alerta" title="O melhor é {{ it.recomendado }} ({{ it.winrate }}%) — você não tem; equipe {{ it.equipar }}">{{ rotulo }}: {{ it.equipar }} ⚠️</span>
+        <span class="acess-item acess-alerta" title="O melhor é {{ it.recomendado }} ({{ it.winrate }}%) — você não tem; equipe {{ it.equipar }}">{% if img %}<img class="ico-acess" src="{{ img }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{{ rotulo }}: {{ it.equipar }} ⚠️</span>
       {%- else -%}
-        <span class="acess-item acess-ok" title="{{ rotulo }} recomendado{% if it.winrate %} ({{ it.winrate }}%){% endif %}">{{ rotulo }}: {{ it.equipar }}{% if it.possui_recomendado %} ✓{% endif %}</span>
+        <span class="acess-item acess-ok" title="{{ rotulo }} recomendado{% if it.winrate %} ({{ it.winrate }}%){% endif %}">{% if img %}<img class="ico-acess" src="{{ img }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{{ rotulo }}: {{ it.equipar }}{% if it.possui_recomendado %} ✓{% endif %}</span>
       {%- endif -%}
     {%- endif -%}
   {%- endfor -%}
