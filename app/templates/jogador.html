@@ -636,7 +636,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 {% endif %}
 {% endif %}
 
-{% if composicoes and (composicoes.duplas_brawlers or composicoes.trios_jogadores) %}
+{% if composicoes and (composicoes.duplas_brawlers or composicoes.trios_jogadores or composicoes.quintetos_jogadores) %}
 <h2 id="composicoes">Composições de time</h2>
 
 {% if composicoes.duplas_brawlers %}
@@ -660,6 +660,19 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% for t in composicoes.trios_jogadores %}
     <tr><td>{{ t.parceiros }}</td><td>{{ t.jogos }}</td><td>{{ t.vitorias }}</td>
         <td>{{ barra_wr(t.winrate, t.jogos) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if composicoes.quintetos_jogadores %}
+<h3>Seus times de 5 <span class="nota">(você + 4 parceiros — modos 5v5)</span></h3>
+<table>
+  <thead><tr><th>4 parceiros</th><th>Jogos</th><th>Vitórias</th><th>Winrate</th></tr></thead>
+  <tbody>
+    {% for q in composicoes.quintetos_jogadores %}
+    <tr><td>{{ q.parceiros }}</td><td>{{ q.jogos }}</td><td>{{ q.vitorias }}</td>
+        <td>{{ barra_wr(q.winrate, q.jogos) }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

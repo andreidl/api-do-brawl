@@ -15,5 +15,52 @@
     </nav>
   </header>
   <main>{% block conteudo %}{% endblock %}</main>
+  <script>
+  // Ordenação genérica: clicar em qualquer cabeçalho de tabela ordena por aquela
+  // coluna (numérica ou texto, detectado automaticamente). Usa data-sort/data-val
+  // da célula quando existir.
+  function _valOrd(td) {
+    const dv = td.dataset.sort !== undefined ? td.dataset.sort : td.dataset.val;
+    if (dv !== undefined) { const n = parseFloat(dv); return isNaN(n) ? null : n; }
+    const s = td.textContent.replace(/\s/g, '');
+    const m = s.match(/-?[\d.,]+/);
+    if (!m) return null;
+    let num = m[0];
+    if (num.includes(',')) num = num.replace(/\./g, '').replace(',', '.');
+    else if (/\.\d{3}$/.test(num) && !s.includes('%')) num = num.replace(/\./g, '');
+    const v = parseFloat(num);
+    return isNaN(v) ? null : v;
+  }
+  function _ordenar(tabela, col, th) {
+    const tbody = tabela.tBodies[0]; if (!tbody) return;
+    const linhas = Array.from(tbody.rows).filter(r => r.cells.length > col);
+    const asc = tabela.dataset.ordCol == col && tabela.dataset.ordDir === 'desc';
+    const numerico = linhas.filter(r => _valOrd(r.cells[col]) !== null).length >= linhas.length / 2;
+    linhas.sort((a, b) => {
+      if (numerico) {
+        const va = _valOrd(a.cells[col]), vb = _valOrd(b.cells[col]);
+        return asc ? (va ?? -Infinity) - (vb ?? -Infinity) : (vb ?? -Infinity) - (va ?? -Infinity);
+      }
+      const ta = a.cells[col].textContent.trim(), tb = b.cells[col].textContent.trim();
+      return asc ? ta.localeCompare(tb, 'pt') : tb.localeCompare(ta, 'pt');
+    });
+    tabela.dataset.ordCol = col; tabela.dataset.ordDir = asc ? 'asc' : 'desc';
+    Array.from(th.parentNode.cells).forEach(c => c.classList.remove('ord-asc', 'ord-desc'));
+    th.classList.add(asc ? 'ord-asc' : 'ord-desc');
+    // renumera a 1ª coluna se for um índice "#"
+    const primeiroTh = tabela.tHead && tabela.tHead.rows[0] && tabela.tHead.rows[0].cells[0];
+    const ehIndice = primeiroTh && primeiroTh.textContent.trim() === '#';
+    linhas.forEach((l, i) => { if (ehIndice) l.cells[0].textContent = i + 1; tbody.appendChild(l); });
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('table').forEach(tabela => {
+      const thead = tabela.tHead; if (!thead || !thead.rows[0]) return;
+      Array.from(thead.rows[0].cells).forEach((th, col) => {
+        th.classList.add('th-ord');
+        th.addEventListener('click', () => _ordenar(tabela, col, th));
+      });
+    });
+  });
+  </script>
 </body>
 </html>

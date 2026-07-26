@@ -47,9 +47,9 @@ function copiarRanking() {
 <p class="nota">Nenhum jogador com batalhas suficientes no banco ainda.</p>
 {% endif %}
 
-{% if composicoes and (composicoes.duplas or composicoes.trios) %}
+{% if composicoes and (composicoes.duplas or composicoes.trios or composicoes.quintetos) %}
 <h2>Melhores composições{% if clube %} do {{ clube.nome }}{% endif %}</h2>
-<p class="nota">Times reais que jogaram juntos (mín. 3 batalhas decididas juntos).</p>
+<p class="nota">Times reais que jogaram juntos (mín. 3 batalhas decididas juntos; times de 5, mín. 2).</p>
 
 {% if composicoes.duplas %}
 <h3>Duplas</h3>
@@ -76,6 +76,21 @@ function copiarRanking() {
         <td>{{ barra_wr(t.winrate, t.jogos) }}</td>
         <td>{% for c in t.brawlers_top %}{{ c }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
         <td>{% for s in t.stars %}{{ s }}{% if not loop.last %} · {% endif %}{% else %}—{% endfor %}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if composicoes.quintetos %}
+<h3>Times de 5 <span class="nota">(o stack completo do clã — modos 5v5)</span></h3>
+<table>
+  <thead><tr><th>Time</th><th>Jogos</th><th>V</th><th>Winrate</th><th>Brawlers mais usados</th><th>Star player</th></tr></thead>
+  <tbody>
+    {% for q in composicoes.quintetos %}
+    <tr><td>{{ q.nomes }}</td><td>{{ q.jogos }}</td><td>{{ q.vitorias }}</td>
+        <td>{{ barra_wr(q.winrate, q.jogos) }}</td>
+        <td>{% for c in q.brawlers_top %}{{ c }}{% if not loop.last %}<br>{% endif %}{% else %}—{% endfor %}</td>
+        <td>{% for s in q.stars %}{{ s }}{% if not loop.last %} · {% endif %}{% else %}—{% endfor %}</td></tr>
     {% endfor %}
   </tbody>
 </table>

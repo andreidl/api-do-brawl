@@ -595,6 +595,7 @@ def composicoes_do_jogador(jogadores: list[dict], minimo: int = 2) -> dict:
 
     duplas_brawlers: dict[tuple, list[int]] = {}
     trios_jogadores: dict[tuple, dict] = {}
+    quintetos_jogadores: dict[tuple, dict] = {}
     for h in por_hash.values():
         if h["eu"] is None or not h["eu"].get("brawler"):
             continue
@@ -612,6 +613,13 @@ def composicoes_do_jogador(jogadores: list[dict], minimo: int = 2) -> dict:
                                                        "nicks": (a1["nick"], a2["nick"])})
                 t["jogos"] += 1
                 t["vitorias"] += v
+        if len(h["aliados"]) >= 4:  # você + 4 aliados = time de 5 (modos 5v5)
+            for grupo in combinations(sorted(h["aliados"], key=lambda x: x["tag_jogador"]), 4):
+                chave = tuple(a["tag_jogador"] for a in grupo)
+                q = quintetos_jogadores.setdefault(chave, {"jogos": 0, "vitorias": 0,
+                                                           "nicks": tuple(a["nick"] for a in grupo)})
+                q["jogos"] += 1
+                q["vitorias"] += v
 
     duplas = [
         {"meu_brawler": k[0], "brawler_aliado": k[1], "jogos": c[0], "vitorias": c[1],
@@ -626,7 +634,15 @@ def composicoes_do_jogador(jogadores: list[dict], minimo: int = 2) -> dict:
         for k, v in trios_jogadores.items() if v["jogos"] >= minimo
     ]
     trios.sort(key=lambda t: -wilson(t["vitorias"], t["jogos"]))
-    return {"duplas_brawlers": duplas[:15], "trios_jogadores": trios[:10]}
+    quintetos = [
+        {"parceiros": " + ".join(v["nicks"]), "tags": k,
+         "jogos": v["jogos"], "vitorias": v["vitorias"],
+         "winrate": round(v["vitorias"] / v["jogos"] * 100, 1)}
+        for k, v in quintetos_jogadores.items() if v["jogos"] >= minimo
+    ]
+    quintetos.sort(key=lambda t: -wilson(t["vitorias"], t["jogos"]))
+    return {"duplas_brawlers": duplas[:15], "trios_jogadores": trios[:10],
+            "quintetos_jogadores": quintetos[:10]}
 
 
 def composicoes_clube(linhas: list[dict], membros: set[str] | None,
@@ -668,6 +684,7 @@ def composicoes_clube(linhas: list[dict], membros: set[str] | None,
 
     duplas: dict[tuple, dict] = {}
     trios: dict[tuple, dict] = {}
+    quintetos: dict[tuple, dict] = {}
     for t in times.values():
         js = t["jogadores"]
         if membros is not None:
@@ -678,11 +695,14 @@ def composicoes_clube(linhas: list[dict], membros: set[str] | None,
             _acumular(duplas, grupo, v)
         for grupo in combinations(ordenados, 3):
             _acumular(trios, grupo, v)
+        if len(ordenados) >= 5:  # times de 5 (modos 5v5) — o stack completo do clã
+            for grupo in combinations(ordenados, 5):
+                _acumular(quintetos, grupo, v)
 
-    def _lista(dados: dict) -> list[dict]:
+    def _lista(dados: dict, min_jogos: int = minimo) -> list[dict]:
         out = []
         for k, v in dados.items():
-            if v["jogos"] < minimo:
+            if v["jogos"] < min_jogos:
                 continue
             melhores_combos = sorted(
                 v["combos"].items(), key=lambda kv: (-kv[1][0], -kv[1][1])
@@ -705,7 +725,9 @@ def composicoes_clube(linhas: list[dict], membros: set[str] | None,
         out.sort(key=lambda x: -wilson(x["vitorias"], x["jogos"]))
         return out[:10]
 
-    return {"duplas": _lista(duplas), "trios": _lista(trios)}
+    # quinteto = os 5 exatos jogando juntos (raro) → mínimo menor
+    return {"duplas": _lista(duplas), "trios": _lista(trios),
+            "quintetos": _lista(quintetos, max(2, minimo - 1))}
 
 
 # ---------------------------------------------------------------------------

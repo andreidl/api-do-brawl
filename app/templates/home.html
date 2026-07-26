@@ -69,13 +69,9 @@
   <summary>Top {{ meta_proprio.mais_usados | length }} — ordenável por usos, vitórias, winrate ou star</summary>
   <table id="tabela-mais-usados">
     <thead><tr>
-      <th>#</th><th>Brawler</th>
-      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 2)">Usos&nbsp;⇅</th>
-      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 3)">Vitórias&nbsp;⇅</th>
-      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 4)">Winrate&nbsp;⇅</th>
-      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 5)">⭐ Star&nbsp;⇅</th>
+      <th>#</th><th>Brawler</th><th>Usos</th><th>Vitórias</th><th>Winrate</th><th>⭐ Star</th>
     </tr></thead>
-    <tbody data-ordem="2-desc">
+    <tbody>
       {% for b in meta_proprio.mais_usados %}
       <tr>
         <td>{{ loop.index }}</td>
@@ -89,20 +85,6 @@
     </tbody>
   </table>
 </details>
-<script>
-function ordenarPor(idTabela, coluna) {
-  const tbody = document.querySelector('#' + idTabela + ' tbody');
-  const asc = tbody.dataset.ordem === coluna + '-desc';   // se já estava desc, inverte
-  const linhas = Array.from(tbody.rows);
-  linhas.sort((a, b) => {
-    const va = parseFloat(a.cells[coluna].dataset.val) || 0;
-    const vb = parseFloat(b.cells[coluna].dataset.val) || 0;
-    return asc ? va - vb : vb - va;
-  });
-  tbody.dataset.ordem = coluna + (asc ? '-asc' : '-desc');
-  linhas.forEach((l, i) => { l.cells[0].textContent = i + 1; tbody.appendChild(l); });
-}
-</script>
 {% endif %}
 
 {% if meta_proprio.mapas %}
