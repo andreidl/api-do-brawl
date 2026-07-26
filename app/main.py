@@ -57,6 +57,19 @@ app.mount("/static", StaticFiles(directory=DIR_APP / "static"), name="static")
 templates = Jinja2Templates(directory=DIR_APP / "templates")
 
 
+def _css_ver() -> str:
+    """Versão do estilo.css (mtime) para cache-busting — o navegador refaz o
+    download sempre que o arquivo muda, sem depender de hard refresh."""
+    try:
+        return str(int((DIR_APP / "static" / "estilo.css").stat().st_mtime))
+    except OSError:
+        return "1"
+
+
+# global de template chamado por render → lê o mtime na hora (não precisa restart)
+templates.env.globals["css_ver"] = _css_ver
+
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, erro: str | None = None):
     """Landing enxuta: busca de tag + atalhos (clã, brawlers/meta) + status.
