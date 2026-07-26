@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import barra_wr %}
+{% from "_macros.html" import barra_wr, brawler_ico %}
 {% block titulo %}{{ perfil.nick }} — API do Brawl{% endblock %}
 {% block conteudo %}
 {% if modo_instantaneo %}
@@ -96,7 +96,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
       {% for b in brawlers_usados %}
       <tr>
         <td>{{ loop.index }}</td>
-        <td>{{ b.brawler }}</td>
+        <td>{{ brawler_ico(b.brawler) }}</td>
         <td><b>{{ b.usos }}</b></td>
         <td>{{ b.vitorias }}</td>
         <td>{{ b.stars }} ⭐</td>
@@ -349,7 +349,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   <thead><tr><th>Brawler</th><th>Partidas</th><th>Uso</th><th>Winrate</th><th>⭐ Star</th></tr></thead>
   <tbody>
     {% for b in indicadores.por_brawler %}
-    <tr><td>{{ b.nome }}</td><td>{{ b.partidas }}</td><td>{{ b.uso_pct }}%</td>
+    <tr><td>{{ brawler_ico(b.nome) }}</td><td>{{ b.partidas }}</td><td>{{ b.uso_pct }}%</td>
         <td>{{ barra_wr(b.winrate, b.partidas) }}</td>
         <td>{% if b.stars %}{{ b.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td></tr>
     {% endfor %}
@@ -378,7 +378,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 {% for b in indicadores.brawler_detalhado %}
 <details class="brawler-card">
   <summary>
-    <span class="bc-nome">{{ b.brawler }}{% if b.stars %} <span class="nota">{{ b.stars }}⭐</span>{% endif %}</span>
+    <span class="bc-nome">{{ brawler_ico(b.brawler) }}{% if b.stars %} <span class="nota">{{ b.stars }}⭐</span>{% endif %}</span>
     <span class="bc-uso nota">{{ b.jogos }} jogos · {{ b.uso_pct }}% uso</span>
     <span class="bc-wr {{ 'bom' if b.winrate >= 50 else 'ruim' }}">{{ b.winrate }}%</span>
   </summary>

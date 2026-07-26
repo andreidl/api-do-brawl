@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import db, rastrear
+from app import db, rastrear, imagens
 from app.coleta import brawlace, brawltime, brawlytix, oficial
 from app.indicadores import meta as indicadores_meta
 from app.indicadores import performance
@@ -47,6 +47,11 @@ async def _ciclo_de_vida(app: FastAPI):
             print(f"[startup] aviso ao garantir schema Postgres: {erro}")
         finally:
             con.close()
+    try:  # carrega o mapa nome→id dos brawlers p/ as imagens (best-effort)
+        n = imagens.recarregar()
+        print(f"[startup] mapa de imagens: {n} brawlers")
+    except Exception as erro:
+        print(f"[startup] aviso ao carregar mapa de imagens: {erro}")
     if os.environ.get("BRAWL_RASTREIO", "1") == "1":
         threading.Thread(target=_loop_rastreio, daemon=True).start()
     yield
@@ -68,6 +73,11 @@ def _css_ver() -> str:
 
 # global de template chamado por render → lê o mtime na hora (não precisa restart)
 templates.env.globals["css_ver"] = _css_ver
+
+# URLs de imagem (CDN brawlify) por nome — carregam no navegador do visitante
+templates.env.globals["img_brawler"] = imagens.img_brawler
+templates.env.globals["img_star_power"] = imagens.img_star_power
+templates.env.globals["img_gadget"] = imagens.img_gadget
 
 
 @app.get("/", response_class=HTMLResponse)

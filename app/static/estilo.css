@@ -417,6 +417,11 @@ h2[id], h3[id] { scroll-margin-top: 14px; }
 .tabela-modos { width: 100%; margin-top: 0.2rem; }
 th.ordenavel { cursor: pointer; user-select: none; white-space: nowrap; }
 th.ordenavel:hover { color: var(--destaque); }
+.ico-brawler {
+  width: 26px; height: 26px; vertical-align: middle;
+  margin-right: 0.4rem; border-radius: 6px; background: rgba(255,255,255,0.05);
+}
+h1 .ico-brawler, .bc-nome .ico-brawler { width: 34px; height: 34px; }
 
 /* ---------- duas tabelas lado a lado ---------- */
 .lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }

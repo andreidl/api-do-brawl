@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import tabela_modos, resumo_forte_fraco %}
+{% from "_macros.html" import tabela_modos, resumo_forte_fraco, brawler_ico %}
 {% block titulo %}Meta dos brawlers — API do Brawl{% endblock %}
 {% block conteudo %}
 <h1>📊 Meta dos brawlers</h1>
@@ -11,7 +11,7 @@
   <details class="brawler-card">
     <summary>
       <span class="bc-pos">{{ loop.index }}º</span>
-      <span class="bc-nome">{{ b.brawler }}</span>
+      <span class="bc-nome">{{ brawler_ico(b.brawler) }}</span>
       <span class="bc-media nota">média {{ b.pos_media }}º · melhor {{ b.melhor_pos }}º</span>
       <span class="bc-resumo">
         {%- if b.fortes %}<span class="chip-forte">🟢 {{ b.fortes | length }} forte{{ 's' if b.fortes|length > 1 }}</span>{% endif -%}

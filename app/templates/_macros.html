@@ -13,6 +13,12 @@
 {%- endif -%}
 {%- endmacro %}
 
+{# Ícone do brawler (CDN) + nome. Sem imagem conhecida → mostra só o nome. #}
+{% macro brawler_ico(nome) -%}
+{%- set u = img_brawler(nome) -%}
+{%- if u %}<img class="ico-brawler" src="{{ u }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{{ nome }}
+{%- endmacro %}
+
 {# Tabela de modos do brawler no meta: posição (de N), nível e tendência #}
 {% macro tabela_modos(modos) -%}
 <table class="tabela-modos">

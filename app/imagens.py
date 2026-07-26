@@ -1,0 +1,64 @@
+"""URLs de imagem dos brawlers (e acessórios) via CDN público do Brawlify.
+
+O mapa nome→id vem da API OFICIAL (`/brawlers`), cacheado em memória. As imagens
+carregam no NAVEGADOR do visitante (o servidor só monta a URL), então o bloqueio
+de IP de datacenter não afeta. Se o mapa não carregar (API fora), as funções
+devolvem "" e os templates simplesmente mostram só o nome — nada quebra.
+"""
+from app.coleta import oficial
+
+CDN = "https://cdn.brawlify.com"
+
+_mapa_brawler: dict | None = None   # {NOME_NORMALIZADO: id}
+_mapa_sp: dict | None = None        # {NOME_NORMALIZADO: id} star powers
+_mapa_gadget: dict | None = None    # {NOME_NORMALIZADO: id} gadgets
+
+
+def _norm(nome: str) -> str:
+    return (nome or "").strip().upper()
+
+
+def _carregar() -> None:
+    global _mapa_brawler, _mapa_sp, _mapa_gadget
+    if _mapa_brawler is not None:
+        return
+    b_map, sp_map, g_map = {}, {}, {}
+    try:
+        for b in oficial.coletar_brawlers():
+            if b.get("id") and b.get("name"):
+                b_map[_norm(b["name"])] = b["id"]
+            for s in b.get("star_powers", []):
+                if s.get("id") and s.get("name"):
+                    sp_map[_norm(s["name"])] = s["id"]
+            for g in b.get("gadgets", []):
+                if g.get("id") and g.get("name"):
+                    g_map[_norm(g["name"])] = g["id"]
+    except Exception:
+        pass  # API fora / sem token → mapas vazios (templates mostram só o nome)
+    _mapa_brawler, _mapa_sp, _mapa_gadget = b_map, sp_map, g_map
+
+
+def img_brawler(nome: str) -> str:
+    _carregar()
+    bid = _mapa_brawler.get(_norm(nome))
+    return f"{CDN}/brawlers/borderless/{bid}.png" if bid else ""
+
+
+def img_star_power(nome: str) -> str:
+    _carregar()
+    sid = _mapa_sp.get(_norm(nome))
+    return f"{CDN}/star-powers/borderless/{sid}.png" if sid else ""
+
+
+def img_gadget(nome: str) -> str:
+    _carregar()
+    gid = _mapa_gadget.get(_norm(nome))
+    return f"{CDN}/gadgets/borderless/{gid}.png" if gid else ""
+
+
+def recarregar() -> int:
+    """Força recarregar o mapa (ex.: no startup). Retorna nº de brawlers no mapa."""
+    global _mapa_brawler
+    _mapa_brawler = None
+    _carregar()
+    return len(_mapa_brawler or {})

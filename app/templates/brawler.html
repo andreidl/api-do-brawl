@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% from "_macros.html" import tabela_modos, resumo_forte_fraco %}
+{% from "_macros.html" import tabela_modos, resumo_forte_fraco, brawler_ico %}
 {% block titulo %}{{ brawler }} (meta) — API do Brawl{% endblock %}
 {% block conteudo %}
 <p class="nota"><a href="/brawler">← Todos os brawlers</a></p>
-<h1>📊 {{ brawler }}</h1>
+<h1>{{ brawler_ico(brawler) }}</h1>
 {% if data_meta %}<p class="nota">Posição no meta por modo — <code>{{ data_meta }}</code>. Posição menor = mais forte. "de N" = total de brawlers ranqueados no modo.</p>{% endif %}
 {{ resumo_forte_fraco(dados.fortes, dados.fracos) }}
 {{ tabela_modos(dados.modos) }}

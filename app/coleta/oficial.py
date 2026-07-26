@@ -281,6 +281,23 @@ def coletar_clube(clube_tag: str) -> dict:
     }
 
 
+def coletar_brawlers() -> list[dict]:
+    """Lista de referência de brawlers da API oficial → [{id, name,
+    star_powers:[{id,name}], gadgets:[{id,name}]}]. Usado p/ mapear nome→id e
+    montar as URLs de imagem do CDN (cdn.brawlify.com)."""
+    with _cliente() as c:
+        d = _get(c, "/brawlers")
+    itens = d.get("items", []) if isinstance(d, dict) else []
+    return [{
+        "id": b.get("id"),
+        "name": b.get("name"),
+        "star_powers": [{"id": s.get("id"), "name": s.get("name")}
+                        for s in b.get("starPowers", [])],
+        "gadgets": [{"id": g.get("id"), "name": g.get("name")}
+                    for g in b.get("gadgets", [])],
+    } for b in itens]
+
+
 def coletar_eventos() -> list[dict]:
     """Rotação de eventos ativos → [{modo, mapa, inicio, fim}]."""
     with _cliente() as c:

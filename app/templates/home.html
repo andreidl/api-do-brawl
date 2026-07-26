@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import barra_wr %}
+{% from "_macros.html" import barra_wr, brawler_ico %}
 {% block conteudo %}
 <h1>Consultar jogador</h1>
 {% if mensagem_erro %}<p class="erro">{{ mensagem_erro }}</p>{% endif %}
@@ -41,7 +41,7 @@
   <thead><tr><th>Modo</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
   <tbody>
     {% for g in meta_proprio.por_modo %}
-    <tr><td>{{ g.grupo }}</td><td><b>{{ g.brawler }}</b></td>
+    <tr><td>{{ g.grupo }}</td><td><b>{{ brawler_ico(g.brawler) }}</b></td>
         <td>{{ barra_wr(g.winrate, g.jogos) }}</td><td>{{ g.vitorias }}/{{ g.jogos }}</td></tr>
     {% endfor %}
   </tbody>
@@ -55,7 +55,7 @@
     <thead><tr><th>Mapa</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
     <tbody>
       {% for g in meta_proprio.por_mapa %}
-      <tr><td>{{ g.grupo }}</td><td><b>{{ g.brawler }}</b></td>
+      <tr><td>{{ g.grupo }}</td><td><b>{{ brawler_ico(g.brawler) }}</b></td>
           <td>{{ barra_wr(g.winrate, g.jogos) }}</td><td>{{ g.vitorias }}/{{ g.jogos }}</td></tr>
       {% endfor %}
     </tbody>
@@ -79,7 +79,7 @@
       {% for b in meta_proprio.mais_usados %}
       <tr>
         <td>{{ loop.index }}</td>
-        <td>{{ b.brawler }}</td>
+        <td>{{ brawler_ico(b.brawler) }}</td>
         <td data-val="{{ b.usos }}"><b>{{ b.usos }}</b></td>
         <td data-val="{{ b.vitorias }}">{{ b.vitorias }}</td>
         <td data-val="{{ b.winrate if b.winrate is not none else -1 }}">{{ barra_wr(b.winrate) }}</td>
