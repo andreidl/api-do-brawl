@@ -729,6 +729,83 @@ def estatisticas_globais(conexao: sqlite3.Connection) -> dict:
     }
 
 
+def melhor_brawler_por_grupo(conexao: sqlite3.Connection, dimensao: str,
+                             minimo: int = 5, limite: int | None = None) -> list[dict]:
+    """META PRÓPRIO (das nossas batalhas): melhor brawler em cada mapa ou modo,
+    por Wilson score (winrate ajustado à amostra). Só considera batalhas decididas
+    e combos (grupo, brawler) com >= `minimo` jogos. Grupos mais jogados primeiro.
+    `dimensao` = 'mapa' ou 'modo'."""
+    if dimensao not in ("mapa", "modo"):
+        raise ValueError(f"dimensao inválida: {dimensao!r}")
+    col = "b." + dimensao
+    linhas = conexao.execute(
+        f"""SELECT {col} AS grupo, bj.brawler AS brawler,
+                   COUNT(*) AS jogos,
+                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+            FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+            WHERE bj.resultado IN ('Victory','Defeat')
+              AND bj.brawler IS NOT NULL AND {col} IS NOT NULL
+            GROUP BY {col}, bj.brawler
+            HAVING COUNT(*) >= ?""",
+        (minimo,)).fetchall()
+    from app.indicadores.performance import wilson
+    grupos: dict = {}
+    for l in linhas:
+        g, jogos, vit = l["grupo"], int(l["jogos"]), int(l["vitorias"])
+        w = wilson(vit, jogos)
+        grupos.setdefault(g, {"grupo": g, "jogos_grupo": 0, "_w": -1.0})
+        grupos[g]["jogos_grupo"] += jogos
+        if w > grupos[g]["_w"]:
+            grupos[g].update({"_w": w, "brawler": l["brawler"], "jogos": jogos,
+                              "vitorias": vit, "winrate": round(vit / jogos * 100, 1)})
+    saida = [g for g in grupos.values() if "brawler" in g]
+    for g in saida:
+        g.pop("_w", None)
+    saida.sort(key=lambda x: -x["jogos_grupo"])
+    return saida[:limite] if limite else saida
+
+
+def brawlers_mais_usados_geral(conexao: sqlite3.Connection, limite: int = 15) -> list[dict]:
+    """META PRÓPRIO: brawlers mais usados em TODAS as batalhas capturadas, com
+    vitórias, star player e winrate (sobre as decididas). Mais usados primeiro."""
+    linhas = conexao.execute(
+        """SELECT bj.brawler AS brawler,
+                  COUNT(*) AS usos,
+                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                  SUM(CASE WHEN bj.resultado IN ('Victory','Defeat') THEN 1 ELSE 0 END) AS decididas,
+                  SUM(bj.star_player) AS stars
+           FROM batalha_jogadores bj
+           WHERE bj.brawler IS NOT NULL
+           GROUP BY bj.brawler
+           ORDER BY usos DESC""").fetchall()
+    saida: list[dict] = []
+    for l in linhas[:limite]:
+        dec, vit = int(l["decididas"] or 0), int(l["vitorias"] or 0)
+        saida.append({"brawler": l["brawler"], "usos": int(l["usos"]),
+                      "vitorias": vit, "stars": int(l["stars"] or 0),
+                      "winrate": round(vit / dec * 100, 1) if dec else None})
+    return saida
+
+
+def _contagem_simples(conexao: sqlite3.Connection, coluna: str, limite: int | None) -> list[dict]:
+    linhas = conexao.execute(
+        f"SELECT {coluna} AS nome, COUNT(*) AS jogos FROM batalhas "
+        f"WHERE {coluna} IS NOT NULL GROUP BY {coluna} ORDER BY jogos DESC"
+    ).fetchall()
+    dados = [{"nome": l["nome"], "jogos": int(l["jogos"])} for l in linhas]
+    return dados[:limite] if limite else dados
+
+
+def mapas_mais_jogados(conexao: sqlite3.Connection, limite: int = 12) -> list[dict]:
+    """META PRÓPRIO: mapas mais jogados nas batalhas capturadas."""
+    return _contagem_simples(conexao, "mapa", limite)
+
+
+def modos_mais_jogados(conexao: sqlite3.Connection, limite: int | None = None) -> list[dict]:
+    """META PRÓPRIO: modos mais jogados nas batalhas capturadas."""
+    return _contagem_simples(conexao, "modo", limite)
+
+
 def data_meta_recente(conexao: sqlite3.Connection) -> str | None:
     """Data (timestamp texto) do snapshot de meta mais recente, ou None se vazio."""
     linha = conexao.execute("SELECT MAX(data) AS d FROM meta_snapshots").fetchone()

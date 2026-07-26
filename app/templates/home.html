@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_macros.html" import barra_wr %}
 {% block conteudo %}
 <h1>Consultar jogador</h1>
 {% if mensagem_erro %}<p class="erro">{{ mensagem_erro }}</p>{% endif %}
@@ -30,6 +31,71 @@
   <div class="cartao"><b>{{ "{:,}".format(estatisticas.meta_snapshots).replace(",", ".") }}</b><span>Registros de meta</span></div>
 </section>
 {% if estatisticas.primeira_batalha %}<p class="nota">Batalhas capturadas de <code>{{ estatisticas.primeira_batalha[:10] }}</code> até <code>{{ estatisticas.ultima_batalha[:10] }}</code> · {{ estatisticas.jogadores_consultados }} jogadores já consultados.</p>{% endif %}
+{% endif %}
+
+{% if meta_proprio and meta_proprio.por_modo %}
+<h2>📈 Meta do nosso banco <span class="nota">(calculado das nossas batalhas — sem depender de terceiros)</span></h2>
+
+<h3>Melhor brawler por modo <span class="nota">(winrate ajustado à amostra · mín. 5 jogos)</span></h3>
+<table>
+  <thead><tr><th>Modo</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+  <tbody>
+    {% for g in meta_proprio.por_modo %}
+    <tr><td>{{ g.grupo }}</td><td><b>{{ g.brawler }}</b></td>
+        <td>{{ barra_wr(g.winrate, g.jogos) }}</td><td>{{ g.vitorias }}/{{ g.jogos }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if meta_proprio.por_mapa %}
+<h3>Melhor brawler por mapa <span class="nota">(mín. 5 jogos · {{ meta_proprio.por_mapa | length }} mapas com volume)</span></h3>
+<details class="recolhivel">
+  <summary>Ver melhores por mapa</summary>
+  <table>
+    <thead><tr><th>Mapa</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+    <tbody>
+      {% for g in meta_proprio.por_mapa %}
+      <tr><td>{{ g.grupo }}</td><td><b>{{ g.brawler }}</b></td>
+          <td>{{ barra_wr(g.winrate, g.jogos) }}</td><td>{{ g.vitorias }}/{{ g.jogos }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endif %}
+
+{% if meta_proprio.mais_usados %}
+<h3>Brawlers mais usados <span class="nota">(todas as batalhas capturadas)</span></h3>
+<details class="recolhivel">
+  <summary>Ver top {{ meta_proprio.mais_usados | length }}</summary>
+  <table>
+    <thead><tr><th>#</th><th>Brawler</th><th>Usos</th><th>Vitórias</th><th>Winrate</th><th>⭐ Star</th></tr></thead>
+    <tbody>
+      {% for b in meta_proprio.mais_usados %}
+      <tr><td>{{ loop.index }}</td><td>{{ b.brawler }}</td><td><b>{{ b.usos }}</b></td>
+          <td>{{ b.vitorias }}</td><td>{{ barra_wr(b.winrate) }}</td><td>{{ b.stars }} ⭐</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endif %}
+
+{% if meta_proprio.mapas %}
+<h3>Mais jogados</h3>
+<div class="lado-a-lado">
+  <div class="meia">
+    <table>
+      <thead><tr><th>Mapa</th><th>Jogos</th></tr></thead>
+      <tbody>{% for m in meta_proprio.mapas %}<tr><td>{{ m.nome }}</td><td>{{ m.jogos }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  <div class="meia">
+    <table>
+      <thead><tr><th>Modo</th><th>Jogos</th></tr></thead>
+      <tbody>{% for m in meta_proprio.modos_jogados %}<tr><td>{{ m.nome }}</td><td>{{ m.jogos }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
 {% endif %}
 
 {% if pendencias_externas %}

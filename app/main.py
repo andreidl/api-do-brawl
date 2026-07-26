@@ -93,6 +93,13 @@ def home(request: Request, erro: str | None = None):
                 "clube": clube,
                 "tem_meta": db.data_meta_recente(conexao) is not None,
                 "estatisticas": db.estatisticas_globais(conexao),
+                "meta_proprio": {
+                    "por_modo": db.melhor_brawler_por_grupo(conexao, "modo", minimo=5),
+                    "por_mapa": db.melhor_brawler_por_grupo(conexao, "mapa", minimo=5, limite=20),
+                    "mais_usados": db.brawlers_mais_usados_geral(conexao, 15),
+                    "mapas": db.mapas_mais_jogados(conexao, 12),
+                    "modos_jogados": db.modos_mais_jogados(conexao),
+                },
                 "pendencias_externas": db.tags_sem_historico_externo(conexao),
                 "rastreio_status": rastrear.ultima_rodada(),
             },
