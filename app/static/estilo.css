@@ -62,9 +62,23 @@ header a {
   text-transform: uppercase;
 }
 header a:hover { color: #ffe15c; }
-header .menu { display: flex; gap: 1rem; }
-header .menu a { font-size: 0.9rem; color: var(--texto); }
-header .menu a:hover { color: var(--destaque); }
+header .marca { white-space: nowrap; }
+header .menu { display: flex; gap: 0.55rem; }
+header .menu a {
+  font-size: 0.82rem;
+  color: var(--texto);
+  padding: 0.4rem 0.85rem;
+  border: 1px solid #2c3145;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  letter-spacing: 0.02em;
+  transition: color .15s, border-color .15s, background .15s;
+}
+header .menu a:hover {
+  color: var(--destaque);
+  border-color: var(--destaque);
+  background: rgba(255, 206, 0, 0.08);
+}
 
 /* ---------- cartões de atalho (home) ---------- */
 .atalhos { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 1.4rem 0; }
@@ -254,6 +268,12 @@ td.ruim { color: var(--vermelho); font-weight: 700; }
   table { display: block; overflow-x: auto; white-space: nowrap; }
   .busca { flex-direction: column; }
   .busca button { width: 100%; }
+  header { padding: 0.65rem 0.9rem; gap: 0.5rem; }
+  header .marca { font-size: 0.95rem; }
+  header .menu { gap: 0.4rem; }
+  header .menu a { padding: 0.35rem 0.7rem; font-size: 0.76rem; }
+  .atalhos { flex-direction: column; }
+  .cartao-atalho { min-width: 0; }
 }
 
 /* ---------- abas ranked × troféus ---------- */
