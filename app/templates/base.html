@@ -15,7 +15,7 @@
       <a href="/comparar">⚖️ Comparar</a>
     </nav>
   </header>
-  <main>{% block conteudo %}{% endblock %}</main>
+  <main class="{% block main_classe %}{% endblock %}">{% block conteudo %}{% endblock %}</main>
   <script>
   // Ordenação genérica: clicar em qualquer cabeçalho de tabela ordena por aquela
   // coluna (numérica ou texto, detectado automaticamente). Usa data-sort/data-val
@@ -62,6 +62,41 @@
       });
     });
   });
+
+  // Accordion de seções (só em main.acordeon, ex.: página do jogador): cada <h2>
+  // vira um cabeçalho clicável que abre/fecha o conteúdo até o próximo <h2>.
+  (function () {
+    const main = document.querySelector('main.acordeon');
+    if (!main) return;
+    const h2s = Array.from(main.children).filter(el => el.tagName === 'H2');
+    h2s.forEach((h2, i) => {
+      const corpo = document.createElement('div');
+      corpo.className = 'secao-corpo';
+      let el = h2.nextElementSibling;
+      while (el && el.tagName !== 'H2') { const prox = el.nextElementSibling; corpo.appendChild(el); el = prox; }
+      h2.after(corpo);
+      h2.classList.add('secao-h');
+      h2._corpo = corpo;
+      if (i > 0) { corpo.hidden = true; h2.classList.add('fechada'); }
+      h2.addEventListener('click', (e) => {
+        if (e.target.tagName === 'A') return;
+        corpo.hidden = !corpo.hidden;
+        h2.classList.toggle('fechada', corpo.hidden);
+      });
+    });
+    function abrirAlvo() {
+      const id = decodeURIComponent(location.hash.slice(1));
+      if (!id) return;
+      const alvo = document.getElementById(id);
+      if (!alvo) return;
+      const h2 = alvo.classList.contains('secao-h') ? alvo
+        : (alvo.closest('.secao-corpo') ? alvo.closest('.secao-corpo').previousElementSibling : null);
+      if (h2 && h2._corpo) { h2._corpo.hidden = false; h2.classList.remove('fechada'); }
+      alvo.scrollIntoView();
+    }
+    window.addEventListener('hashchange', abrirAlvo);
+    abrirAlvo();
+  })();
   </script>
 </body>
 </html>

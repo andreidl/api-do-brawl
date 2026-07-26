@@ -30,24 +30,21 @@
   </tr></thead>
   <tbody>
     {{ linha('🏆 Troféus', a.trofeus, b.trofeus) }}
-    {{ linha('🏆 Troféus máximo', a.trofeus_max, b.trofeus_max) }}
     {{ linha('⭐ Level', a.level, b.level) }}
-    {{ linha('Vitórias 3v3', a.vitorias_3v3, b.vitorias_3v3) }}
-    {{ linha('Vitórias solo', a.vitorias_solo, b.vitorias_solo) }}
-    {{ linha('Vitórias duo', a.vitorias_duo, b.vitorias_duo) }}
     <tr><th>Ranked atual</th><td>{{ a.ranked_atual or '—' }}</td><td>{{ b.ranked_atual or '—' }}</td></tr>
     {{ linha('Winrate (capturado)', a.winrate, b.winrate, '%') }}
     {{ linha('⭐ Star player (capturado)', a.star_pct, b.star_pct, '%') }}
     {{ linha('Batalhas capturadas', a.batalhas, b.batalhas) }}
-    {{ linha('Brawlers diferentes usados', a.n_brawlers, b.n_brawlers) }}
-    <tr>
-      <th>Brawler mais usado</th>
-      <td>{% if a.brawler_top %}{{ brawler_ico(a.brawler_top.brawler) }} <span class="nota">({{ a.brawler_top.usos }}x)</span>{% else %}—{% endif %}</td>
-      <td>{% if b.brawler_top %}{{ brawler_ico(b.brawler_top.brawler) }} <span class="nota">({{ b.brawler_top.usos }}x)</span>{% else %}—{% endif %}</td>
-    </tr>
+    <tr class="comp-sub"><th colspan="3">Coleção</th></tr>
+    {{ linha('🎯 Brawlers liberados', a.brawlers_liberados, b.brawlers_liberados) }}
+    {{ linha('🔥 Brawlers no poder 11', a.power11, b.power11) }}
+    {{ linha('⭐ Poderes estrela', a.star_powers, b.star_powers) }}
+    {{ linha('🛠️ Gadgets', a.gadgets, b.gadgets) }}
+    {{ linha('⚙️ Gears', a.gears, b.gears) }}
+    {{ linha('⚡ Hypercharges', a.hypercharges, b.hypercharges) }}
   </tbody>
 </table>
-<p class="nota">🟩 = melhor valor. "Capturado" = calculado das batalhas no nosso banco (não a conta inteira). Troféus/level/vitórias vêm do último snapshot da conta.</p>
+<p class="nota">🟩 = melhor valor. "Capturado" = calculado das batalhas no nosso banco (não a conta inteira). Troféus/level/coleção vêm do último snapshot da conta.</p>
 {% elif not erro_a and not erro_b %}
 <p class="nota">Digite as duas tags e clique em <b>Comparar</b>. Os jogadores precisam ter sido consultados antes — se não aparecer, busque cada um na home primeiro.</p>
 {% endif %}

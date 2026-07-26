@@ -822,20 +822,24 @@ def resumo_comparacao(conexao: sqlite3.Connection, tag: str) -> dict | None:
         (tag,)).fetchone()
     dec, vit = int(r["dec"] or 0), int(r["vit"] or 0)
     stars = int(r["stars"] or 0)
-    usados = brawlers_usados_do_jogador(conexao, tag)
+    # coleção do jogador (do snapshot: brawlers que possui + itens de cada um)
+    brws = perfil.get("brawlers") or []
+    n_sp = sum(len(b.get("star_powers_nomes") or []) for b in brws)
+    n_gd = sum(len(b.get("gadgets_nomes") or []) for b in brws)
+    n_gr = sum(len(b.get("gears_nomes") or []) for b in brws)
+    n_hyper = sum(1 for b in brws if b.get("hypercharge"))
+    n_p11 = sum(1 for b in brws if b.get("power") == 11)
     return {
         "tag": tag, "nick": perfil["nick"],
-        "trofeus": stats.get("trofeus"), "trofeus_max": stats.get("trofeus_max"),
+        "trofeus": stats.get("trofeus"),
         "level": stats.get("level"),
-        "vitorias_3v3": stats.get("vitorias_3v3"),
-        "vitorias_solo": stats.get("vitorias_solo"),
-        "vitorias_duo": stats.get("vitorias_duo"),
         "ranked_atual": stats.get("ranked_atual"),
         "batalhas": int(r["total"] or 0), "decididas": dec, "vitorias": vit,
         "winrate": round(vit / dec * 100, 1) if dec else None,
         "stars": stars, "star_pct": round(stars / dec * 100, 1) if dec else None,
-        "n_brawlers": len(usados),
-        "brawler_top": usados[0] if usados else None,
+        "brawlers_liberados": len(brws),
+        "power11": n_p11,
+        "star_powers": n_sp, "gadgets": n_gd, "gears": n_gr, "hypercharges": n_hyper,
     }
 
 

@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% from "_macros.html" import barra_wr, brawler_ico %}
 {% block titulo %}{{ perfil.nick }} — API do Brawl{% endblock %}
+{% block main_classe %}acordeon{% endblock %}
 {% block conteudo %}
 {% if modo_instantaneo %}
 <p class="nota" id="aviso-atualizacao">⚡ Dados do banco ({{ snapshot_em }}) —
-  buscando novidades no brawlace em segundo plano…</p>
+  atualizando pela API oficial em segundo plano…</p>
 <script>
 fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   .then(r => r.json())
@@ -13,12 +14,12 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
       location.href = "/jogador/{{ perfil.tag.lstrip('#') }}?atualizado=1{% if filtro_tipo %}&tipo={{ filtro_tipo }}{% endif %}";
     } else {
       const aviso = document.getElementById("aviso-atualizacao");
-      if (aviso) aviso.textContent = "✅ Dados em dia com o brawlace (nenhuma batalha nova).";
+      if (aviso) aviso.textContent = "✅ Dados em dia (nenhuma batalha nova).";
     }
   })
   .catch(() => {
     const aviso = document.getElementById("aviso-atualizacao");
-    if (aviso) aviso.textContent = "⚠️ Não consegui atualizar agora (brawlace fora do ar?) — mostrando o banco local.";
+    if (aviso) aviso.textContent = "⚠️ Não consegui atualizar agora — mostrando o banco local.";
   });
 </script>
 {% endif %}

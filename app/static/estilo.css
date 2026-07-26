@@ -435,7 +435,20 @@ h1 .ico-brawler, .bc-nome .ico-brawler { width: 34px; height: 34px; }
 .tabela-comparacao td { text-align: center; font-weight: 700; }
 .tabela-comparacao thead th { text-align: center; }
 td.comp-melhor { background: rgba(61, 220, 132, 0.14); color: var(--verde); }
+.tabela-comparacao tr.comp-sub th { text-align: center; color: var(--destaque);
+  background: rgba(255, 255, 255, 0.03); font-weight: 700; letter-spacing: 0.03em; }
 @media (max-width: 640px) { .form-comparar input { min-width: 0; } }
+
+/* ---------- accordion de seções (página do jogador) ---------- */
+main.acordeon > h2.secao-h {
+  cursor: pointer; user-select: none; display: flex; align-items: center; gap: 0.5rem;
+}
+main.acordeon > h2.secao-h::before {
+  content: "▾"; color: var(--destaque); font-size: 0.75em; transition: transform 0.15s;
+}
+main.acordeon > h2.secao-h.fechada::before { transform: rotate(-90deg); }
+main.acordeon > h2.secao-h:hover { color: var(--destaque); }
+.secao-corpo[hidden] { display: none; }
 
 /* ---------- duas tabelas lado a lado ---------- */
 .lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }
