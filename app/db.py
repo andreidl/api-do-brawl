@@ -929,15 +929,19 @@ def meta_todos_detalhado(conexao: sqlite3.Connection) -> dict:
     brawlers: list[dict] = []
     for b, modos in por_brawler.items():
         modos.sort(key=lambda m: m["posicao"])
+        posicoes = [m["posicao"] for m in modos]
         brawlers.append({
             "brawler": b,
             "melhor_pos": modos[0]["posicao"],
+            # posição MÉDIA entre os modos = força GERAL (menor = mais forte no geral)
+            "pos_media": round(sum(posicoes) / len(posicoes), 1),
             "modos_qtd": len(modos),
             "modos": modos,
             "fortes": [m["modo"] for m in modos if m["nivel"] == "forte"],
             "fracos": [m["modo"] for m in modos if m["nivel"] == "fraco"],
         })
-    brawlers.sort(key=lambda x: x["melhor_pos"])
+    # ordena pela força GERAL (posição média), não pela melhor posição num único modo
+    brawlers.sort(key=lambda x: x["pos_media"])
     return {"data": d1, "brawlers": brawlers}
 
 

@@ -3,15 +3,16 @@
 {% block titulo %}Meta dos brawlers — API do Brawl{% endblock %}
 {% block conteudo %}
 <h1>📊 Meta dos brawlers</h1>
-{% if data_meta %}<p class="nota">Meta mais recente: <code>{{ data_meta }}</code> · {{ brawlers | length }} brawlers · ordenados pela melhor posição entre os modos. <b>Clique</b> num brawler para ver os modos onde ele é forte/fraco.</p>{% endif %}
+{% if data_meta %}<p class="nota">Meta mais recente: <code>{{ data_meta }}</code> · {{ brawlers | length }} brawlers · ordenados pela <b>força geral</b> (posição média entre os modos — quem é bom em vários modos fica no topo). <b>Clique</b> num brawler para ver os modos onde ele é forte/fraco.</p>{% endif %}
 
 {% if brawlers %}
 <div class="lista-brawlers">
   {% for b in brawlers %}
   <details class="brawler-card">
     <summary>
-      <span class="bc-pos">{{ b.melhor_pos }}º</span>
+      <span class="bc-pos">{{ loop.index }}º</span>
       <span class="bc-nome">{{ b.brawler }}</span>
+      <span class="bc-media nota">média {{ b.pos_media }}º · melhor {{ b.melhor_pos }}º</span>
       <span class="bc-resumo">
         {%- if b.fortes %}<span class="chip-forte">🟢 {{ b.fortes | length }} forte{{ 's' if b.fortes|length > 1 }}</span>{% endif -%}
         {%- if b.fracos %}<span class="chip-fraco">🔴 {{ b.fracos | length }} fraco{{ 's' if b.fracos|length > 1 }}</span>{% endif -%}
