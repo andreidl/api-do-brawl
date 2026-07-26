@@ -806,6 +806,39 @@ def modos_mais_jogados(conexao: sqlite3.Connection, limite: int | None = None) -
     return _contagem_simples(conexao, "modo", limite)
 
 
+def resumo_comparacao(conexao: sqlite3.Connection, tag: str) -> dict | None:
+    """KPIs de um jogador para a tela de comparação (tudo do banco). None se o
+    jogador nunca foi consultado (sem snapshot)."""
+    perfil = perfil_do_banco(conexao, tag)
+    if perfil is None:
+        return None
+    stats = perfil["stats"]
+    r = conexao.execute(
+        """SELECT COUNT(*) AS total,
+                  SUM(CASE WHEN resultado IN ('Victory','Defeat') THEN 1 ELSE 0 END) AS dec,
+                  SUM(CASE WHEN resultado = 'Victory' THEN 1 ELSE 0 END) AS vit,
+                  SUM(star_player) AS stars
+           FROM batalha_jogadores WHERE tag_jogador = ?""",
+        (tag,)).fetchone()
+    dec, vit = int(r["dec"] or 0), int(r["vit"] or 0)
+    stars = int(r["stars"] or 0)
+    usados = brawlers_usados_do_jogador(conexao, tag)
+    return {
+        "tag": tag, "nick": perfil["nick"],
+        "trofeus": stats.get("trofeus"), "trofeus_max": stats.get("trofeus_max"),
+        "level": stats.get("level"),
+        "vitorias_3v3": stats.get("vitorias_3v3"),
+        "vitorias_solo": stats.get("vitorias_solo"),
+        "vitorias_duo": stats.get("vitorias_duo"),
+        "ranked_atual": stats.get("ranked_atual"),
+        "batalhas": int(r["total"] or 0), "decididas": dec, "vitorias": vit,
+        "winrate": round(vit / dec * 100, 1) if dec else None,
+        "stars": stars, "star_pct": round(stars / dec * 100, 1) if dec else None,
+        "n_brawlers": len(usados),
+        "brawler_top": usados[0] if usados else None,
+    }
+
+
 def data_meta_recente(conexao: sqlite3.Connection) -> str | None:
     """Data (timestamp texto) do snapshot de meta mais recente, ou None se vazio."""
     linha = conexao.execute("SELECT MAX(data) AS d FROM meta_snapshots").fetchone()

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import brawler_ico %}
+{% block titulo %}Comparar jogadores — API do Brawl{% endblock %}
+
+{% macro linha(rotulo, va, vb, suf='') -%}
+<tr>
+  <th>{{ rotulo }}</th>
+  <td class="{{ 'comp-melhor' if va is not none and vb is not none and va > vb }}">{% if va is none %}<span class="nota">—</span>{% else %}{{ va }}{{ suf }}{% endif %}</td>
+  <td class="{{ 'comp-melhor' if va is not none and vb is not none and vb > va }}">{% if vb is none %}<span class="nota">—</span>{% else %}{{ vb }}{{ suf }}{% endif %}</td>
+</tr>
+{%- endmacro %}
+
+{% block conteudo %}
+<h1>⚖️ Comparar jogadores</h1>
+<form method="get" action="/comparar" class="form-comparar">
+  <input type="text" name="a" value="{{ tag_a }}" placeholder="#TAG do jogador 1" required>
+  <span class="vs">×</span>
+  <input type="text" name="b" value="{{ tag_b }}" placeholder="#TAG do jogador 2" required>
+  <button type="submit">Comparar</button>
+</form>
+{% if erro_a %}<p class="erro">Jogador 1: {{ erro_a }}</p>{% endif %}
+{% if erro_b %}<p class="erro">Jogador 2: {{ erro_b }}</p>{% endif %}
+
+{% if a and b %}
+<table class="tabela-comparacao">
+  <thead><tr>
+    <th></th>
+    <th><a href="/jogador/{{ a.tag.lstrip('#') }}">{{ a.nick }}</a><br><span class="tag">{{ a.tag }}</span></th>
+    <th><a href="/jogador/{{ b.tag.lstrip('#') }}">{{ b.nick }}</a><br><span class="tag">{{ b.tag }}</span></th>
+  </tr></thead>
+  <tbody>
+    {{ linha('🏆 Troféus', a.trofeus, b.trofeus) }}
+    {{ linha('🏆 Troféus máximo', a.trofeus_max, b.trofeus_max) }}
+    {{ linha('⭐ Level', a.level, b.level) }}
+    {{ linha('Vitórias 3v3', a.vitorias_3v3, b.vitorias_3v3) }}
+    {{ linha('Vitórias solo', a.vitorias_solo, b.vitorias_solo) }}
+    {{ linha('Vitórias duo', a.vitorias_duo, b.vitorias_duo) }}
+    <tr><th>Ranked atual</th><td>{{ a.ranked_atual or '—' }}</td><td>{{ b.ranked_atual or '—' }}</td></tr>
+    {{ linha('Winrate (capturado)', a.winrate, b.winrate, '%') }}
+    {{ linha('⭐ Star player (capturado)', a.star_pct, b.star_pct, '%') }}
+    {{ linha('Batalhas capturadas', a.batalhas, b.batalhas) }}
+    {{ linha('Brawlers diferentes usados', a.n_brawlers, b.n_brawlers) }}
+    <tr>
+      <th>Brawler mais usado</th>
+      <td>{% if a.brawler_top %}{{ brawler_ico(a.brawler_top.brawler) }} <span class="nota">({{ a.brawler_top.usos }}x)</span>{% else %}—{% endif %}</td>
+      <td>{% if b.brawler_top %}{{ brawler_ico(b.brawler_top.brawler) }} <span class="nota">({{ b.brawler_top.usos }}x)</span>{% else %}—{% endif %}</td>
+    </tr>
+  </tbody>
+</table>
+<p class="nota">🟩 = melhor valor. "Capturado" = calculado das batalhas no nosso banco (não a conta inteira). Troféus/level/vitórias vêm do último snapshot da conta.</p>
+{% elif not erro_a and not erro_b %}
+<p class="nota">Digite as duas tags e clique em <b>Comparar</b>. Os jogadores precisam ter sido consultados antes — se não aparecer, busque cada um na home primeiro.</p>
+{% endif %}
+{% endblock %}

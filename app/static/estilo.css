@@ -426,6 +426,17 @@ th.th-ord.ord-desc::after { content: " ▼"; font-size: 0.7em; color: var(--dest
 h1 .ico-brawler, .bc-nome .ico-brawler { width: 34px; height: 34px; }
 .ico-acess { width: 18px; height: 18px; vertical-align: middle; margin-right: 0.25rem; }
 
+/* ---------- comparar jogadores ---------- */
+.form-comparar { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 1rem 0 1.4rem; }
+.form-comparar input { flex: 1; min-width: 160px; padding: 0.7rem 0.9rem;
+  background: var(--painel); border: 1px solid var(--painel-borda); border-radius: 10px; color: var(--texto); }
+.form-comparar .vs { font-weight: 800; color: var(--destaque); }
+.tabela-comparacao th:first-child { text-align: left; color: var(--texto-suave); font-weight: 600; }
+.tabela-comparacao td { text-align: center; font-weight: 700; }
+.tabela-comparacao thead th { text-align: center; }
+td.comp-melhor { background: rgba(61, 220, 132, 0.14); color: var(--verde); }
+@media (max-width: 640px) { .form-comparar input { min-width: 0; } }
+
 /* ---------- duas tabelas lado a lado ---------- */
 .lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }
 .lado-a-lado .meia { flex: 1; min-width: 260px; }

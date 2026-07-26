@@ -182,6 +182,34 @@ def pagina_brawler(request: Request, nome: str):
         conexao.close()
 
 
+@app.get("/comparar", response_class=HTMLResponse)
+def pagina_comparar(request: Request, a: str | None = None, b: str | None = None):
+    """Compara dois jogadores lado a lado (KPIs do banco)."""
+    dados = {"a": None, "b": None}
+    erros = {"a": None, "b": None}
+    conexao = db.conectar()
+    try:
+        for raw, slot in ((a, "a"), (b, "b")):
+            if not raw:
+                continue
+            try:
+                tag = brawlace.normalizar_tag(raw)
+            except brawlace.TagInvalida:
+                erros[slot] = "Tag inválida (use #299PGGLQL)."
+                continue
+            res = db.resumo_comparacao(conexao, tag)
+            if res is None:
+                erros[slot] = f"{tag} ainda não foi consultado — busque o jogador primeiro."
+            else:
+                dados[slot] = res
+    finally:
+        conexao.close()
+    return templates.TemplateResponse(request, "comparar.html", {
+        "a": dados["a"], "b": dados["b"], "tag_a": a or "", "tag_b": b or "",
+        "erro_a": erros["a"], "erro_b": erros["b"],
+    })
+
+
 @app.post("/buscar")
 def buscar(tag: str = Form(...)):
     try:
