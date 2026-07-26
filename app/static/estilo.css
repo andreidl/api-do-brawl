@@ -399,6 +399,23 @@ h2[id], h3[id] { scroll-margin-top: 14px; }
 .bc-bloco table { margin-top: 0.3rem; }
 .bc-bloco td { padding: 0.25rem 0.4rem; }
 
+/* ---------- meta: accordion de brawlers (/brawler) ---------- */
+.bom { color: var(--verde); font-weight: 700; }
+.ruim { color: var(--vermelho); font-weight: 700; }
+.lista-brawlers { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem; }
+.lista-brawlers .bc-corpo { display: block; padding: 0.6rem 0.9rem 0.9rem; }
+.bc-pos { font-weight: 800; color: var(--destaque); min-width: 2.8rem; }
+.bc-resumo { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-left: auto; }
+.resumo-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 0 0 0.7rem; }
+.chip-forte, .chip-fraco { font-size: 0.78rem; padding: 0.16rem 0.6rem; border-radius: 999px; white-space: nowrap; }
+.chip-forte { background: rgba(70, 209, 122, 0.16); color: #6fe39a; }
+.chip-fraco { background: rgba(229, 106, 106, 0.16); color: #f08a8a; }
+.nivel { font-size: 0.82rem; white-space: nowrap; }
+.nivel-forte { color: #46d17a; }
+.nivel-medio { color: #e8c34a; }
+.nivel-fraco { color: #e56a6a; }
+.tabela-modos { width: 100%; margin-top: 0.2rem; }
+
 /* ---------- duas tabelas lado a lado ---------- */
 .lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }
 .lado-a-lado .meia { flex: 1; min-width: 260px; }

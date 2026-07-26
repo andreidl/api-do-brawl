@@ -130,13 +130,14 @@ def pagina_cla(request: Request):
 
 @app.get("/brawler", response_class=HTMLResponse)
 def pagina_brawlers(request: Request):
-    """Índice do meta: todos os brawlers, mais fortes primeiro."""
+    """Índice do meta: todos os brawlers como cards expansíveis (accordion) —
+    clicar abre o detalhe por modo na própria página, sem trocar de rota."""
     conexao = db.conectar()
     try:
+        dados = db.meta_todos_detalhado(conexao)
         return templates.TemplateResponse(
             request, "brawlers.html",
-            {"brawlers": db.brawlers_no_meta(conexao),
-             "data_meta": db.data_meta_recente(conexao)},
+            {"brawlers": dados["brawlers"], "data_meta": dados["data"]},
         )
     finally:
         conexao.close()
@@ -144,12 +145,13 @@ def pagina_brawlers(request: Request):
 
 @app.get("/brawler/{nome}", response_class=HTMLResponse)
 def pagina_brawler(request: Request, nome: str):
-    """Stats globais (meta) de um brawler: posição + % star player por modo."""
+    """Detalhe de um brawler (link direto). O índice /brawler já mostra tudo
+    inline; esta rota serve para compartilhar/abrir um brawler específico."""
     brawler = nome.upper()  # nome vem URL-decoded; no meta os nomes são MAIÚSCULOS
     conexao = db.conectar()
     try:
-        modos = db.meta_do_brawler(conexao, brawler)
-        if not modos:
+        dados = db.meta_brawler_detalhado(conexao, brawler)
+        if not dados["modos"]:
             return templates.TemplateResponse(
                 request, "erro.html",
                 {"mensagem": f"Sem dados de meta para '{brawler}'."},
@@ -157,8 +159,7 @@ def pagina_brawler(request: Request, nome: str):
             )
         return templates.TemplateResponse(
             request, "brawler.html",
-            {"brawler": brawler, "modos": modos,
-             "data_meta": db.data_meta_recente(conexao)},
+            {"brawler": brawler, "dados": dados, "data_meta": dados["data"]},
         )
     finally:
         conexao.close()

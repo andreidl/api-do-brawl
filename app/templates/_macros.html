@@ -13,6 +13,36 @@
 {%- endif -%}
 {%- endmacro %}
 
+{# Tabela de modos do brawler no meta: posição (de N), nível e tendência #}
+{% macro tabela_modos(modos) -%}
+<table class="tabela-modos">
+  <thead><tr><th>Modo</th><th>Posição</th><th>Força</th><th>Tendência</th><th>Star player</th></tr></thead>
+  <tbody>
+    {% for m in modos %}
+    <tr>
+      <td>{{ m.modo }}</td>
+      <td><b>{{ m.posicao }}º</b>{% if m.total %} <span class="nota">de {{ m.total }}</span>{% endif %}</td>
+      <td><span class="nivel nivel-{{ m.nivel }}">{{ {'forte':'🟢 Forte','medio':'🟡 Médio','fraco':'🔴 Fraco'}[m.nivel] }}</span></td>
+      <td>{% if m.delta is none %}<span class="nota">—</span>
+          {%- elif m.delta > 0 %}<span class="bom">▲ {{ m.delta }}</span>
+          {%- elif m.delta < 0 %}<span class="ruim">▼ {{ -m.delta }}</span>
+          {%- else %}<span class="nota">=</span>{% endif %}</td>
+      <td>{{ "%.2f"|format(m.star_player_pct) }}%</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{%- endmacro %}
+
+{# Resumo forte/fraco em chips #}
+{% macro resumo_forte_fraco(fortes, fracos) -%}
+<p class="resumo-meta">
+  {%- if fortes %}<span class="chip-forte">🟢 Forte em: {{ fortes | join(', ') }}</span>{% endif -%}
+  {%- if fracos %}<span class="chip-fraco">🔴 Fraco em: {{ fracos | join(', ') }}</span>{% endif -%}
+  {%- if not fortes and not fracos %}<span class="nota">Desempenho mediano em todos os modos.</span>{% endif -%}
+</p>
+{%- endmacro %}
+
 {% macro acessorios(a) -%}
 {%- if a -%}
 <span class="acess">

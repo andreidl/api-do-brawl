@@ -724,6 +724,104 @@ def meta_do_brawler(conexao: sqlite3.Connection, brawler: str) -> list[dict]:
              "posicao": l["posicao"]} for l in linhas]
 
 
+def meta_brawler_detalhado(conexao: sqlite3.Connection, brawler: str) -> dict:
+    """Detalhe rico do brawler no meta: por modo, posição COM contexto (de N
+    brawlers), nível (forte/médio/fraco pelo percentil) e tendência vs a data
+    anterior. Retorna {data, modos:[...], fortes:[...], fracos:[...]}."""
+    d1 = data_meta_recente(conexao)
+    if d1 is None:
+        return {"data": None, "modos": [], "fortes": [], "fracos": []}
+    # data anterior (para a tendência)
+    r = conexao.execute(
+        "SELECT MAX(data) AS d FROM meta_snapshots WHERE data < ?", (d1,)
+    ).fetchone()
+    d0 = r["d"] if r else None
+    # quantos brawlers cada modo tem na data atual (para o "Xº de N")
+    totais = {l["modo"]: l["n"] for l in conexao.execute(
+        "SELECT modo, COUNT(*) AS n FROM meta_snapshots WHERE data = ? GROUP BY modo",
+        (d1,)).fetchall()}
+    # posições do brawler na data anterior (para o delta)
+    anteriores: dict = {}
+    if d0:
+        anteriores = {l["modo"]: l["posicao"] for l in conexao.execute(
+            "SELECT modo, posicao FROM meta_snapshots WHERE brawler = ? AND data = ?",
+            (brawler, d0)).fetchall()}
+    modos: list[dict] = []
+    for l in conexao.execute(
+        """SELECT modo, star_player_pct, posicao FROM meta_snapshots
+           WHERE brawler = ? AND data = ? ORDER BY posicao""",
+        (brawler, d1)).fetchall():
+        modo, pos, spp = l["modo"], l["posicao"], l["star_player_pct"]
+        total = totais.get(modo)
+        pct = (pos / total) if total else None  # 0 = topo; 1 = fundo
+        nivel = ("forte" if pct is not None and pct <= 0.20
+                 else "fraco" if pct is not None and pct > 0.55 else "medio")
+        delta = (anteriores[modo] - pos) if modo in anteriores else None  # + = subiu
+        modos.append({"modo": modo, "posicao": pos, "total": total,
+                      "star_player_pct": spp, "nivel": nivel, "delta": delta})
+    return {
+        "data": d1,
+        "modos": modos,
+        "fortes": [m["modo"] for m in modos if m["nivel"] == "forte"],
+        "fracos": [m["modo"] for m in modos if m["nivel"] == "fraco"],
+    }
+
+
+def _nivel_meta(pos: int, total: int | None) -> str:
+    """Classifica a força do brawler no modo pelo percentil da posição."""
+    if not total:
+        return "medio"
+    pct = pos / total
+    return "forte" if pct <= 0.20 else "fraco" if pct > 0.55 else "medio"
+
+
+def meta_todos_detalhado(conexao: sqlite3.Connection) -> dict:
+    """Detalhe de TODOS os brawlers do meta (data recente) para o accordion de
+    /brawler — cada um com seus modos (posição de N, nível, tendência), forte/
+    fraco resumidos. Eficiente: 3 queries no total. {data, brawlers:[...]}."""
+    d1 = data_meta_recente(conexao)
+    if d1 is None:
+        return {"data": None, "brawlers": []}
+    r = conexao.execute(
+        "SELECT MAX(data) AS d FROM meta_snapshots WHERE data < ?", (d1,)
+    ).fetchone()
+    d0 = r["d"] if r else None
+    totais = {l["modo"]: l["n"] for l in conexao.execute(
+        "SELECT modo, COUNT(*) AS n FROM meta_snapshots WHERE data = ? GROUP BY modo",
+        (d1,)).fetchall()}
+    anteriores: dict = {}
+    if d0:
+        for l in conexao.execute(
+            "SELECT brawler, modo, posicao FROM meta_snapshots WHERE data = ?",
+            (d0,)).fetchall():
+            anteriores[(l["brawler"], l["modo"])] = l["posicao"]
+    por_brawler: dict = {}
+    for l in conexao.execute(
+        """SELECT brawler, modo, star_player_pct, posicao
+           FROM meta_snapshots WHERE data = ? ORDER BY posicao""",
+        (d1,)).fetchall():
+        b, modo, pos, spp = l["brawler"], l["modo"], l["posicao"], l["star_player_pct"]
+        total = totais.get(modo)
+        delta = anteriores[(b, modo)] - pos if (b, modo) in anteriores else None
+        por_brawler.setdefault(b, []).append({
+            "modo": modo, "posicao": pos, "total": total,
+            "star_player_pct": spp, "nivel": _nivel_meta(pos, total), "delta": delta,
+        })
+    brawlers: list[dict] = []
+    for b, modos in por_brawler.items():
+        modos.sort(key=lambda m: m["posicao"])
+        brawlers.append({
+            "brawler": b,
+            "melhor_pos": modos[0]["posicao"],
+            "modos_qtd": len(modos),
+            "modos": modos,
+            "fortes": [m["modo"] for m in modos if m["nivel"] == "forte"],
+            "fracos": [m["modo"] for m in modos if m["nivel"] == "fraco"],
+        })
+    brawlers.sort(key=lambda x: x["melhor_pos"])
+    return {"data": d1, "brawlers": brawlers}
+
+
 def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> list[dict]:
     """Ranking de todos os jogadores conhecidos no banco (consultados ou não):
     batalhas decididas, winrate, taxa de star player e troféus GANHOS (soma dos
