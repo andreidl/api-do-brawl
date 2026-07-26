@@ -707,6 +707,28 @@ def historico_score_meta(conexao: sqlite3.Connection, tag: str) -> list[dict]:
     return [{"dia": l["dia"], "score": l["score"]} for l in linhas]
 
 
+def estatisticas_globais(conexao: sqlite3.Connection) -> dict:
+    """Totais de TODO o dado coletado — para o painel da home. Contagens baratas
+    sobre as tabelas principais (o que temos e de quando a quando)."""
+    def _n(sql: str):
+        return conexao.execute(sql).fetchone()["n"]
+    return {
+        "batalhas": _n("SELECT COUNT(*) AS n FROM batalhas"),
+        "registros_jogador": _n("SELECT COUNT(*) AS n FROM batalha_jogadores"),
+        "jogadores_vistos": _n("SELECT COUNT(DISTINCT tag_jogador) AS n FROM batalha_jogadores"),
+        "jogadores_consultados": _n("SELECT COUNT(*) AS n FROM jogadores"),
+        "brawlers_vistos": _n("SELECT COUNT(DISTINCT brawler) AS n FROM batalha_jogadores WHERE brawler IS NOT NULL"),
+        "mapas": _n("SELECT COUNT(DISTINCT mapa) AS n FROM batalhas WHERE mapa IS NOT NULL"),
+        "modos": _n("SELECT COUNT(DISTINCT modo) AS n FROM batalhas WHERE modo IS NOT NULL"),
+        "meta_snapshots": _n("SELECT COUNT(*) AS n FROM meta_snapshots"),
+        "snapshots": _n("SELECT COUNT(*) AS n FROM snapshots"),
+        "primeira_batalha": conexao.execute(
+            "SELECT MIN(ocorrida_em) AS n FROM batalhas").fetchone()["n"],
+        "ultima_batalha": conexao.execute(
+            "SELECT MAX(ocorrida_em) AS n FROM batalhas").fetchone()["n"],
+    }
+
+
 def data_meta_recente(conexao: sqlite3.Connection) -> str | None:
     """Data (timestamp texto) do snapshot de meta mais recente, ou None se vazio."""
     linha = conexao.execute("SELECT MAX(data) AS d FROM meta_snapshots").fetchone()

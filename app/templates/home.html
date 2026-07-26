@@ -18,6 +18,20 @@
   </a>
 </div>
 
+{% if estatisticas %}
+<h2>📦 Dados coletados</h2>
+<section class="cartoes">
+  <div class="cartao"><b>{{ "{:,}".format(estatisticas.batalhas).replace(",", ".") }}</b><span>Batalhas</span></div>
+  <div class="cartao"><b>{{ "{:,}".format(estatisticas.registros_jogador).replace(",", ".") }}</b><span>Registros de jogador</span></div>
+  <div class="cartao"><b>{{ estatisticas.jogadores_vistos }}</b><span>Jogadores vistos</span></div>
+  <div class="cartao"><b>{{ estatisticas.brawlers_vistos }}</b><span>Brawlers vistos</span></div>
+  <div class="cartao"><b>{{ estatisticas.mapas }}</b><span>Mapas</span></div>
+  <div class="cartao"><b>{{ estatisticas.modos }}</b><span>Modos</span></div>
+  <div class="cartao"><b>{{ "{:,}".format(estatisticas.meta_snapshots).replace(",", ".") }}</b><span>Registros de meta</span></div>
+</section>
+{% if estatisticas.primeira_batalha %}<p class="nota">Batalhas capturadas de <code>{{ estatisticas.primeira_batalha[:10] }}</code> até <code>{{ estatisticas.ultima_batalha[:10] }}</code> · {{ estatisticas.jogadores_consultados }} jogadores já consultados.</p>{% endif %}
+{% endif %}
+
 {% if pendencias_externas %}
 <p class="nota">📥 <b>Histórico externo pendente</b> — consultados sem importação do Brawlify:
   {% for p in pendencias_externas %}{{ p.nick }} <span class="tag">{{ p.tag }}</span>{{ ", " if not loop.last }}{% endfor %}.

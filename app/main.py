@@ -92,6 +92,7 @@ def home(request: Request, erro: str | None = None):
                 "mensagem_erro": mensagem_erro,
                 "clube": clube,
                 "tem_meta": db.data_meta_recente(conexao) is not None,
+                "estatisticas": db.estatisticas_globais(conexao),
                 "pendencias_externas": db.tags_sem_historico_externo(conexao),
                 "rastreio_status": rastrear.ultima_rodada(),
             },
