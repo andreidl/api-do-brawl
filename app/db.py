@@ -622,6 +622,26 @@ def batalhas_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[dict]:
     return [dict(linha) for linha in linhas]
 
 
+def brawlers_usados_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[dict]:
+    """Brawlers que o jogador usou em TODAS as batalhas capturadas (não só as
+    decididas), mais usados primeiro: usos, vitórias (3v3/duo etc.) e star player.
+    Fonte: batalha_jogadores (o que foi visto nas nossas buscas)."""
+    linhas = conexao.execute(
+        """SELECT bj.brawler AS brawler,
+                  COUNT(*) AS usos,
+                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                  SUM(bj.star_player) AS stars
+           FROM batalha_jogadores bj
+           WHERE bj.tag_jogador = ? AND bj.brawler IS NOT NULL
+           GROUP BY bj.brawler
+           ORDER BY usos DESC""",
+        (tag,),
+    ).fetchall()
+    return [{"brawler": l["brawler"], "usos": int(l["usos"]),
+             "vitorias": int(l["vitorias"] or 0), "stars": int(l["stars"] or 0)}
+            for l in linhas]
+
+
 def contar_batalhas(conexao: sqlite3.Connection, tag: str) -> int:
     return conexao.execute(
         "SELECT COUNT(*) AS n FROM batalha_jogadores WHERE tag_jogador = ?", (tag,)

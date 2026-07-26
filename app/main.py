@@ -207,6 +207,7 @@ def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
         brawlers_lp: list[dict] = db.historico_brawler_do_jogador(conexao, perfil["tag"])
         brawlers_modo: list[dict] = db.historico_brawler_modo_do_jogador(conexao, perfil["tag"])
         participantes: list[dict] = db.jogadores_das_batalhas(conexao, perfil["tag"])
+        brawlers_usados: list[dict] = db.brawlers_usados_do_jogador(conexao, perfil["tag"])
     finally:
         conexao.close()
     historico = _filtrar_tipo(historico, filtro_tipo)
@@ -224,6 +225,7 @@ def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
     tendencias: dict | None = _tendencias_meta_seguro()
     return {
         "perfil": perfil, "gravacao": gravacao,
+        "brawlers_usados": brawlers_usados,
         "indicadores": indicadores, "extra": extra,
         "brawlers_longo_prazo": brawlers_lp,
         "correlacao": correlacao,
@@ -301,6 +303,7 @@ def _consultar_do_banco(tag_norm: str, filtro_tipo: str | None = None) -> dict |
         brawlers_lp: list[dict] = db.historico_brawler_do_jogador(conexao, tag_norm)
         brawlers_modo: list[dict] = db.historico_brawler_modo_do_jogador(conexao, tag_norm)
         participantes: list[dict] = db.jogadores_das_batalhas(conexao, tag_norm)
+        brawlers_usados: list[dict] = db.brawlers_usados_do_jogador(conexao, tag_norm)
     finally:
         conexao.close()
     historico = _filtrar_tipo(historico, filtro_tipo)
@@ -309,13 +312,14 @@ def _consultar_do_banco(tag_norm: str, filtro_tipo: str | None = None) -> dict |
     indicadores: dict = performance.calcular_indicadores(
         historico, perfil["brawlers"], snapshots, diario
     )
-    extra: dict | None = brawltime.coletar_extra(tag_norm)
-    conta: dict | None = brawlytix.coletar_conta(tag_norm)
+    extra: dict | None = _seguro(lambda: brawltime.coletar_extra(tag_norm))
+    conta: dict | None = _seguro(lambda: brawlytix.coletar_conta(tag_norm))
     correlacao: dict | None = _correlacao_meta(perfil, historico, brawlers_lp,
                                                brawlers_modo)
     return {
         "perfil": perfil,
         "gravacao": {"batalhas_novas": 0, "total_batalhas": len(historico)},
+        "brawlers_usados": brawlers_usados,
         "indicadores": indicadores, "extra": extra,
         "brawlers_longo_prazo": brawlers_lp,
         "correlacao": correlacao,

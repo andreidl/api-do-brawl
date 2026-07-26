@@ -70,6 +70,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% if tendencias or correlacao %}<a href="#tendencias">Tendências</a>{% endif %}
     <a href="#batalhas">Últimas batalhas</a>
     <a href="#brawlers-lista">Brawlers</a>
+    {% if brawlers_usados %}<a href="#mais-usados">Brawlers mais usados</a>{% endif %}
   </div>
   <div class="indice-linha indice-sub">
     <span class="indice-titulo"><a href="#indicadores">Indicadores</a> →</span>
@@ -84,6 +85,27 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% if indicadores.brawler_detalhado %}<a href="#detalhe-brawler">detalhe por brawler (cards)</a>{% endif %}
   </div>
 </nav>
+
+{% if brawlers_usados %}
+<h2 id="mais-usados">🎯 Brawlers mais usados <span class="nota">(nas batalhas capturadas — todas, incluindo showdown)</span></h2>
+<details class="recolhivel" {{ 'open' if brawlers_usados | length <= 12 }}>
+  <summary>{{ brawlers_usados | length }} brawlers usados — clique para {{ 'recolher' if brawlers_usados | length <= 12 else 'expandir' }}</summary>
+  <table>
+    <thead><tr><th>#</th><th>Brawler</th><th>Usos</th><th>Vitórias</th><th>⭐ Star player</th></tr></thead>
+    <tbody>
+      {% for b in brawlers_usados %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ b.brawler }}</td>
+        <td><b>{{ b.usos }}</b></td>
+        <td>{{ b.vitorias }}</td>
+        <td>{{ b.stars }} ⭐</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% endif %}
 
 {% if not filtro_tipo %}
 <h2 id="carreira">Carreira (vida inteira)</h2>
