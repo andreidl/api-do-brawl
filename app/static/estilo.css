@@ -415,6 +415,8 @@ h2[id], h3[id] { scroll-margin-top: 14px; }
 .nivel-medio { color: #e8c34a; }
 .nivel-fraco { color: #e56a6a; }
 .tabela-modos { width: 100%; margin-top: 0.2rem; }
+th.ordenavel { cursor: pointer; user-select: none; white-space: nowrap; }
+th.ordenavel:hover { color: var(--destaque); }
 
 /* ---------- duas tabelas lado a lado ---------- */
 .lado-a-lado { display: flex; flex-wrap: wrap; gap: 1.2rem; }

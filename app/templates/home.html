@@ -64,19 +64,45 @@
 {% endif %}
 
 {% if meta_proprio.mais_usados %}
-<h3>Brawlers mais usados <span class="nota">(todas as batalhas capturadas)</span></h3>
-<details class="recolhivel">
-  <summary>Ver top {{ meta_proprio.mais_usados | length }}</summary>
-  <table>
-    <thead><tr><th>#</th><th>Brawler</th><th>Usos</th><th>Vitórias</th><th>Winrate</th><th>⭐ Star</th></tr></thead>
-    <tbody>
+<h3>Brawlers mais usados <span class="nota">(todas as batalhas capturadas · clique nos títulos para ordenar)</span></h3>
+<details class="recolhivel" open>
+  <summary>Top {{ meta_proprio.mais_usados | length }} — ordenável por usos, vitórias, winrate ou star</summary>
+  <table id="tabela-mais-usados">
+    <thead><tr>
+      <th>#</th><th>Brawler</th>
+      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 2)">Usos&nbsp;⇅</th>
+      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 3)">Vitórias&nbsp;⇅</th>
+      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 4)">Winrate&nbsp;⇅</th>
+      <th class="ordenavel" onclick="ordenarPor('tabela-mais-usados', 5)">⭐ Star&nbsp;⇅</th>
+    </tr></thead>
+    <tbody data-ordem="2-desc">
       {% for b in meta_proprio.mais_usados %}
-      <tr><td>{{ loop.index }}</td><td>{{ b.brawler }}</td><td><b>{{ b.usos }}</b></td>
-          <td>{{ b.vitorias }}</td><td>{{ barra_wr(b.winrate) }}</td><td>{{ b.stars }} ⭐</td></tr>
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ b.brawler }}</td>
+        <td data-val="{{ b.usos }}"><b>{{ b.usos }}</b></td>
+        <td data-val="{{ b.vitorias }}">{{ b.vitorias }}</td>
+        <td data-val="{{ b.winrate if b.winrate is not none else -1 }}">{{ barra_wr(b.winrate) }}</td>
+        <td data-val="{{ b.stars }}">{{ b.stars }} ⭐</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 </details>
+<script>
+function ordenarPor(idTabela, coluna) {
+  const tbody = document.querySelector('#' + idTabela + ' tbody');
+  const asc = tbody.dataset.ordem === coluna + '-desc';   // se já estava desc, inverte
+  const linhas = Array.from(tbody.rows);
+  linhas.sort((a, b) => {
+    const va = parseFloat(a.cells[coluna].dataset.val) || 0;
+    const vb = parseFloat(b.cells[coluna].dataset.val) || 0;
+    return asc ? va - vb : vb - va;
+  });
+  tbody.dataset.ordem = coluna + (asc ? '-asc' : '-desc');
+  linhas.forEach((l, i) => { l.cells[0].textContent = i + 1; tbody.appendChild(l); });
+}
+</script>
 {% endif %}
 
 {% if meta_proprio.mapas %}
@@ -96,12 +122,6 @@
   </div>
 </div>
 {% endif %}
-{% endif %}
-
-{% if pendencias_externas %}
-<p class="nota">📥 <b>Histórico externo pendente</b> — consultados sem importação do Brawlify:
-  {% for p in pendencias_externas %}{{ p.nick }} <span class="tag">{{ p.tag }}</span>{{ ", " if not loop.last }}{% endfor %}.
-  Peça ao Claude numa sessão com o Chrome aberto ("importa o Brawlify do fulano") — processo de ~2 min (CLAUDE.md §3.6b).</p>
 {% endif %}
 
 {% if recentes %}

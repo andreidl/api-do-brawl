@@ -100,7 +100,6 @@ def home(request: Request, erro: str | None = None):
                     "mapas": db.mapas_mais_jogados(conexao, 12),
                     "modos_jogados": db.modos_mais_jogados(conexao),
                 },
-                "pendencias_externas": db.tags_sem_historico_externo(conexao),
                 "rastreio_status": rastrear.ultima_rodada(),
             },
         )
