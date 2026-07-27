@@ -1035,6 +1035,78 @@ def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> lis
     return ranking
 
 
+def melhor_membro_por_modo(conexao: sqlite3.Connection, membros: set[str],
+                           minimo: int = 5) -> list[dict]:
+    """Para cada modo, o MEMBRO do clã com melhor winrate (Wilson), mín. `minimo`
+    jogos decididos. Modos mais jogados primeiro."""
+    membros = [m for m in (membros or set())]
+    if not membros:
+        return []
+    ph = ", ".join(["?"] * len(membros))
+    linhas = conexao.execute(
+        f"""SELECT b.modo AS modo, bj.tag_jogador AS tag, MAX(bj.nick) AS nick,
+                   COUNT(*) AS jogos,
+                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+            FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+            WHERE bj.resultado IN ('Victory','Defeat')
+              AND bj.tag_jogador IN ({ph}) AND b.modo IS NOT NULL
+            GROUP BY b.modo, bj.tag_jogador
+            HAVING COUNT(*) >= ?""",
+        (*membros, minimo)).fetchall()
+    from app.indicadores.performance import wilson
+    por_modo: dict = {}
+    for l in linhas:
+        jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        w = wilson(vit, jogos)
+        if l["modo"] not in por_modo or w > por_modo[l["modo"]]["_w"]:
+            por_modo[l["modo"]] = {"modo": l["modo"], "nick": l["nick"], "tag": l["tag"],
+                                   "jogos": jogos, "vitorias": vit,
+                                   "winrate": round(vit / jogos * 100, 1), "_w": w}
+    saida = list(por_modo.values())
+    for s in saida:
+        s.pop("_w", None)
+    saida.sort(key=lambda x: -x["jogos"])
+    return saida
+
+
+def ranking_membros_por_brawler(conexao: sqlite3.Connection, membros: set[str],
+                                minimo: int = 3) -> list[dict]:
+    """Para cada brawler, os MEMBROS do clã ranqueados por winrate (Wilson) —
+    'se for jogar de X, o melhor é fulano, depois beltrano'. Brawlers mais jogados
+    pelo clã primeiro. [{brawler, jogos_total, membros:[{nick,jogos,vitorias,winrate}]}]."""
+    membros = [m for m in (membros or set())]
+    if not membros:
+        return []
+    ph = ", ".join(["?"] * len(membros))
+    linhas = conexao.execute(
+        f"""SELECT bj.brawler AS brawler, bj.tag_jogador AS tag, MAX(bj.nick) AS nick,
+                   COUNT(*) AS jogos,
+                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+            FROM batalha_jogadores bj
+            WHERE bj.resultado IN ('Victory','Defeat')
+              AND bj.tag_jogador IN ({ph}) AND bj.brawler IS NOT NULL
+            GROUP BY bj.brawler, bj.tag_jogador
+            HAVING COUNT(*) >= ?""",
+        (*membros, minimo)).fetchall()
+    from app.indicadores.performance import wilson
+    por_brawler: dict = {}
+    for l in linhas:
+        jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        d = por_brawler.setdefault(l["brawler"], {"brawler": l["brawler"],
+                                                  "jogos_total": 0, "membros": []})
+        d["jogos_total"] += jogos
+        d["membros"].append({"nick": l["nick"], "tag": l["tag"], "jogos": jogos,
+                             "vitorias": vit, "winrate": round(vit / jogos * 100, 1),
+                             "_w": wilson(vit, jogos)})
+    saida = list(por_brawler.values())
+    for d in saida:
+        d["membros"].sort(key=lambda m: -m["_w"])
+        for m in d["membros"]:
+            m.pop("_w", None)
+    saida.sort(key=lambda x: -x["jogos_total"])
+    return saida
+
+
 def perfil_do_banco(conexao: sqlite3.Connection, tag: str) -> dict | None:
     """Monta um 'perfil' com o que há no banco (snapshot mais recente + batalhas
     acumuladas) — para a página abrir INSTANTANEAMENTE sem esperar scraping.

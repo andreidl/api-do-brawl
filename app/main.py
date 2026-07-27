@@ -131,9 +131,12 @@ def _dados_cla(conexao) -> dict:
         db.times_das_batalhas(conexao),
         clube["membros"] if clube else None,
     )
+    membros = clube["membros"] if clube else set()
     return {
         "ranking": ranking, "clube": clube,
         "fora_do_clube": fora_do_clube, "composicoes": comp_clube,
+        "melhor_por_modo": db.melhor_membro_por_modo(conexao, membros),
+        "por_brawler": db.ranking_membros_por_brawler(conexao, membros),
     }
 
 

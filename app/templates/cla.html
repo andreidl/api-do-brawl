@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import barra_wr %}
+{% from "_macros.html" import barra_wr, brawler_ico %}
 {% block titulo %}Clã{% if clube %} {{ clube.nome }}{% endif %} — API do Brawl{% endblock %}
 {% block conteudo %}
 <h1>🐍 Clã{% if clube %} — {{ clube.nome }}{% endif %}</h1>
@@ -45,6 +45,51 @@ function copiarRanking() {
 </script>
 {% else %}
 <p class="nota">Nenhum jogador com batalhas suficientes no banco ainda.</p>
+{% endif %}
+
+{% if melhor_por_modo %}
+<h2>🏅 Melhor do clã por modo</h2>
+<p class="nota">O membro com melhor winrate em cada modo (mín. 5 jogos decididos).</p>
+<table>
+  <thead><tr><th>Modo</th><th>Melhor membro</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+  <tbody>
+    {% for r in melhor_por_modo %}
+    <tr><td>{{ r.modo }}</td>
+        <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a></td>
+        <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
+        <td>{{ r.vitorias }}/{{ r.jogos }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% if por_brawler %}
+<h2>🎯 Melhor do clã por brawler</h2>
+<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler pra ver o ranking dos membros (mín. 3 jogos por membro).</p>
+<div class="lista-brawlers">
+  {% for b in por_brawler %}
+  <details class="brawler-card">
+    <summary>
+      <span class="bc-nome">{{ brawler_ico(b.brawler) }}</span>
+      <span class="bc-media nota">{{ b.jogos_total }} jogos do clã</span>
+      <span class="bc-resumo">{% if b.membros %}🥇 {{ b.membros[0].nick }} <span class="nota">({{ b.membros[0].winrate }}%)</span>{% endif %}</span>
+    </summary>
+    <div class="bc-corpo">
+      <table>
+        <thead><tr><th>#</th><th>Membro</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+        <tbody>
+          {% for m in b.membros %}
+          <tr><td>{{ loop.index }}</td>
+              <td><a href="/jogador/{{ m.tag.lstrip('#') }}">{{ m.nick }}</a></td>
+              <td>{{ barra_wr(m.winrate, m.jogos) }}</td>
+              <td>{{ m.vitorias }}/{{ m.jogos }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </details>
+  {% endfor %}
+</div>
 {% endif %}
 
 {% if composicoes and (composicoes.duplas or composicoes.trios or composicoes.quintetos) %}
