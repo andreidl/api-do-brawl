@@ -79,7 +79,7 @@ function copiarRanking() {
 
 {% if por_brawler %}
 <h2>🎯 Melhor do clã por brawler</h2>
-<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler. Ordenado por <b>winrate (Wilson) × troféu médio</b>: ganhar a 1000 troféus vale mais que a 500. O <span class="nota">?</span> marca poucos jogos.</p>
+<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler. Ordenado por <b>troféu médio</b> (peso maior) × winrate (Wilson): quem joga bem em troféu alto fica no topo. O <span class="nota">?</span> marca poucos jogos.</p>
 <div class="lista-brawlers">
   {% for b in por_brawler %}
   <details class="brawler-card">

@@ -1125,15 +1125,15 @@ def ranking_membros_por_brawler(conexao: sqlite3.Connection, membros: set[str],
     for l in linhas:
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
         trof = int(l["trof_medio"]) if l["trof_medio"] is not None else 0
-        # score = confiança na winrate (Wilson) PONDERADA pelo nível de troféus:
-        # ganhar a 1000 vale mais que ganhar a 500 (adversários mais fortes).
+        # score = Wilson (confiança na winrate) × troféu² — o nível de troféus
+        # DOMINA: jogar bem a 1000 vale muito mais que a 500 (adversários fortes).
         d = por_brawler.setdefault(l["brawler"], {"brawler": l["brawler"],
                                                   "jogos_total": 0, "membros": []})
         d["jogos_total"] += jogos
         d["membros"].append({"nick": nicks.get(l["tag"]) or l["nick"] or l["tag"],
                              "tag": l["tag"], "jogos": jogos, "vitorias": vit,
                              "winrate": round(vit / jogos * 100, 1), "trofeus": trof,
-                             "_score": wilson(vit, jogos) * trof})
+                             "_score": wilson(vit, jogos) * trof * trof})
     saida = list(por_brawler.values())
     for d in saida:
         d["membros"].sort(key=lambda m: -m["_score"])
