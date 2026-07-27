@@ -1111,7 +1111,8 @@ def ranking_membros_por_brawler(conexao: sqlite3.Connection, membros: set[str],
     linhas = conexao.execute(
         f"""SELECT bj.brawler AS brawler, bj.tag_jogador AS tag, MAX(bj.nick) AS nick,
                    COUNT(*) AS jogos,
-                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                   AVG(bj.trofeus) AS trof_medio
             FROM batalha_jogadores bj
             WHERE bj.resultado IN ('Victory','Defeat')
               AND bj.tag_jogador IN ({ph}) AND bj.brawler IS NOT NULL
@@ -1123,18 +1124,21 @@ def ranking_membros_por_brawler(conexao: sqlite3.Connection, membros: set[str],
     por_brawler: dict = {}
     for l in linhas:
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        trof = int(l["trof_medio"]) if l["trof_medio"] is not None else 0
+        # score = confiança na winrate (Wilson) PONDERADA pelo nível de troféus:
+        # ganhar a 1000 vale mais que ganhar a 500 (adversários mais fortes).
         d = por_brawler.setdefault(l["brawler"], {"brawler": l["brawler"],
                                                   "jogos_total": 0, "membros": []})
         d["jogos_total"] += jogos
         d["membros"].append({"nick": nicks.get(l["tag"]) or l["nick"] or l["tag"],
-                             "tag": l["tag"], "jogos": jogos,
-                             "vitorias": vit, "winrate": round(vit / jogos * 100, 1),
-                             "_w": wilson(vit, jogos)})
+                             "tag": l["tag"], "jogos": jogos, "vitorias": vit,
+                             "winrate": round(vit / jogos * 100, 1), "trofeus": trof,
+                             "_score": wilson(vit, jogos) * trof})
     saida = list(por_brawler.values())
     for d in saida:
-        d["membros"].sort(key=lambda m: -m["_w"])
+        d["membros"].sort(key=lambda m: -m["_score"])
         for m in d["membros"]:
-            m.pop("_w", None)
+            m.pop("_score", None)
     saida.sort(key=lambda x: -x["jogos_total"])
     return saida
 

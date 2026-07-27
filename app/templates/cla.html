@@ -79,7 +79,7 @@ function copiarRanking() {
 
 {% if por_brawler %}
 <h2>🎯 Melhor do clã por brawler</h2>
-<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler pra ver o ranking dos membros (winrate ajustado à amostra; o <span class="nota">?</span> marca poucos jogos).</p>
+<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler. Ordenado por <b>winrate (Wilson) × troféu médio</b>: ganhar a 1000 troféus vale mais que a 500. O <span class="nota">?</span> marca poucos jogos.</p>
 <div class="lista-brawlers">
   {% for b in por_brawler %}
   <details class="brawler-card">
@@ -90,13 +90,14 @@ function copiarRanking() {
     </summary>
     <div class="bc-corpo">
       <table>
-        <thead><tr><th>#</th><th>Membro</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+        <thead><tr><th>#</th><th>Membro</th><th>Winrate</th><th>V/Jogos</th><th>🏆 Troféus méd.</th></tr></thead>
         <tbody>
           {% for m in b.membros %}
           <tr><td>{{ loop.index }}</td>
               <td><a href="/jogador/{{ m.tag.lstrip('#') }}">{{ m.nick }}</a></td>
               <td>{{ barra_wr(m.winrate, m.jogos) }}</td>
-              <td>{{ m.vitorias }}/{{ m.jogos }}</td></tr>
+              <td>{{ m.vitorias }}/{{ m.jogos }}</td>
+              <td>{{ m.trofeus if m.trofeus else "—" }}</td></tr>
           {% endfor %}
         </tbody>
       </table>
