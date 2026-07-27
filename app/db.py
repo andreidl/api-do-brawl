@@ -956,19 +956,26 @@ def time_selecionado(conexao: sqlite3.Connection, tags: list[str],
     nicks = _nicks_de(conexao, tags)
     por_membro: list[dict] = []
     for tag in tags:
+        # troféu ATUAL de cada brawler do player (do snapshot mais recente dele)
+        snap = conexao.execute(
+            "SELECT brawlers_json FROM snapshots WHERE tag = ? ORDER BY criado_em DESC LIMIT 1",
+            (tag,)).fetchone()
+        trof_atual = {}
+        if snap and snap["brawlers_json"]:
+            for b in json.loads(snap["brawlers_json"]):
+                trof_atual[(b.get("nome") or "").upper()] = b.get("trofeus")
         cont: dict = {}
         for g in juntos:
             r = g[tag]
             if not r["brawler"]:
                 continue
-            c = cont.setdefault(r["brawler"], [0, 0, 0])  # jogos, vitorias, soma troféu
+            c = cont.setdefault(r["brawler"], [0, 0])  # jogos, vitorias
             c[0] += 1
             if r["resultado"] == "Victory":
                 c[1] += 1
-            c[2] += r["trofeus"] or 0
         brs = [{"brawler": b, "jogos": c[0], "vitorias": c[1],
                 "winrate": round(c[1] / c[0] * 100, 1),
-                "trofeus": round(c[2] / c[0]) if c[0] else 0, "_w": wilson(c[1], c[0])}
+                "trofeus": trof_atual.get(b.upper()), "_w": wilson(c[1], c[0])}
                for b, c in cont.items()]
         brs.sort(key=lambda x: -x["_w"])
         for x in brs:

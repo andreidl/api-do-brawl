@@ -38,7 +38,7 @@
     {% if m.brawlers %}
     <div class="time-brawlers">
       {% for b in m.brawlers %}
-      <div class="time-brawler">{{ brawler_ico(b.brawler) }}<span class="tb-wr">{{ b.winrate }}%</span><span class="nota">🏆 {{ b.trofeus }} · {{ b.jogos }}j</span></div>
+      <div class="time-brawler">{{ brawler_ico(b.brawler) }}<span class="tb-wr">{{ b.winrate }}%</span><span class="nota">{% if b.trofeus %}🏆 {{ b.trofeus }} · {% endif %}{{ b.jogos }}j</span></div>
       {% endfor %}
     </div>
     {% else %}<p class="nota">Sem brawler registrado nesses jogos.</p>{% endif %}
