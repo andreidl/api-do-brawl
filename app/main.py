@@ -140,13 +140,33 @@ def _dados_cla(conexao) -> dict:
     }
 
 
+_ultimo_refresh_cla: float = 0.0  # throttle do refresh sob demanda da /cla
+
+
 @app.get("/cla", response_class=HTMLResponse)
-def pagina_cla(request: Request):
+def pagina_cla(request: Request, atualizado: int | None = None):
     conexao = db.conectar()
     try:
-        return templates.TemplateResponse(request, "cla.html", _dados_cla(conexao))
+        ctx = _dados_cla(conexao)
     finally:
         conexao.close()
+    # dispara o refresh dos membros em 2º plano só na 1ª carga (não no reload)
+    ctx["refrescar"] = not atualizado
+    return templates.TemplateResponse(request, "cla.html", ctx)
+
+
+@app.post("/api/refrescar-cla")
+def api_refrescar_cla():
+    """Atualiza os membros do clã pela API oficial (throttle 10 min)."""
+    global _ultimo_refresh_cla
+    agora = time_mod.time()
+    if agora - _ultimo_refresh_cla < 600:
+        return {"pulado": True}
+    _ultimo_refresh_cla = agora  # marca já, evita refresh concorrente
+    try:
+        return rastrear.rastrear_membros_cla()
+    except Exception as erro:
+        return JSONResponse({"erro": str(erro)}, status_code=200)
 
 
 @app.get("/brawler", response_class=HTMLResponse)

@@ -4,6 +4,20 @@
 {% block conteudo %}
 <h1>🐍 Clã{% if clube %} — {{ clube.nome }}{% endif %}</h1>
 
+{% if refrescar %}
+<p class="nota" id="aviso-cla">🔄 Atualizando as batalhas dos membros do clã em segundo plano…</p>
+<script>
+fetch("/api/refrescar-cla", {method: "POST"}).then(r => r.json()).then(d => {
+  const el = document.getElementById("aviso-cla");
+  if (!el) return;
+  if (d.pulado) el.textContent = "✅ Membros atualizados há pouco (cache de 10 min).";
+  else if (d.batalhas_novas > 0) { location.href = "/cla?atualizado=1"; }
+  else if (d.erro) el.textContent = "⚠️ Não consegui atualizar agora — mostrando o banco.";
+  else el.textContent = "✅ Membros do clã em dia (nenhuma batalha nova).";
+}).catch(() => { const el = document.getElementById("aviso-cla"); if (el) el.textContent = "⚠️ Falha ao atualizar."; });
+</script>
+{% endif %}
+
 {% if ranking %}
 {% if clube %}
 <p class="nota">Só membros do {{ clube.nome }} (roster do brawlace, atualizado a cada consulta).

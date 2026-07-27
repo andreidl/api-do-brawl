@@ -72,6 +72,32 @@ def rastrear_uma_vez() -> None:
         conexao.close()
 
 
+def rastrear_membros_cla() -> dict:
+    """Atualiza SÓ os membros fixos do clã (perfil via API oficial) — usado pelo
+    refresh sob demanda ao abrir a /cla. Retorna {membros, batalhas_novas}."""
+    conexao = db.conectar()
+    total: int = 0
+    n: int = 0
+    try:
+        for tag in TAGS_CLA_FIXAS:
+            try:
+                perfil = oficial.coletar_perfil(tag)
+                res = db.salvar_consulta(conexao, perfil)
+                if perfil.get("clube_tag"):
+                    try:
+                        db.salvar_clube(conexao, oficial.coletar_clube(perfil["clube_tag"]))
+                    except (oficial.ErroColeta, oficial.TagInvalida):
+                        pass
+                conexao.commit()
+                total += res["batalhas_novas"]
+                n += 1
+            except (oficial.TagInvalida, oficial.ErroColeta) as erro:
+                _log(f"{tag}: ERRO refresh /cla — {erro}")
+    finally:
+        conexao.close()
+    return {"membros": n, "batalhas_novas": total}
+
+
 def ultima_rodada() -> str | None:
     """Última linha do log de rastreio (para exibir status na home)."""
     try:

@@ -124,7 +124,7 @@ Description=API do Brawl — dispara o rastreamento a cada 2h
 
 [Timer]
 OnBootSec=5min
-OnUnitActiveSec=2h
+OnUnitActiveSec=1h
 Persistent=true
 
 [Install]
