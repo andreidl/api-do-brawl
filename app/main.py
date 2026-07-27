@@ -373,10 +373,11 @@ def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
     indicadores: dict = performance.calcular_indicadores(
         historico, perfil["brawlers"], snapshots, diario
     )
-    # Enriquecimentos por scraping (a API oficial não tem): best-effort — se o
-    # brawltime/brawlytix falhar ou for bloqueado na VM, a página não quebra.
-    extra: dict | None = _seguro(lambda: brawltime.coletar_extra(perfil["tag"]))
-    conta: dict | None = _seguro(lambda: brawlytix.coletar_conta(perfil["tag"]))
+    # brawltime/brawlytix são BLOQUEADOS no IP de datacenter da VM → cada chamada
+    # esperava o timeout (10s+15s) e travava a página. Como não funcionam no ar,
+    # ficam desligados (seções vazias). Ver plano_online.md §Fase 4.
+    extra: dict | None = None
+    conta: dict | None = None
     correlacao: dict | None = _correlacao_meta(perfil, historico, brawlers_lp,
                                                brawlers_modo)
     tendencias: dict | None = _tendencias_meta_seguro()
@@ -419,25 +420,30 @@ def _tendencias_meta_seguro() -> dict | None:
 def _correlacao_meta(perfil: dict, batalhas: list[dict],
                      historico_lp: list[dict] | None = None,
                      historico_modo: list[dict] | None = None) -> dict | None:
-    """Meta + eventos + correlação. Falha aqui nunca derruba a página."""
-    try:
-        dados_meta: dict = brawlace.coletar_meta()
-        eventos: list[dict] = brawlace.coletar_eventos()
-    except (brawlace.ErroColeta, brawlace.ErroParsing):
-        return None
-    correl: dict = indicadores_meta.calcular_meta_jogador(
-        dados_meta, eventos, batalhas, perfil["brawlers"], historico_lp,
-        historico_modo,
-    )
+    """Meta (do BANCO — o rastreador é quem raspa em 2º plano) + eventos (API
+    oficial) + correlação. NÃO raspa ao vivo (isso travava a página ~25s)."""
     conexao = db.conectar()
     try:
-        db.salvar_meta(conexao, dados_meta)
+        dados_meta: dict = db.meta_do_banco(conexao)
+    finally:
+        conexao.close()
+    if not dados_meta.get("modos"):
+        return None
+    eventos: list[dict] = _seguro(lambda: oficial.coletar_eventos()) or []
+    try:
+        correl: dict = indicadores_meta.calcular_meta_jogador(
+            dados_meta, eventos, batalhas, perfil["brawlers"], historico_lp,
+            historico_modo,
+        )
+    except Exception:
+        return None
+    conexao = db.conectar()
+    try:
         if correl.get("score"):
             db.salvar_score_meta(conexao, perfil["tag"], correl["score"]["score"])
-        # série de evolução do score (1 ponto/dia — acumula com o tempo)
         correl["evolucao_score"] = db.historico_score_meta(conexao, perfil["tag"])
     except db.ErrosBanco:
-        pass  # banco ocupado pelo rastreio — fica para a próxima
+        pass
     finally:
         conexao.close()
     return correl
@@ -469,8 +475,8 @@ def _consultar_do_banco(tag_norm: str, filtro_tipo: str | None = None) -> dict |
     indicadores: dict = performance.calcular_indicadores(
         historico, perfil["brawlers"], snapshots, diario
     )
-    extra: dict | None = _seguro(lambda: brawltime.coletar_extra(tag_norm))
-    conta: dict | None = _seguro(lambda: brawlytix.coletar_conta(tag_norm))
+    extra: dict | None = None   # brawltime bloqueado na VM (ver _consultar)
+    conta: dict | None = None   # brawlytix idem
     correlacao: dict | None = _correlacao_meta(perfil, historico, brawlers_lp,
                                                brawlers_modo)
     return {

@@ -865,6 +865,24 @@ def data_meta_recente(conexao: sqlite3.Connection) -> str | None:
     return linha["d"] if linha else None
 
 
+def meta_do_banco(conexao: sqlite3.Connection) -> dict:
+    """Reconstrói o meta no formato do coletar_meta a partir do meta_snapshots
+    mais recente — evita raspar o brawlace AO VIVO a cada consulta (que travava
+    a página em ~25s). {'data', 'modos': {modo: [{posicao, brawler, star_player_pct}]}}."""
+    d1 = data_meta_recente(conexao)
+    if d1 is None:
+        return {"data": None, "modos": {}}
+    modos: dict = {}
+    for l in conexao.execute(
+        """SELECT modo, brawler, star_player_pct, posicao FROM meta_snapshots
+           WHERE data = ? ORDER BY modo, posicao""", (d1,)).fetchall():
+        modos.setdefault(l["modo"], []).append({
+            "posicao": l["posicao"], "brawler": l["brawler"],
+            "star_player_pct": l["star_player_pct"], "star_player": None,
+        })
+    return {"data": d1, "modos": modos}
+
+
 def brawlers_no_meta(conexao: sqlite3.Connection) -> list[dict]:
     """Todos os brawlers do meta (data mais recente), com a MELHOR posição entre
     os modos e em quantos modos aparecem — para o índice `/brawler`. A→Z? Não:
