@@ -224,7 +224,18 @@ def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
             s.append(f"Leve mais {gm} brawler(s) acima de {fmt(marco)} troféus "
                      f"(você tem {_marco_n(fraco, marco)}, ele tem {_marco_n(forte, marco)}).")
             break
-    # 3) coleção
+    # vitória rápida: brawlers a <50 troféus de um marco
+    if (fraco.get("n_quase_marco") or 0) > 0:
+        s.append(f"Vitória rápida: você tem {fraco['n_quase_marco']} brawler(s) a menos de "
+                 "50 troféus de bater um marco — empurre eles primeiro.")
+    # 3) level e ranked
+    if g("level") > 0:
+        s.append(f"Suba o level da conta (você {fraco.get('level')}, {forte['nick']} {forte.get('level')}).")
+    if (fraco.get("ranked_elo") is not None and forte.get("ranked_elo") is not None
+            and forte["ranked_elo"] - fraco["ranked_elo"] >= 50):
+        s.append(f"Suba no Ranked: você está em {fraco.get('ranked_atual')}, "
+                 f"{forte['nick']} em {forte.get('ranked_atual')}.")
+    # 4) coleção
     if g("brawlers_liberados") > 0:
         s.append(f"Desbloqueie mais {g('brawlers_liberados')} brawler(s).")
     if g("power11") > 0:
@@ -233,6 +244,8 @@ def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
         s.append(f"Desbloqueie mais {g('star_powers')} poder(es) estrela.")
     if g("gadgets") > 0:
         s.append(f"Desbloqueie mais {g('gadgets')} gadget(s).")
+    if g("gears") > 0:
+        s.append(f"Fabrique mais {g('gears')} gear(s).")
     if g("hypercharges") > 0:
         s.append(f"Adquira mais {g('hypercharges')} hypercharge(s).")
     # 4) desempenho

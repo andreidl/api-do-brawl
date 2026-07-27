@@ -833,6 +833,17 @@ def resumo_comparacao(conexao: sqlite3.Connection, tag: str) -> dict | None:
     trofeus_brw = [b.get("trofeus") or 0 for b in brws]
     marcos = [{"min": m, "n": sum(1 for t in trofeus_brw if t >= m)}
               for m in (2000, 1000, 750, 500, 250)]
+    # brawlers "quase lá": a menos de 50 troféus de bater um marco (vitória fácil)
+    _alvos = (500, 750, 1000, 2000)
+    n_quase = sum(1 for t in trofeus_brw if any(m - 50 <= t < m for m in _alvos))
+    # elo do ranked (número entre parênteses, ex.: "GOLD I (1601)")
+    ranked_txt = stats.get("ranked_atual") or ""
+    ranked_elo = None
+    if "(" in ranked_txt and ")" in ranked_txt:
+        try:
+            ranked_elo = int(ranked_txt.split("(")[1].split(")")[0])
+        except ValueError:
+            pass
     return {
         "tag": tag, "nick": perfil["nick"],
         "trofeus": stats.get("trofeus"),
@@ -844,7 +855,7 @@ def resumo_comparacao(conexao: sqlite3.Connection, tag: str) -> dict | None:
         "brawlers_liberados": len(brws),
         "power11": n_p11,
         "star_powers": n_sp, "gadgets": n_gd, "gears": n_gr, "hypercharges": n_hyper,
-        "marcos_trofeus": marcos,
+        "marcos_trofeus": marcos, "n_quase_marco": n_quase, "ranked_elo": ranked_elo,
     }
 
 
