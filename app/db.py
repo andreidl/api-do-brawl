@@ -938,7 +938,8 @@ def time_selecionado(conexao: sqlite3.Connection, tags: list[str],
     params = (*tags, min_trofeus) if min_trofeus else tuple(tags)
     linhas = conexao.execute(
         f"""SELECT bj.hash AS hash, bj.time AS time, bj.tag_jogador AS tag,
-                   bj.brawler AS brawler, bj.resultado AS resultado, b.modo AS modo
+                   bj.brawler AS brawler, bj.resultado AS resultado, bj.trofeus AS trofeus,
+                   b.modo AS modo
             FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
             WHERE bj.tag_jogador IN ({ph}) AND bj.time IS NOT NULL{filtro}""",
         params).fetchall()
@@ -960,12 +961,14 @@ def time_selecionado(conexao: sqlite3.Connection, tags: list[str],
             r = g[tag]
             if not r["brawler"]:
                 continue
-            c = cont.setdefault(r["brawler"], [0, 0])
+            c = cont.setdefault(r["brawler"], [0, 0, 0])  # jogos, vitorias, soma troféu
             c[0] += 1
             if r["resultado"] == "Victory":
                 c[1] += 1
+            c[2] += r["trofeus"] or 0
         brs = [{"brawler": b, "jogos": c[0], "vitorias": c[1],
-                "winrate": round(c[1] / c[0] * 100, 1), "_w": wilson(c[1], c[0])}
+                "winrate": round(c[1] / c[0] * 100, 1),
+                "trofeus": round(c[2] / c[0]) if c[0] else 0, "_w": wilson(c[1], c[0])}
                for b, c in cont.items()]
         brs.sort(key=lambda x: -x["_w"])
         for x in brs:
