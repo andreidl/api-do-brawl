@@ -65,7 +65,7 @@ function copiarRanking() {
 
 {% if por_brawler %}
 <h2>🎯 Melhor do clã por brawler</h2>
-<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler pra ver o ranking dos membros (mín. 3 jogos por membro).</p>
+<p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler pra ver o ranking dos membros (winrate ajustado à amostra; o <span class="nota">?</span> marca poucos jogos).</p>
 <div class="lista-brawlers">
   {% for b in por_brawler %}
   <details class="brawler-card">

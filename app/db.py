@@ -1082,7 +1082,7 @@ def melhor_membro_por_modo(conexao: sqlite3.Connection, membros: set[str],
 
 
 def ranking_membros_por_brawler(conexao: sqlite3.Connection, membros: set[str],
-                                minimo: int = 3) -> list[dict]:
+                                minimo: int = 1) -> list[dict]:
     """Para cada brawler, os MEMBROS do clã ranqueados por winrate (Wilson) —
     'se for jogar de X, o melhor é fulano, depois beltrano'. Brawlers mais jogados
     pelo clã primeiro. [{brawler, jogos_total, membros:[{nick,jogos,vitorias,winrate}]}]."""
