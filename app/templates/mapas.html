@@ -48,7 +48,7 @@
   <details class="brawler-card">
     <summary>
       <span class="bc-pos">{{ m.jogos }}</span>
-      <span class="bc-nome">{{ m.mapa }}</span>
+      <span class="bc-nome">{{ mapa_pt(m.mapa) }}</span>
       <span class="bc-media nota">{{ m.modo }}{% if m.duracao_media %} · ⏱️ {{ m.duracao_media // 60 }}m{{ '%02d'|format(m.duracao_media % 60) }}s méd.{% endif %}</span>
     </summary>
     <div class="bc-corpo">{{ tabela_top(m.brawlers) }}</div>

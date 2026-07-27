@@ -11,7 +11,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app import db, rastrear, imagens
+from app import db, rastrear, imagens, mapas_pt
 from app.coleta import brawlace, brawltime, brawlytix, oficial
 from app.indicadores import meta as indicadores_meta
 from app.indicadores import performance
@@ -79,6 +79,9 @@ templates.env.globals["img_brawler"] = imagens.img_brawler
 templates.env.globals["img_star_power"] = imagens.img_star_power
 templates.env.globals["img_gadget"] = imagens.img_gadget
 templates.env.globals["acessorios_brawler"] = imagens.acessorios_brawler
+
+# nome do mapa em pt-BR (fallback: nome em inglês) — ver app/mapas_pt.py
+templates.env.globals["mapa_pt"] = mapas_pt.mapa_pt
 
 
 @app.get("/", response_class=HTMLResponse)

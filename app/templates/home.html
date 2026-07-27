@@ -93,7 +93,7 @@
   <div class="meia">
     <table>
       <thead><tr><th>Mapa</th><th>Jogos</th></tr></thead>
-      <tbody>{% for m in meta_proprio.mapas %}<tr><td>{{ m.nome }}</td><td>{{ m.jogos }}</td></tr>{% endfor %}</tbody>
+      <tbody>{% for m in meta_proprio.mapas %}<tr><td>{{ mapa_pt(m.nome) }}</td><td>{{ m.jogos }}</td></tr>{% endfor %}</tbody>
     </table>
   </div>
   <div class="meia">

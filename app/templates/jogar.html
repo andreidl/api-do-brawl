@@ -35,7 +35,7 @@ document.querySelector(".time-form").addEventListener("submit", function(e) {
     {% endif %}
     <div class="evento-topo">
       <b>{{ c.modo }}</b>
-      <span class="mapa">{{ c.mapa }}</span>
+      <span class="mapa">{{ mapa_pt(c.mapa) }}</span>
       {% if c.fim %}<time datetime="{{ c.fim }}" class="nota">até {{ c.fim[11:16] }} UTC</time>{% endif %}
     </div>
 

@@ -273,7 +273,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 {% for g in grupos %}
 <table class="tabela-modo-brawler">
   <thead>
-    <tr><th colspan="4" class="cab-modo">{{ g.grupo }} <span class="nota">— {{ g.jogos }} jogos</span></th></tr>
+    <tr><th colspan="4" class="cab-modo">{{ mapa_pt(g.grupo) }} <span class="nota">— {{ g.jogos }} jogos</span></th></tr>
     <tr><th>Brawler</th><th>Jogos</th><th>Winrate</th><th>⭐ Star</th></tr>
   </thead>
   <tbody>
@@ -302,7 +302,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   <thead><tr><th>Mapa</th><th>Partidas</th><th>Winrate</th><th>⭐ Star</th><th>Duração méd.</th></tr></thead>
   <tbody>
     {% for m in indicadores.por_mapa %}
-    <tr><td>{{ m.nome }}</td><td>{{ m.partidas }}</td>
+    <tr><td>{{ mapa_pt(m.nome) }}</td><td>{{ m.partidas }}</td>
         <td>{{ barra_wr(m.winrate, m.partidas) }}</td>
         <td>{% if m.stars %}{{ m.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td>
         <td>{{ dur(m.duracao_media) }}</td></tr>
@@ -505,7 +505,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
   <thead><tr><th>Modo</th><th>Mapa</th><th>Brawler</th><th>Suas partidas</th><th>Posição no meta</th><th>Percentil</th></tr></thead>
   <tbody>
     {% for d in correlacao.score.detalhes %}
-    <tr><td>{{ d.modo }}</td><td>{{ d.mapa }}</td><td>{{ d.brawler }}</td><td>{{ d.partidas }}</td>
+    <tr><td>{{ d.modo }}</td><td>{{ mapa_pt(d.mapa) }}</td><td>{{ d.brawler }}</td><td>{{ d.partidas }}</td>
         <td>{{ d.posicao_meta if d.posicao_meta else "fora do ranking" }} / {{ d.total_ranking }}</td>
         <td class="{{ 'bom' if d.percentil >= 50 else 'ruim' }}">{{ d.percentil }}%</td></tr>
     {% endfor %}
@@ -523,7 +523,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% for s in correlacao.sugestoes %}
     <tr>
       <td>{{ s.modo }}</td>
-      <td>{{ s.mapa }}</td>
+      <td>{{ mapa_pt(s.mapa) }}</td>
       <td>
         {% for p in s.picks %}
         <b>{{ p.brawler }}</b> <span class="nota">(#{{ p.posicao_meta }} do meta{% if p.winrate_no_modo is not none %}, {{ p.winrate_no_modo }}% neste modo ({{ p.jogos_no_modo }}j){% elif p.winrate_seu is not none %}, {{ p.winrate_seu }}% geral ({{ p.jogos_seus }}j){% else %}, você nunca jogou{% endif %})</span>{{ " · " if not loop.last }}
@@ -727,7 +727,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
       <td>{{ b.ocorrida_em or "?" }}</td>
       <td>{{ b.tipo }}</td>
       <td>{{ b.modo }}</td>
-      <td>{{ b.mapa or "?" }}</td>
+      <td>{{ mapa_pt(b.mapa) or "?" }}</td>
       <td>{{ b.brawler or "?" }}{% if b.star_player %} ⭐{% endif %}</td>
       {{ cel_delta(b.trofeus_delta) }}
       <td>{% if b.rank %}{{ b.rank }}º lugar{% if b.resultado %} <span class="nota">({{ b.resultado }})</span>{% endif %}{% else %}{{ b.resultado or "—" }}{% endif %}</td>
@@ -747,7 +747,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
       <td>{{ b.ocorrida_em or "?" }}</td>
       <td>{{ b.tipo }}</td>
       <td>{{ b.modo }}</td>
-      <td>{{ b.mapa or "?" }}</td>
+      <td>{{ mapa_pt(b.mapa) or "?" }}</td>
       <td>{{ b.brawler or "?" }}{% if b.star_player %} ⭐{% endif %}</td>
       {{ cel_delta(b.trofeus_delta) }}
       <td>{% if b.rank %}{{ b.rank }}º lugar{% if b.resultado %} <span class="nota">({{ b.resultado }})</span>{% endif %}{% else %}{{ b.resultado or "—" }}{% endif %}</td>
