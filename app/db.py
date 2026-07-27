@@ -923,21 +923,25 @@ def membros_com_dados(conexao: sqlite3.Connection, membros: set[str]) -> list[di
             for l in linhas]
 
 
-def time_selecionado(conexao: sqlite3.Connection, tags: list[str]) -> dict:
+def time_selecionado(conexao: sqlite3.Connection, tags: list[str],
+                     min_trofeus: int = 0) -> dict:
     """Estatísticas de quando os jogadores `tags` jogaram JUNTOS (mesmo time numa
     batalha). O time precisa ter TODOS os selecionados → o tamanho do time é >= nº
-    selecionado automaticamente (5 sel = só 5v5; 3 sel = 3v3 e 5v5; etc.).
+    selecionado automaticamente (5 sel = só 5v5; 3 sel = 3v3 e 5v5; etc.). Se
+    `min_trofeus` > 0, só conta batalhas em que TODOS estavam com >= aquele troféu.
     Retorna {jogos, vitorias, winrate, por_membro:[{nick, brawlers:[...]}], modos}."""
     tags = list(tags)
     if not tags:
         return {"jogos": 0, "vitorias": 0, "winrate": None, "por_membro": [], "modos": []}
     ph = ", ".join(["?"] * len(tags))
+    filtro = " AND bj.trofeus >= ?" if min_trofeus else ""
+    params = (*tags, min_trofeus) if min_trofeus else tuple(tags)
     linhas = conexao.execute(
         f"""SELECT bj.hash AS hash, bj.time AS time, bj.tag_jogador AS tag,
                    bj.brawler AS brawler, bj.resultado AS resultado, b.modo AS modo
             FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
-            WHERE bj.tag_jogador IN ({ph}) AND bj.time IS NOT NULL""",
-        tuple(tags)).fetchall()
+            WHERE bj.tag_jogador IN ({ph}) AND bj.time IS NOT NULL{filtro}""",
+        params).fetchall()
     sel = set(tags)
     grupos: dict = {}
     for l in linhas:

@@ -195,10 +195,13 @@ def pagina_mapas(request: Request):
 
 
 @app.get("/times", response_class=HTMLResponse)
-def pagina_times(request: Request, j: list[str] = Query(default=[])):
-    """Escolha até 5 membros do clã → mostra os jogos em que eles jogaram JUNTOS
-    (mesmo time) e o brawler de cada um nesses jogos. O tamanho do time filtra
-    sozinho: 5 selecionados = só 5v5; 3 = 3v3 e 5v5; etc."""
+def pagina_times(request: Request, j: list[str] = Query(default=[]),
+                 trofeu: int | None = None):
+    """Escolha até 5 membros do clã → jogos em que jogaram JUNTOS (mesmo time) +
+    o brawler de cada um. O tamanho do time filtra sozinho. `trofeu`: só conta os
+    jogos em que todos estavam com >= aquele troféu."""
+    marcos = [0, 250, 500, 750, 1000, 2000, 3000]
+    trofeu_sel = trofeu if trofeu in marcos else 0
     conexao = db.conectar()
     try:
         clube = db.clube_principal(conexao)
@@ -206,11 +209,14 @@ def pagina_times(request: Request, j: list[str] = Query(default=[])):
         candidatos = db.membros_com_dados(conexao, membros)
         validas = {c["tag"] for c in candidatos}
         selecionados = [t for t in ("#" + x.lstrip("#").upper() for x in j) if t in validas][:5]
-        resultado = db.time_selecionado(conexao, selecionados) if selecionados else None
+        resultado = (db.time_selecionado(conexao, selecionados, min_trofeus=trofeu_sel)
+                     if selecionados else None)
     finally:
         conexao.close()
+    jquery = "&".join(f"j={t.lstrip('#')}" for t in selecionados)
     return templates.TemplateResponse(request, "times.html", {
         "candidatos": candidatos, "selecionados": selecionados, "resultado": resultado,
+        "marcos": marcos, "trofeu_sel": trofeu_sel, "jquery": jquery,
     })
 
 

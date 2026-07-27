@@ -6,6 +6,7 @@
 <p class="nota">Escolha até 5 membros → veja os jogos em que jogaram <b>juntos</b> (mesmo time) e o brawler de cada um neles. O tamanho do time filtra sozinho: 5 selecionados = só 5v5; 3 = 3v3 e 5v5; 2 = duo, 3v3 e 5v5.</p>
 
 <form method="get" action="/times" class="form-times">
+  {% if trofeu_sel %}<input type="hidden" name="trofeu" value="{{ trofeu_sel }}">{% endif %}
   <div class="membros-check">
     {% for c in candidatos %}
     {% set marcado = ('#' ~ c.tag.lstrip('#')) in selecionados %}
@@ -17,6 +18,15 @@
   </div>
   <button type="submit">Ver time</button>
 </form>
+
+{% if selecionados %}
+<p class="nota"><b>Faixa de troféus</b> (conta só jogos em que todos estavam nessa faixa):</p>
+<div class="abas abas-meta">
+  {% for m in marcos %}
+  <a href="/times?{{ jquery }}{% if m %}&trofeu={{ m }}{% endif %}" class="{{ 'ativa' if trofeu_sel == m }}">{{ 'Todos' if m == 0 else m ~ '+' }}</a>
+  {% endfor %}
+</div>
+{% endif %}
 
 {% if selecionados %}
   {% if resultado and resultado.jogos > 0 %}
