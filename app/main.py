@@ -545,16 +545,12 @@ def api_refrescar(tag: str):
 
 @app.get("/api/meta")
 def api_meta():
-    try:
-        dados_meta: dict = brawlace.coletar_meta()
-        eventos: list[dict] = brawlace.coletar_eventos()
-    except (brawlace.ErroColeta, brawlace.ErroParsing) as erro:
-        return JSONResponse({"erro": str(erro)}, status_code=502)
     conexao = db.conectar()
     try:
-        db.salvar_meta(conexao, dados_meta)
+        dados_meta: dict = db.meta_do_banco(conexao)
     finally:
         conexao.close()
+    eventos: list[dict] = _seguro(lambda: oficial.coletar_eventos()) or []
     return {"meta": dados_meta, "eventos": eventos}
 
 
@@ -628,18 +624,10 @@ def jogar_agora(request: Request, tag: str, time: str | None = None):
         return templates.TemplateResponse(
             request, "erro.html", {"mensagem": str(erro)}, status_code=404
         )
-    try:
-        eventos: list[dict] = brawlace.coletar_eventos()
-        dados_meta: dict = brawlace.coletar_meta()
-    except (brawlace.ErroColeta, brawlace.ErroParsing) as erro:
-        return templates.TemplateResponse(
-            request, "erro.html",
-            {"mensagem": f"Não consegui buscar os eventos ativos: {erro}"},
-            status_code=502,
-        )
-
+    eventos: list[dict] = _seguro(lambda: oficial.coletar_eventos()) or []
     conexao = db.conectar()
     try:
+        dados_meta: dict = db.meta_do_banco(conexao)
         perfil: dict | None = db.perfil_do_banco(conexao, tag_norm)
         if perfil is None:
             return RedirectResponse(f"/jogador/{tag_norm.lstrip('#')}", status_code=303)
