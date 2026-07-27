@@ -1035,6 +1035,16 @@ def ranking_jogadores(conexao: sqlite3.Connection, minimo_jogos: int = 5) -> lis
     return ranking
 
 
+def _nicks_de(conexao: sqlite3.Connection, tags: list[str]) -> dict:
+    """{tag: nick} canônico da tabela jogadores (o bj.nick pode vir NULL em
+    algumas capturas). Fallback fica por conta de quem chama."""
+    if not tags:
+        return {}
+    ph = ", ".join(["?"] * len(tags))
+    return {l["tag"]: l["nick"] for l in conexao.execute(
+        f"SELECT tag, nick FROM jogadores WHERE tag IN ({ph})", tuple(tags)).fetchall()}
+
+
 def melhor_membro_por_modo(conexao: sqlite3.Connection, membros: set[str],
                            minimo: int = 5) -> list[dict]:
     """Para cada modo, o MEMBRO do clã com melhor winrate (Wilson), mín. `minimo`
@@ -1054,13 +1064,15 @@ def melhor_membro_por_modo(conexao: sqlite3.Connection, membros: set[str],
             HAVING COUNT(*) >= ?""",
         (*membros, minimo)).fetchall()
     from app.indicadores.performance import wilson
+    nicks = _nicks_de(conexao, membros)
     por_modo: dict = {}
     for l in linhas:
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
         w = wilson(vit, jogos)
         if l["modo"] not in por_modo or w > por_modo[l["modo"]]["_w"]:
-            por_modo[l["modo"]] = {"modo": l["modo"], "nick": l["nick"], "tag": l["tag"],
-                                   "jogos": jogos, "vitorias": vit,
+            por_modo[l["modo"]] = {"modo": l["modo"],
+                                   "nick": nicks.get(l["tag"]) or l["nick"] or l["tag"],
+                                   "tag": l["tag"], "jogos": jogos, "vitorias": vit,
                                    "winrate": round(vit / jogos * 100, 1), "_w": w}
     saida = list(por_modo.values())
     for s in saida:
@@ -1089,13 +1101,15 @@ def ranking_membros_por_brawler(conexao: sqlite3.Connection, membros: set[str],
             HAVING COUNT(*) >= ?""",
         (*membros, minimo)).fetchall()
     from app.indicadores.performance import wilson
+    nicks = _nicks_de(conexao, membros)
     por_brawler: dict = {}
     for l in linhas:
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
         d = por_brawler.setdefault(l["brawler"], {"brawler": l["brawler"],
                                                   "jogos_total": 0, "membros": []})
         d["jogos_total"] += jogos
-        d["membros"].append({"nick": l["nick"], "tag": l["tag"], "jogos": jogos,
+        d["membros"].append({"nick": nicks.get(l["tag"]) or l["nick"] or l["tag"],
+                             "tag": l["tag"], "jogos": jogos,
                              "vitorias": vit, "winrate": round(vit / jogos * 100, 1),
                              "_w": wilson(vit, jogos)})
     saida = list(por_brawler.values())
