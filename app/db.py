@@ -901,6 +901,41 @@ def estatisticas_mapas(conexao: sqlite3.Connection, minimo_brawler: int = 3) -> 
     return saida
 
 
+def estatisticas_modos(conexao: sqlite3.Connection, minimo_brawler: int = 5) -> list[dict]:
+    """Estatísticas por MODO (das nossas batalhas): nº de jogos, duração média e
+    os melhores brawlers (winrate Wilson). Modos mais jogados primeiro."""
+    base: dict = {}
+    for l in conexao.execute(
+        """SELECT modo, COUNT(*) AS jogos, AVG(duracao_seg) AS dur
+           FROM batalhas WHERE modo IS NOT NULL GROUP BY modo""").fetchall():
+        base[l["modo"]] = {"modo": l["modo"], "jogos": int(l["jogos"]),
+                           "duracao_media": int(l["dur"]) if l["dur"] is not None else None,
+                           "brawlers": []}
+    from app.indicadores.performance import wilson
+    for l in conexao.execute(
+        """SELECT b.modo AS modo, bj.brawler AS brawler, COUNT(*) AS jogos,
+                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+           FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+           WHERE bj.resultado IN ('Victory','Defeat')
+             AND bj.brawler IS NOT NULL AND b.modo IS NOT NULL
+           GROUP BY b.modo, bj.brawler
+           HAVING COUNT(*) >= ?""", (minimo_brawler,)).fetchall():
+        m = base.get(l["modo"])
+        if m is None:
+            continue
+        jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        m["brawlers"].append({"brawler": l["brawler"], "jogos": jogos, "vitorias": vit,
+                              "winrate": round(vit / jogos * 100, 1), "_w": wilson(vit, jogos)})
+    saida = list(base.values())
+    for m in saida:
+        m["brawlers"].sort(key=lambda x: -x["_w"])
+        for x in m["brawlers"]:
+            x.pop("_w", None)
+        m["brawlers"] = m["brawlers"][:10]
+    saida.sort(key=lambda x: -x["jogos"])
+    return saida
+
+
 def meta_do_banco(conexao: sqlite3.Connection) -> dict:
     """Reconstrói o meta no formato do coletar_meta a partir do meta_snapshots
     mais recente — evita raspar o brawlace AO VIVO a cada consulta (que travava

@@ -182,14 +182,16 @@ def api_refrescar_cla():
 
 @app.get("/mapas", response_class=HTMLResponse)
 def pagina_mapas(request: Request):
-    """Estatísticas por mapa (das nossas batalhas): modo, jogos, duração e os
-    melhores brawlers em cada mapa."""
+    """Estatísticas por modo e por mapa (das nossas batalhas): jogos, duração e
+    os melhores brawlers."""
     conexao = db.conectar()
     try:
+        modos = db.estatisticas_modos(conexao)
         mapas = db.estatisticas_mapas(conexao)
     finally:
         conexao.close()
-    return templates.TemplateResponse(request, "mapas.html", {"mapas": mapas})
+    return templates.TemplateResponse(request, "mapas.html",
+                                      {"modos": modos, "mapas": mapas})
 
 
 @app.get("/brawler", response_class=HTMLResponse)
