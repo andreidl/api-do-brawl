@@ -1074,7 +1074,8 @@ def melhor_membro_por_modo(conexao: sqlite3.Connection, membros: set[str],
     linhas = conexao.execute(
         f"""SELECT b.modo AS modo, bj.tag_jogador AS tag, MAX(bj.nick) AS nick,
                    COUNT(*) AS jogos,
-                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                   AVG(bj.trofeus) AS trof_medio
             FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
             WHERE bj.resultado IN ('Victory','Defeat')
               AND bj.tag_jogador IN ({ph}) AND b.modo IS NOT NULL
@@ -1086,15 +1087,17 @@ def melhor_membro_por_modo(conexao: sqlite3.Connection, membros: set[str],
     por_modo: dict = {}
     for l in linhas:
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
-        w = wilson(vit, jogos)
-        if l["modo"] not in por_modo or w > por_modo[l["modo"]]["_w"]:
+        trof = int(l["trof_medio"]) if l["trof_medio"] is not None else 0
+        score = wilson(vit, jogos) * trof * trof  # mesmo critério do por-brawler
+        if l["modo"] not in por_modo or score > por_modo[l["modo"]]["_s"]:
             por_modo[l["modo"]] = {"modo": l["modo"],
                                    "nick": nicks.get(l["tag"]) or l["nick"] or l["tag"],
                                    "tag": l["tag"], "jogos": jogos, "vitorias": vit,
-                                   "winrate": round(vit / jogos * 100, 1), "_w": w}
+                                   "winrate": round(vit / jogos * 100, 1),
+                                   "trofeus": trof, "_s": score}
     saida = list(por_modo.values())
     for s in saida:
-        s.pop("_w", None)
+        s.pop("_s", None)
     saida.sort(key=lambda x: -x["jogos"])
     return saida
 

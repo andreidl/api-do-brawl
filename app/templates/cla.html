@@ -65,13 +65,14 @@ function copiarRanking() {
 <h2>🏅 Melhor do clã por modo</h2>
 <p class="nota">O membro com melhor winrate em cada modo (mín. 5 jogos decididos).</p>
 <table>
-  <thead><tr><th>Modo</th><th>Melhor membro</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+  <thead><tr><th>Modo</th><th>Melhor membro</th><th>Winrate</th><th>V/Jogos</th><th>🏆 Troféus méd.</th></tr></thead>
   <tbody>
     {% for r in melhor_por_modo %}
     <tr><td>{{ r.modo }}</td>
         <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a></td>
         <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
-        <td>{{ r.vitorias }}/{{ r.jogos }}</td></tr>
+        <td>{{ r.vitorias }}/{{ r.jogos }}</td>
+        <td>{{ r.trofeus if r.trofeus else "—" }}</td></tr>
     {% endfor %}
   </tbody>
 </table>
