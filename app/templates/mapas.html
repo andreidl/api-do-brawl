@@ -5,13 +5,14 @@
 {% macro tabela_top(brawlers) -%}
 {% if brawlers %}
 <table>
-  <thead><tr><th>#</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+  <thead><tr><th>#</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th><th>🏆 Tróf.</th></tr></thead>
   <tbody>
     {% for b in brawlers %}
     <tr><td>{{ loop.index }}</td>
         <td>{{ brawler_ico(b.brawler) }}</td>
         <td>{{ barra_wr(b.winrate, b.jogos) }}</td>
-        <td>{{ b.vitorias }}/{{ b.jogos }}</td></tr>
+        <td>{{ b.vitorias }}/{{ b.jogos }}</td>
+        <td>{{ b.trofeus if b.trofeus else "—" }}</td></tr>
     {% endfor %}
   </tbody>
 </table>

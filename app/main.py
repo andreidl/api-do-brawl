@@ -194,6 +194,29 @@ def pagina_mapas(request: Request):
                                       {"modos": modos, "mapas": mapas})
 
 
+@app.get("/times", response_class=HTMLResponse)
+def pagina_times(request: Request, trofeu: int | None = None):
+    """Sugestão de time por modo: os melhores brawlers (ponderados por troféu) no
+    tamanho do modo. Filtro `trofeu`: só partidas nessa faixa de troféus pra cima."""
+    marcos = [0, 250, 500, 750, 1000, 2000, 3000]
+    sel = trofeu if trofeu in marcos else 0
+    conexao = db.conectar()
+    try:
+        modos = db.estatisticas_modos(conexao, minimo_brawler=3, min_trofeus=sel)
+    finally:
+        conexao.close()
+    times: list[dict] = []
+    for m in modos:
+        n = indicadores_meta.tamanho_time_do_modo(m["modo"])
+        equipe = m["brawlers"][:n]
+        if equipe:
+            times.append({"modo": m["modo"], "jogos": m["jogos"],
+                          "tamanho": n, "brawlers": equipe,
+                          "reservas": m["brawlers"][n:n + 3]})
+    return templates.TemplateResponse(request, "times.html",
+                                      {"times": times, "trofeu_sel": sel, "marcos": marcos})
+
+
 @app.get("/brawler", response_class=HTMLResponse)
 def pagina_brawlers(request: Request, modo: str | None = None):
     """Índice do meta (accordion). Botões: Geral (força média) + eventos ativos.

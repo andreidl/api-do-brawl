@@ -429,6 +429,16 @@ h1 .ico-brawler, .bc-nome .ico-brawler { width: 34px; height: 34px; }
 .acess-chip { display: inline-flex; align-items: center; margin: 0.15rem 0.3rem 0.15rem 0;
   padding: 0.15rem 0.55rem; background: var(--painel-hover); border-radius: 999px; }
 
+/* ---------- sugestão de times ---------- */
+.time-card { background: var(--painel); border: 1px solid var(--painel-borda);
+  border-radius: 12px; padding: 0.9rem 1.1rem; margin: 0.8rem 0; }
+.time-card h3 { margin: 0 0 0.6rem; }
+.time-brawlers { display: flex; flex-wrap: wrap; gap: 0.9rem; }
+.time-brawler { display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  min-width: 84px; padding: 0.5rem; background: var(--painel-hover); border-radius: 10px; }
+.time-brawler .ico-brawler { width: 52px; height: 52px; margin: 0; }
+.time-brawler .tb-wr { font-weight: 800; color: var(--verde); }
+
 /* ---------- comparar jogadores ---------- */
 .form-comparar { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 1rem 0 1.4rem; }
 .form-comparar input { flex: 1; min-width: 160px; padding: 0.7rem 0.9rem;

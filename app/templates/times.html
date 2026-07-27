@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_macros.html" import brawler_ico %}
+{% block titulo %}Sugestão de times — API do Brawl{% endblock %}
+{% block conteudo %}
+<h1>🤝 Sugestão de times</h1>
+<p class="nota">O time recomendado em cada modo — os melhores brawlers (winrate ponderado por troféu) no tamanho do modo. 100% das <b>nossas batalhas</b>. Filtre pela faixa de troféus:</p>
+
+<div class="abas abas-meta">
+  {% for m in marcos %}
+  <a href="/times{% if m %}?trofeu={{ m }}{% endif %}" class="{{ 'ativa' if trofeu_sel == m }}">{{ 'Todos' if m == 0 else m ~ '+' }}</a>
+  {% endfor %}
+</div>
+{% if trofeu_sel %}<p class="nota">Mostrando o meta de quem tem <b>{{ trofeu_sel }}+ troféus</b> no brawler.</p>{% endif %}
+
+{% if times %}
+{% for t in times %}
+<div class="time-card">
+  <h3>{{ t.modo }} <span class="nota">· time de {{ t.tamanho }} · {{ t.jogos }} jogos</span></h3>
+  <div class="time-brawlers">
+    {% for b in t.brawlers %}
+    <div class="time-brawler">
+      {{ brawler_ico(b.brawler) }}
+      <span class="tb-wr">{{ b.winrate }}%</span>
+      <span class="nota">🏆 {{ b.trofeus }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% if t.reservas %}
+  <p class="nota">🔄 Reservas: {% for b in t.reservas %}<span class="acess-chip">{{ brawler_ico(b.brawler) }} {{ b.winrate }}%</span>{% endfor %}</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p class="nota">Sem dados suficientes ainda.</p>
+{% endif %}
+{% endblock %}

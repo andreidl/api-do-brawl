@@ -741,7 +741,8 @@ def melhor_brawler_por_grupo(conexao: sqlite3.Connection, dimensao: str,
     linhas = conexao.execute(
         f"""SELECT {col} AS grupo, bj.brawler AS brawler,
                    COUNT(*) AS jogos,
-                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                   AVG(bj.trofeus) AS trof_medio
             FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
             WHERE bj.resultado IN ('Victory','Defeat')
               AND bj.brawler IS NOT NULL AND {col} IS NOT NULL
@@ -752,15 +753,17 @@ def melhor_brawler_por_grupo(conexao: sqlite3.Connection, dimensao: str,
     grupos: dict = {}
     for l in linhas:
         g, jogos, vit = l["grupo"], int(l["jogos"]), int(l["vitorias"])
-        w = wilson(vit, jogos)
-        grupos.setdefault(g, {"grupo": g, "jogos_grupo": 0, "_w": -1.0})
+        trof = int(l["trof_medio"]) if l["trof_medio"] is not None else 0
+        s = wilson(vit, jogos) * trof * trof  # pondera pelo nível de troféus
+        grupos.setdefault(g, {"grupo": g, "jogos_grupo": 0, "_s": -1.0})
         grupos[g]["jogos_grupo"] += jogos
-        if w > grupos[g]["_w"]:
-            grupos[g].update({"_w": w, "brawler": l["brawler"], "jogos": jogos,
-                              "vitorias": vit, "winrate": round(vit / jogos * 100, 1)})
+        if s > grupos[g]["_s"]:
+            grupos[g].update({"_s": s, "brawler": l["brawler"], "jogos": jogos,
+                              "vitorias": vit, "winrate": round(vit / jogos * 100, 1),
+                              "trofeus": trof})
     saida = [g for g in grupos.values() if "brawler" in g]
     for g in saida:
-        g.pop("_w", None)
+        g.pop("_s", None)
     saida.sort(key=lambda x: -x["jogos_grupo"])
     return saida[:limite] if limite else saida
 
@@ -879,7 +882,8 @@ def estatisticas_mapas(conexao: sqlite3.Connection, minimo_brawler: int = 3) -> 
     from app.indicadores.performance import wilson
     for l in conexao.execute(
         """SELECT b.mapa AS mapa, bj.brawler AS brawler, COUNT(*) AS jogos,
-                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                  AVG(bj.trofeus) AS trof_medio
            FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
            WHERE bj.resultado IN ('Victory','Defeat')
              AND bj.brawler IS NOT NULL AND b.mapa IS NOT NULL
@@ -889,21 +893,26 @@ def estatisticas_mapas(conexao: sqlite3.Connection, minimo_brawler: int = 3) -> 
         if m is None:
             continue
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        trof = int(l["trof_medio"]) if l["trof_medio"] is not None else 0
         m["brawlers"].append({"brawler": l["brawler"], "jogos": jogos, "vitorias": vit,
-                              "winrate": round(vit / jogos * 100, 1), "_w": wilson(vit, jogos)})
+                              "winrate": round(vit / jogos * 100, 1), "trofeus": trof,
+                              "_s": wilson(vit, jogos) * trof * trof})
     saida = list(base.values())
     for m in saida:
-        m["brawlers"].sort(key=lambda x: -x["_w"])
+        m["brawlers"].sort(key=lambda x: -x["_s"])
         for x in m["brawlers"]:
-            x.pop("_w", None)
+            x.pop("_s", None)
         m["brawlers"] = m["brawlers"][:8]
     saida.sort(key=lambda x: -x["jogos"])
     return saida
 
 
-def estatisticas_modos(conexao: sqlite3.Connection, minimo_brawler: int = 5) -> list[dict]:
+def estatisticas_modos(conexao: sqlite3.Connection, minimo_brawler: int = 5,
+                       min_trofeus: int = 0) -> list[dict]:
     """Estatísticas por MODO (das nossas batalhas): nº de jogos, duração média e
-    os melhores brawlers (winrate Wilson). Modos mais jogados primeiro."""
+    os melhores brawlers (winrate Wilson × troféu²). Se `min_trofeus` > 0, só conta
+    partidas em que o brawler tinha >= aquele valor (filtro por faixa de elo).
+    Modos mais jogados primeiro."""
     base: dict = {}
     for l in conexao.execute(
         """SELECT modo, COUNT(*) AS jogos, AVG(duracao_seg) AS dur
@@ -912,25 +921,30 @@ def estatisticas_modos(conexao: sqlite3.Connection, minimo_brawler: int = 5) -> 
                            "duracao_media": int(l["dur"]) if l["dur"] is not None else None,
                            "brawlers": []}
     from app.indicadores.performance import wilson
+    filtro_trof = " AND bj.trofeus >= ?" if min_trofeus else ""
+    params = (min_trofeus, minimo_brawler) if min_trofeus else (minimo_brawler,)
     for l in conexao.execute(
-        """SELECT b.modo AS modo, bj.brawler AS brawler, COUNT(*) AS jogos,
-                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+        f"""SELECT b.modo AS modo, bj.brawler AS brawler, COUNT(*) AS jogos,
+                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                  AVG(bj.trofeus) AS trof_medio
            FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
            WHERE bj.resultado IN ('Victory','Defeat')
-             AND bj.brawler IS NOT NULL AND b.modo IS NOT NULL
+             AND bj.brawler IS NOT NULL AND b.modo IS NOT NULL{filtro_trof}
            GROUP BY b.modo, bj.brawler
-           HAVING COUNT(*) >= ?""", (minimo_brawler,)).fetchall():
+           HAVING COUNT(*) >= ?""", params).fetchall():
         m = base.get(l["modo"])
         if m is None:
             continue
         jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        trof = int(l["trof_medio"]) if l["trof_medio"] is not None else 0
         m["brawlers"].append({"brawler": l["brawler"], "jogos": jogos, "vitorias": vit,
-                              "winrate": round(vit / jogos * 100, 1), "_w": wilson(vit, jogos)})
+                              "winrate": round(vit / jogos * 100, 1), "trofeus": trof,
+                              "_s": wilson(vit, jogos) * trof * trof})
     saida = list(base.values())
     for m in saida:
-        m["brawlers"].sort(key=lambda x: -x["_w"])
+        m["brawlers"].sort(key=lambda x: -x["_s"])
         for x in m["brawlers"]:
-            x.pop("_w", None)
+            x.pop("_s", None)
         m["brawlers"] = m["brawlers"][:10]
     saida.sort(key=lambda x: -x["jogos"])
     return saida
