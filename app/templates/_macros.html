@@ -40,6 +40,19 @@
 </table>
 {%- endmacro %}
 
+{# Poderes estrela e gadgets disponíveis de um brawler (referência da API) #}
+{% macro acessorios_ref(nome) -%}
+{%- set a = acessorios_brawler(nome) -%}
+{%- if a.star_powers or a.gadgets -%}
+<div class="acess-ref">
+  {%- if a.star_powers %}<div><b>⭐ Poderes estrela:</b>
+    {% for s in a.star_powers %}<span class="acess-chip">{% if img_star_power(s.name) %}<img class="ico-acess" src="{{ img_star_power(s.name) }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{{ s.name }}</span>{% endfor %}</div>{% endif -%}
+  {%- if a.gadgets %}<div><b>🛠️ Gadgets:</b>
+    {% for g in a.gadgets %}<span class="acess-chip">{% if img_gadget(g.name) %}<img class="ico-acess" src="{{ img_gadget(g.name) }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{{ g.name }}</span>{% endfor %}</div>{% endif -%}
+</div>
+{%- endif -%}
+{%- endmacro %}
+
 {# Resumo forte/fraco em chips #}
 {% macro resumo_forte_fraco(fortes, fracos) -%}
 <p class="resumo-meta">

@@ -13,6 +13,7 @@ _mapa_brawler: dict | None = None   # {NOME_NORMALIZADO: id}
 _mapa_sp: dict | None = None        # {NOME_NORMALIZADO: id} star powers
 _mapa_gadget: dict | None = None    # {NOME_NORMALIZADO: id} gadgets
 _totais: dict | None = None         # totais disponíveis no jogo (denominadores)
+_acess_brawler: dict | None = None  # {NOME: {"star_powers":[{name,id}], "gadgets":[{name,id}]}}
 
 
 def _norm(nome: str) -> str:
@@ -20,10 +21,10 @@ def _norm(nome: str) -> str:
 
 
 def _carregar() -> None:
-    global _mapa_brawler, _mapa_sp, _mapa_gadget, _totais
+    global _mapa_brawler, _mapa_sp, _mapa_gadget, _totais, _acess_brawler
     if _mapa_brawler is not None:
         return
-    b_map, sp_map, g_map = {}, {}, {}
+    b_map, sp_map, g_map, ac_map = {}, {}, {}, {}
     tot = {"brawlers": 0, "star_powers": 0, "gadgets": 0}
     try:
         for b in oficial.coletar_brawlers():
@@ -40,9 +41,22 @@ def _carregar() -> None:
             for g in gds:
                 if g.get("id") and g.get("name"):
                     g_map[_norm(g["name"])] = g["id"]
+            if b.get("name"):
+                ac_map[_norm(b["name"])] = {
+                    "star_powers": [{"name": s.get("name"), "id": s.get("id")} for s in sps if s.get("name")],
+                    "gadgets": [{"name": g.get("name"), "id": g.get("id")} for g in gds if g.get("name")],
+                }
     except Exception:
         pass  # API fora / sem token → mapas vazios (templates mostram só o nome)
-    _mapa_brawler, _mapa_sp, _mapa_gadget, _totais = b_map, sp_map, g_map, tot
+    _mapa_brawler, _mapa_sp, _mapa_gadget, _totais, _acess_brawler = \
+        b_map, sp_map, g_map, tot, ac_map
+
+
+def acessorios_brawler(nome: str) -> dict:
+    """Star powers e gadgets disponíveis de um brawler (da API oficial), c/ ids
+    p/ imagem. {'star_powers':[{name,id}], 'gadgets':[{name,id}]} — vazio se não achar."""
+    _carregar()
+    return (_acess_brawler or {}).get(_norm(nome), {"star_powers": [], "gadgets": []})
 
 
 def totais_colecao() -> dict:

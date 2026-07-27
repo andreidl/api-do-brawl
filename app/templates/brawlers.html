@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import tabela_modos, resumo_forte_fraco, brawler_ico %}
+{% from "_macros.html" import tabela_modos, resumo_forte_fraco, brawler_ico, acessorios_ref %}
 {% block titulo %}Meta dos brawlers — API do Brawl{% endblock %}
 {% block conteudo %}
 <h1>📊 Meta dos brawlers</h1>
@@ -32,6 +32,7 @@
     </summary>
     <div class="bc-corpo">
       {{ resumo_forte_fraco(b.fortes, b.fracos) }}
+      {{ acessorios_ref(b.brawler) }}
       {{ tabela_modos(b.modos) }}
     </div>
   </details>

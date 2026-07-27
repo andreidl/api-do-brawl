@@ -78,6 +78,7 @@ templates.env.globals["css_ver"] = _css_ver
 templates.env.globals["img_brawler"] = imagens.img_brawler
 templates.env.globals["img_star_power"] = imagens.img_star_power
 templates.env.globals["img_gadget"] = imagens.img_gadget
+templates.env.globals["acessorios_brawler"] = imagens.acessorios_brawler
 
 
 @app.get("/", response_class=HTMLResponse)

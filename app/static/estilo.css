@@ -425,6 +425,9 @@ th.th-ord.ord-desc::after { content: " ▼"; font-size: 0.7em; color: var(--dest
 }
 h1 .ico-brawler, .bc-nome .ico-brawler { width: 34px; height: 34px; }
 .ico-acess { width: 18px; height: 18px; vertical-align: middle; margin-right: 0.25rem; }
+.acess-ref { margin: 0.2rem 0 0.7rem; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; }
+.acess-chip { display: inline-flex; align-items: center; margin: 0.15rem 0.3rem 0.15rem 0;
+  padding: 0.15rem 0.55rem; background: var(--painel-hover); border-radius: 999px; }
 
 /* ---------- comparar jogadores ---------- */
 .form-comparar { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin: 1rem 0 1.4rem; }
