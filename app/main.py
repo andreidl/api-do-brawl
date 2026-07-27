@@ -132,11 +132,22 @@ def _dados_cla(conexao) -> dict:
         clube["membros"] if clube else None,
     )
     membros = clube["membros"] if clube else set()
+    por_brawler = db.ranking_membros_por_brawler(conexao, membros)
+    # resumo por jogador: em quantos/quais brawlers cada um é o #1
+    lideres: dict = {}
+    for b in por_brawler:
+        if b["membros"]:
+            top = b["membros"][0]
+            d = lideres.setdefault(top["tag"], {"nick": top["nick"], "tag": top["tag"],
+                                                "brawlers": []})
+            d["brawlers"].append(b["brawler"])
+    melhores_por_jogador = sorted(lideres.values(), key=lambda x: -len(x["brawlers"]))
     return {
         "ranking": ranking, "clube": clube,
         "fora_do_clube": fora_do_clube, "composicoes": comp_clube,
         "melhor_por_modo": db.melhor_membro_por_modo(conexao, membros),
-        "por_brawler": db.ranking_membros_por_brawler(conexao, membros),
+        "por_brawler": por_brawler,
+        "melhores_por_jogador": melhores_por_jogador,
     }
 
 

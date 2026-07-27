@@ -81,6 +81,26 @@ function copiarRanking() {
 {% if por_brawler %}
 <h2>🎯 Melhor do clã por brawler</h2>
 <p class="nota">"Se for jogar de X, quem vai melhor" — clique num brawler. Ordenado por <b>troféu médio</b> (peso maior) × winrate (Wilson): quem joga bem em troféu alto fica no topo. O <span class="nota">?</span> marca poucos jogos.</p>
+
+{% if melhores_por_jogador %}
+<h3>🥇 Quem lidera em mais brawlers</h3>
+<div class="lista-brawlers">
+  {% for j in melhores_por_jogador %}
+  <details class="brawler-card">
+    <summary>
+      <span class="bc-pos">{{ j.brawlers | length }}</span>
+      <span class="bc-nome"><a href="/jogador/{{ j.tag.lstrip('#') }}">{{ j.nick }}</a></span>
+      <span class="bc-resumo">melhor em {{ j.brawlers | length }} brawler{{ 's' if j.brawlers|length > 1 }}</span>
+    </summary>
+    <div class="bc-corpo">
+      {% for br in j.brawlers %}<span class="acess-chip">{{ brawler_ico(br) }}</span>{% endfor %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h3>Todos os brawlers</h3>
 <div class="lista-brawlers">
   {% for b in por_brawler %}
   <details class="brawler-card">
