@@ -249,10 +249,33 @@ def pagina_brawlers(request: Request, modo: str | None = None):
                           key=lambda b: b["pos_sel"])
     else:
         modo_sel = None
+    brawlers, tiers = _montar_tiers(brawlers)
     return templates.TemplateResponse(request, "brawlers.html", {
-        "brawlers": brawlers, "data_meta": dados["data"],
+        "brawlers": brawlers, "tiers": tiers, "data_meta": dados["data"],
         "modos_ativos": modos_ativos, "modo_sel": modo_sel,
     })
+
+
+# Faixas de tier (S→F) por percentil de ranking — S/F menores, meio maior,
+# imitando a distribuição de uma tier list clássica. A ordem de `brawlers` já
+# reflete a força (pos_media no Geral, ou posição no modo quando filtrado).
+_FAIXAS_TIER: list[tuple[float, str]] = [
+    (0.08, "S"), (0.22, "A"), (0.42, "B"), (0.64, "C"), (0.85, "D"), (1.01, "F"),
+]
+
+
+def _montar_tiers(brawlers: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Anexa idx+tier a cada brawler (na ordem recebida) e agrupa por tier.
+    idx é estável e liga o ícone da grade ao card de detalhe."""
+    n = len(brawlers)
+    anotados: list[dict] = []
+    for i, b in enumerate(brawlers):
+        frac = (i + 0.5) / n if n else 0.0
+        tier = next(t for lim, t in _FAIXAS_TIER if frac < lim)
+        anotados.append(dict(b, idx=i, tier=tier))
+    tiers = [{"id": tid, "brawlers": [b for b in anotados if b["tier"] == tid]}
+             for _lim, tid in _FAIXAS_TIER]
+    return anotados, tiers
 
 
 @app.get("/brawler/{nome}", response_class=HTMLResponse)

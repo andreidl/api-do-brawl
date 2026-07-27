@@ -14,31 +14,60 @@
 {% endif %}
 
 {% if data_meta %}<p class="nota">Meta mais recente: <code>{{ data_meta }}</code> · {{ brawlers | length }} brawlers ·
-  {% if modo_sel %}ordenados pela posição em <b>{{ modo_sel }}</b> (melhores no modo primeiro).{% else %}ordenados pela <b>força geral</b> (posição média entre os modos).{% endif %}
-  <b>Clique</b> num brawler para ver todos os modos.</p>{% endif %}
+  {% if modo_sel %}tier pela posição em <b>{{ modo_sel }}</b>.{% else %}tier pela <b>força geral</b> (posição média entre os modos).{% endif %}
+  <b>Clique</b> num brawler para ver todos os dados.</p>{% endif %}
 
 {% if brawlers %}
-<div class="lista-brawlers">
-  {% for b in brawlers %}
-  <details class="brawler-card">
-    <summary>
-      <span class="bc-pos">{% if modo_sel %}{{ b.pos_sel }}º{% else %}{{ loop.index }}º{% endif %}</span>
-      <span class="bc-nome">{{ brawler_ico(b.brawler) }}</span>
-      <span class="bc-media nota">{% if modo_sel %}{{ modo_sel }}: {{ b.pos_sel }}º · {% endif %}média {{ b.pos_media }}º · melhor {{ b.melhor_pos }}º</span>
-      <span class="bc-resumo">
-        {%- if b.fortes %}<span class="chip-forte">🟢 {{ b.fortes | length }} forte{{ 's' if b.fortes|length > 1 }}</span>{% endif -%}
-        {%- if b.fracos %}<span class="chip-fraco">🔴 {{ b.fracos | length }} fraco{{ 's' if b.fracos|length > 1 }}</span>{% endif -%}
-      </span>
-    </summary>
-    <div class="bc-corpo">
-      {{ resumo_forte_fraco(b.fortes, b.fracos) }}
-      {{ acessorios_ref(b.brawler) }}
-      {{ tabela_modos(b.modos) }}
+<div class="tier-lista">
+  {% for t in tiers %}{% if t.brawlers %}
+  <div class="tier-linha tier-{{ t.id }}">
+    <div class="tier-rotulo">{{ t.id }}</div>
+    <div class="tier-brawlers">
+      {% for b in t.brawlers %}
+      {%- set u = img_brawler(b.brawler) -%}
+      <button type="button" class="tier-brawler" data-alvo="tcard-{{ b.idx }}" title="{{ b.brawler }} · média {{ b.pos_media }}º">
+        {% if u %}<img src="{{ u }}" alt="{{ b.brawler }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'tier-nome-mini',textContent:this.alt}))">{% else %}<span class="tier-nome-mini">{{ b.brawler }}</span>{% endif %}
+      </button>
+      {% endfor %}
     </div>
-  </details>
+  </div>
+  {% endif %}{% endfor %}
+</div>
+
+<div class="tier-cards">
+  {% for b in brawlers %}
+  <div class="tier-card brawler-card" id="tcard-{{ b.idx }}" hidden>
+    <h3>{{ brawler_ico(b.brawler) }}
+      <span class="tier-selo tier-{{ b.tier }}">{{ b.tier }}</span>
+      <span class="nota">{% if modo_sel %}{{ modo_sel }}: {{ b.pos_sel }}º · {% endif %}média {{ b.pos_media }}º · melhor {{ b.melhor_pos }}º</span>
+      <a href="/brawler/{{ b.brawler | urlencode }}" class="nota tier-link" title="abrir página do brawler">🔗</a>
+    </h3>
+    {{ resumo_forte_fraco(b.fortes, b.fracos) }}
+    {{ acessorios_ref(b.brawler) }}
+    {{ tabela_modos(b.modos) }}
+  </div>
   {% endfor %}
 </div>
 {% else %}
 <p class="nota">Meta ainda não coletado. O rastreador preenche a cada rodada.</p>
 {% endif %}
+
+<script>
+(function () {
+  const cards = document.querySelectorAll('.tier-card');
+  document.querySelectorAll('.tier-brawler').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const alvo = document.getElementById(btn.dataset.alvo);
+      const jaAberto = alvo && !alvo.hidden;
+      cards.forEach(c => { c.hidden = true; });
+      document.querySelectorAll('.tier-brawler.sel').forEach(b => b.classList.remove('sel'));
+      if (alvo && !jaAberto) {
+        alvo.hidden = false;
+        btn.classList.add('sel');
+        alvo.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  });
+})();
+</script>
 {% endblock %}

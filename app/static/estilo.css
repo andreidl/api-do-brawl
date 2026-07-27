@@ -523,3 +523,51 @@ details.recolhivel[open] > summary::before { content: "▾ "; }
 }
 .acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
 .acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }
+
+/* ---------- tier list (meta) ---------- */
+.tier-lista {
+  display: flex; flex-direction: column; gap: 3px;
+  border-radius: 10px; overflow: hidden; margin: 0.6rem 0 1rem;
+  border: 1px solid var(--painel-borda);
+}
+.tier-linha { display: flex; align-items: stretch; background: var(--painel); min-height: 56px; }
+.tier-rotulo {
+  flex: 0 0 52px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 900; color: #10151c; text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+}
+.tier-brawlers {
+  flex: 1; display: flex; flex-wrap: wrap; gap: 4px; align-content: center;
+  padding: 5px 7px;
+}
+.tier-brawler {
+  padding: 0; border: 2px solid transparent; border-radius: 8px; background: rgba(0,0,0,0.25);
+  cursor: pointer; line-height: 0; overflow: hidden; transition: transform .08s, border-color .08s;
+}
+.tier-brawler img { width: 46px; height: 46px; object-fit: cover; display: block; }
+.tier-brawler:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.6); }
+.tier-brawler.sel { border-color: var(--destaque); box-shadow: 0 0 0 2px var(--destaque); }
+.tier-nome-mini {
+  display: inline-block; padding: 0 8px; height: 46px; line-height: 46px;
+  font-size: 0.7rem; font-weight: 700; color: #fff; white-space: nowrap;
+}
+/* cores dos tiers */
+.tier-S .tier-rotulo { background: #ff7f7f; }
+.tier-A .tier-rotulo { background: #ffbf7f; }
+.tier-B .tier-rotulo { background: #ffdf7f; }
+.tier-C .tier-rotulo { background: #bfe07f; }
+.tier-D .tier-rotulo { background: #7fdfbf; }
+.tier-F .tier-rotulo { background: #7fbfdf; }
+.tier-selo {
+  display: inline-block; min-width: 1.4rem; text-align: center; font-weight: 900;
+  color: #10151c; border-radius: 6px; padding: 0 0.35rem; margin: 0 0.3rem; vertical-align: middle;
+}
+.tier-selo.tier-S { background: #ff7f7f; } .tier-selo.tier-A { background: #ffbf7f; }
+.tier-selo.tier-B { background: #ffdf7f; } .tier-selo.tier-C { background: #bfe07f; }
+.tier-selo.tier-D { background: #7fdfbf; } .tier-selo.tier-F { background: #7fbfdf; }
+.tier-card { scroll-margin-top: 70px; }
+.tier-card h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 0.2rem; }
+.tier-link { text-decoration: none; margin-left: auto; }
+@media (max-width: 640px) {
+  .tier-rotulo { flex-basis: 40px; font-size: 1.2rem; }
+  .tier-brawler img, .tier-nome-mini { width: 40px; height: 40px; line-height: 40px; }
+}
