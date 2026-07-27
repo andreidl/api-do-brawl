@@ -123,8 +123,8 @@ sudo tee /etc/systemd/system/apidobrawl-rastreio.timer >/dev/null <<EOF
 Description=API do Brawl — dispara o rastreamento a cada 2h
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=1h
+OnBootSec=3min
+OnUnitActiveSec=30min
 Persistent=true
 
 [Install]
