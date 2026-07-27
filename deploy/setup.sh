@@ -55,6 +55,18 @@ else
   git -C "${APP_DIR}" reset --hard "origin/${REPO_BRANCH}"
 fi
 
+echo ">>> [2.5/8] Swap (evita OOM em VM de 1 GB, ex.: e2-micro)…"
+if [ ! -f /swapfile ] && ! swapon --show | grep -q .; then
+  sudo fallocate -l 2G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+  echo "    swap de 2G criado."
+else
+  echo "    swap já existe — ok."
+fi
+
 echo ">>> [3/8] Virtualenv + dependências…"
 python3 -m venv "${APP_DIR}/.venv"
 "${APP_DIR}/.venv/bin/pip" install --upgrade pip --quiet
