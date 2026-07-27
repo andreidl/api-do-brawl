@@ -1,36 +1,45 @@
 {% extends "base.html" %}
 {% from "_macros.html" import brawler_ico %}
-{% block titulo %}Sugestão de times — API do Brawl{% endblock %}
+{% block titulo %}Time do clã — API do Brawl{% endblock %}
 {% block conteudo %}
-<h1>🤝 Sugestão de times</h1>
-<p class="nota">O time recomendado em cada modo — os melhores brawlers (winrate ponderado por troféu) no tamanho do modo. 100% das <b>nossas batalhas</b>. Filtre pela faixa de troféus:</p>
+<h1>🤝 Time do clã</h1>
+<p class="nota">Escolha até 5 membros → veja os jogos em que jogaram <b>juntos</b> (mesmo time) e o brawler de cada um neles. O tamanho do time filtra sozinho: 5 selecionados = só 5v5; 3 = 3v3 e 5v5; 2 = duo, 3v3 e 5v5.</p>
 
-<div class="abas abas-meta">
-  {% for m in marcos %}
-  <a href="/times{% if m %}?trofeu={{ m }}{% endif %}" class="{{ 'ativa' if trofeu_sel == m }}">{{ 'Todos' if m == 0 else m ~ '+' }}</a>
-  {% endfor %}
-</div>
-{% if trofeu_sel %}<p class="nota">Mostrando o meta de quem tem <b>{{ trofeu_sel }}+ troféus</b> no brawler.</p>{% endif %}
-
-{% if times %}
-{% for t in times %}
-<div class="time-card">
-  <h3>{{ t.modo }} <span class="nota">· time de {{ t.tamanho }} · {{ t.jogos }} jogos</span></h3>
-  <div class="time-brawlers">
-    {% for b in t.brawlers %}
-    <div class="time-brawler">
-      {{ brawler_ico(b.brawler) }}
-      <span class="tb-wr">{{ b.winrate }}%</span>
-      <span class="nota">🏆 {{ b.trofeus }}</span>
-    </div>
+<form method="get" action="/times" class="form-times">
+  <div class="membros-check">
+    {% for c in candidatos %}
+    {% set marcado = ('#' ~ c.tag.lstrip('#')) in selecionados %}
+    <label class="check-membro{{ ' marcado' if marcado }}">
+      <input type="checkbox" name="j" value="{{ c.tag.lstrip('#') }}"{{ ' checked' if marcado }}>
+      {{ c.nick }} <span class="nota">({{ c.jogos }}j)</span>
+    </label>
     {% endfor %}
   </div>
-  {% if t.reservas %}
-  <p class="nota">🔄 Reservas: {% for b in t.reservas %}<span class="acess-chip">{{ brawler_ico(b.brawler) }} {{ b.winrate }}%</span>{% endfor %}</p>
+  <button type="submit">Ver time</button>
+</form>
+
+{% if selecionados %}
+  {% if resultado and resultado.jogos > 0 %}
+  <div class="time-card">
+    <h3>{{ selecionados | length }} juntos — {{ resultado.jogos }} jogos · {{ resultado.winrate }}% winrate ({{ resultado.vitorias }}V)</h3>
+    {% if resultado.modos %}<p class="nota">Modos: {{ resultado.modos | join(', ') }}</p>{% endif %}
+    {% for m in resultado.por_membro %}
+    <h4>{{ m.nick }}</h4>
+    {% if m.brawlers %}
+    <div class="time-brawlers">
+      {% for b in m.brawlers %}
+      <div class="time-brawler">{{ brawler_ico(b.brawler) }}<span class="tb-wr">{{ b.winrate }}%</span><span class="nota">{{ b.jogos }}j</span></div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="nota">Sem brawler registrado nesses jogos.</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="nota">Esses {{ selecionados | length }} <b>nunca jogaram juntos</b> (mesmo time) nas batalhas capturadas. Tente com menos gente.</p>
   {% endif %}
-</div>
-{% endfor %}
+{% elif candidatos %}
+<p class="nota">Marque os membros acima e clique em <b>Ver time</b>.</p>
 {% else %}
-<p class="nota">Sem dados suficientes ainda.</p>
+<p class="nota">Nenhum membro do clã com batalhas no banco ainda.</p>
 {% endif %}
 {% endblock %}

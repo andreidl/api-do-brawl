@@ -907,11 +907,77 @@ def estatisticas_mapas(conexao: sqlite3.Connection, minimo_brawler: int = 3) -> 
     return saida
 
 
+def membros_com_dados(conexao: sqlite3.Connection, membros: set[str]) -> list[dict]:
+    """Membros do clã que têm batalhas decididas no banco (para os checkboxes da
+    página de times). [{tag, nick, jogos}], mais ativos primeiro."""
+    membros = list(membros or [])
+    if not membros:
+        return []
+    ph = ", ".join(["?"] * len(membros))
+    linhas = conexao.execute(
+        f"""SELECT tag_jogador AS tag, COUNT(*) AS jogos FROM batalha_jogadores
+            WHERE tag_jogador IN ({ph}) AND resultado IN ('Victory','Defeat')
+            GROUP BY tag_jogador ORDER BY jogos DESC""", tuple(membros)).fetchall()
+    nicks = _nicks_de(conexao, membros)
+    return [{"tag": l["tag"], "nick": nicks.get(l["tag"]) or l["tag"], "jogos": int(l["jogos"])}
+            for l in linhas]
+
+
+def time_selecionado(conexao: sqlite3.Connection, tags: list[str]) -> dict:
+    """Estatísticas de quando os jogadores `tags` jogaram JUNTOS (mesmo time numa
+    batalha). O time precisa ter TODOS os selecionados → o tamanho do time é >= nº
+    selecionado automaticamente (5 sel = só 5v5; 3 sel = 3v3 e 5v5; etc.).
+    Retorna {jogos, vitorias, winrate, por_membro:[{nick, brawlers:[...]}], modos}."""
+    tags = list(tags)
+    if not tags:
+        return {"jogos": 0, "vitorias": 0, "winrate": None, "por_membro": [], "modos": []}
+    ph = ", ".join(["?"] * len(tags))
+    linhas = conexao.execute(
+        f"""SELECT bj.hash AS hash, bj.time AS time, bj.tag_jogador AS tag,
+                   bj.brawler AS brawler, bj.resultado AS resultado, b.modo AS modo
+            FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+            WHERE bj.tag_jogador IN ({ph}) AND bj.time IS NOT NULL""",
+        tuple(tags)).fetchall()
+    sel = set(tags)
+    grupos: dict = {}
+    for l in linhas:
+        grupos.setdefault((l["hash"], l["time"]), {})[l["tag"]] = l
+    juntos = [g for g in grupos.values() if sel <= set(g.keys())]
+    jogos = len(juntos)
+    if jogos == 0:
+        return {"jogos": 0, "vitorias": 0, "winrate": None, "por_membro": [], "modos": []}
+    vitorias = sum(1 for g in juntos if next(iter(g.values()))["resultado"] == "Victory")
+    from app.indicadores.performance import wilson
+    nicks = _nicks_de(conexao, tags)
+    por_membro: list[dict] = []
+    for tag in tags:
+        cont: dict = {}
+        for g in juntos:
+            r = g[tag]
+            if not r["brawler"]:
+                continue
+            c = cont.setdefault(r["brawler"], [0, 0])
+            c[0] += 1
+            if r["resultado"] == "Victory":
+                c[1] += 1
+        brs = [{"brawler": b, "jogos": c[0], "vitorias": c[1],
+                "winrate": round(c[1] / c[0] * 100, 1), "_w": wilson(c[1], c[0])}
+               for b, c in cont.items()]
+        brs.sort(key=lambda x: -x["_w"])
+        for x in brs:
+            x.pop("_w", None)
+        por_membro.append({"tag": tag, "nick": nicks.get(tag) or tag, "brawlers": brs[:5]})
+    modos = sorted({next(iter(g.values()))["modo"] for g in juntos if next(iter(g.values()))["modo"]})
+    return {"jogos": jogos, "vitorias": vitorias,
+            "winrate": round(vitorias / jogos * 100, 1),
+            "por_membro": por_membro, "modos": modos}
+
+
 def estatisticas_modos(conexao: sqlite3.Connection, minimo_brawler: int = 5,
-                       min_trofeus: int = 0) -> list[dict]:
+                       min_trofeus: int = 0, membros: set[str] | None = None) -> list[dict]:
     """Estatísticas por MODO (das nossas batalhas): nº de jogos, duração média e
-    os melhores brawlers (winrate Wilson × troféu²). Se `min_trofeus` > 0, só conta
-    partidas em que o brawler tinha >= aquele valor (filtro por faixa de elo).
+    os melhores brawlers (winrate Wilson × troféu²). `min_trofeus` > 0 filtra por
+    faixa de troféus; `membros` (set de tags) restringe aos jogadores do clã.
     Modos mais jogados primeiro."""
     base: dict = {}
     for l in conexao.execute(
@@ -921,17 +987,24 @@ def estatisticas_modos(conexao: sqlite3.Connection, minimo_brawler: int = 5,
                            "duracao_media": int(l["dur"]) if l["dur"] is not None else None,
                            "brawlers": []}
     from app.indicadores.performance import wilson
-    filtro_trof = " AND bj.trofeus >= ?" if min_trofeus else ""
-    params = (min_trofeus, minimo_brawler) if min_trofeus else (minimo_brawler,)
+    cond = ["bj.resultado IN ('Victory','Defeat')", "bj.brawler IS NOT NULL", "b.modo IS NOT NULL"]
+    params: list = []
+    if min_trofeus:
+        cond.append("bj.trofeus >= ?")
+        params.append(min_trofeus)
+    if membros:
+        mm = list(membros)
+        cond.append(f"bj.tag_jogador IN ({', '.join(['?'] * len(mm))})")
+        params.extend(mm)
+    params.append(minimo_brawler)
     for l in conexao.execute(
         f"""SELECT b.modo AS modo, bj.brawler AS brawler, COUNT(*) AS jogos,
                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
                   AVG(bj.trofeus) AS trof_medio
            FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
-           WHERE bj.resultado IN ('Victory','Defeat')
-             AND bj.brawler IS NOT NULL AND b.modo IS NOT NULL{filtro_trof}
+           WHERE {' AND '.join(cond)}
            GROUP BY b.modo, bj.brawler
-           HAVING COUNT(*) >= ?""", params).fetchall():
+           HAVING COUNT(*) >= ?""", tuple(params)).fetchall():
         m = base.get(l["modo"])
         if m is None:
             continue

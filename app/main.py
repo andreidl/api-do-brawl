@@ -5,7 +5,7 @@ import threading
 import time as time_mod
 from pathlib import Path
 
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, Query
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -195,26 +195,23 @@ def pagina_mapas(request: Request):
 
 
 @app.get("/times", response_class=HTMLResponse)
-def pagina_times(request: Request, trofeu: int | None = None):
-    """Sugestão de time por modo: os melhores brawlers (ponderados por troféu) no
-    tamanho do modo. Filtro `trofeu`: só partidas nessa faixa de troféus pra cima."""
-    marcos = [0, 250, 500, 750, 1000, 2000, 3000]
-    sel = trofeu if trofeu in marcos else 0
+def pagina_times(request: Request, j: list[str] = Query(default=[])):
+    """Escolha até 5 membros do clã → mostra os jogos em que eles jogaram JUNTOS
+    (mesmo time) e o brawler de cada um nesses jogos. O tamanho do time filtra
+    sozinho: 5 selecionados = só 5v5; 3 = 3v3 e 5v5; etc."""
     conexao = db.conectar()
     try:
-        modos = db.estatisticas_modos(conexao, minimo_brawler=3, min_trofeus=sel)
+        clube = db.clube_principal(conexao)
+        membros = clube["membros"] if clube else set()
+        candidatos = db.membros_com_dados(conexao, membros)
+        validas = {c["tag"] for c in candidatos}
+        selecionados = [t for t in ("#" + x.lstrip("#").upper() for x in j) if t in validas][:5]
+        resultado = db.time_selecionado(conexao, selecionados) if selecionados else None
     finally:
         conexao.close()
-    times: list[dict] = []
-    for m in modos:
-        n = indicadores_meta.tamanho_time_do_modo(m["modo"])
-        equipe = m["brawlers"][:n]
-        if equipe:
-            times.append({"modo": m["modo"], "jogos": m["jogos"],
-                          "tamanho": n, "brawlers": equipe,
-                          "reservas": m["brawlers"][n:n + 3]})
-    return templates.TemplateResponse(request, "times.html",
-                                      {"times": times, "trofeu_sel": sel, "marcos": marcos})
+    return templates.TemplateResponse(request, "times.html", {
+        "candidatos": candidatos, "selecionados": selecionados, "resultado": resultado,
+    })
 
 
 @app.get("/brawler", response_class=HTMLResponse)
