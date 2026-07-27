@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import barra_wr, brawler_ico %}
+{% block titulo %}Mapas — API do Brawl{% endblock %}
+{% block conteudo %}
+<h1>🗺️ Mapas</h1>
+<p class="nota">Estatísticas de cada mapa das <b>nossas batalhas</b> — mais jogados primeiro. Clique num mapa pra ver os melhores brawlers nele (winrate Wilson, mín. 3 jogos).</p>
+
+{% if mapas %}
+<div class="lista-brawlers">
+  {% for m in mapas %}
+  <details class="brawler-card">
+    <summary>
+      <span class="bc-pos">{{ m.jogos }}</span>
+      <span class="bc-nome">{{ m.mapa }}</span>
+      <span class="bc-media nota">{{ m.modo }}{% if m.duracao_media %} · ⏱️ {{ m.duracao_media // 60 }}m{{ '%02d'|format(m.duracao_media % 60) }}s méd.{% endif %}</span>
+    </summary>
+    <div class="bc-corpo">
+      {% if m.brawlers %}
+      <table>
+        <thead><tr><th>#</th><th>Melhor brawler</th><th>Winrate</th><th>V/Jogos</th></tr></thead>
+        <tbody>
+          {% for b in m.brawlers %}
+          <tr><td>{{ loop.index }}</td>
+              <td>{{ brawler_ico(b.brawler) }}</td>
+              <td>{{ barra_wr(b.winrate, b.jogos) }}</td>
+              <td>{{ b.vitorias }}/{{ b.jogos }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="nota">Ainda sem brawlers com jogos suficientes neste mapa.</p>
+      {% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+{% else %}
+<p class="nota">Nenhum mapa com batalhas no banco ainda.</p>
+{% endif %}
+{% endblock %}

@@ -865,6 +865,42 @@ def data_meta_recente(conexao: sqlite3.Connection) -> str | None:
     return linha["d"] if linha else None
 
 
+def estatisticas_mapas(conexao: sqlite3.Connection, minimo_brawler: int = 3) -> list[dict]:
+    """Estatísticas por MAPA (das nossas batalhas): modo, nº de jogos, duração
+    média e os melhores brawlers (winrate Wilson, mín. `minimo_brawler`). Mapas
+    mais jogados primeiro."""
+    base: dict = {}
+    for l in conexao.execute(
+        """SELECT mapa, MAX(modo) AS modo, COUNT(*) AS jogos, AVG(duracao_seg) AS dur
+           FROM batalhas WHERE mapa IS NOT NULL GROUP BY mapa""").fetchall():
+        base[l["mapa"]] = {"mapa": l["mapa"], "modo": l["modo"], "jogos": int(l["jogos"]),
+                           "duracao_media": int(l["dur"]) if l["dur"] is not None else None,
+                           "brawlers": []}
+    from app.indicadores.performance import wilson
+    for l in conexao.execute(
+        """SELECT b.mapa AS mapa, bj.brawler AS brawler, COUNT(*) AS jogos,
+                  SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias
+           FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+           WHERE bj.resultado IN ('Victory','Defeat')
+             AND bj.brawler IS NOT NULL AND b.mapa IS NOT NULL
+           GROUP BY b.mapa, bj.brawler
+           HAVING COUNT(*) >= ?""", (minimo_brawler,)).fetchall():
+        m = base.get(l["mapa"])
+        if m is None:
+            continue
+        jogos, vit = int(l["jogos"]), int(l["vitorias"])
+        m["brawlers"].append({"brawler": l["brawler"], "jogos": jogos, "vitorias": vit,
+                              "winrate": round(vit / jogos * 100, 1), "_w": wilson(vit, jogos)})
+    saida = list(base.values())
+    for m in saida:
+        m["brawlers"].sort(key=lambda x: -x["_w"])
+        for x in m["brawlers"]:
+            x.pop("_w", None)
+        m["brawlers"] = m["brawlers"][:8]
+    saida.sort(key=lambda x: -x["jogos"])
+    return saida
+
+
 def meta_do_banco(conexao: sqlite3.Connection) -> dict:
     """Reconstrói o meta no formato do coletar_meta a partir do meta_snapshots
     mais recente — evita raspar o brawlace AO VIVO a cada consulta (que travava

@@ -180,6 +180,18 @@ def api_refrescar_cla():
         return JSONResponse({"erro": str(erro)}, status_code=200)
 
 
+@app.get("/mapas", response_class=HTMLResponse)
+def pagina_mapas(request: Request):
+    """Estatísticas por mapa (das nossas batalhas): modo, jogos, duração e os
+    melhores brawlers em cada mapa."""
+    conexao = db.conectar()
+    try:
+        mapas = db.estatisticas_mapas(conexao)
+    finally:
+        conexao.close()
+    return templates.TemplateResponse(request, "mapas.html", {"mapas": mapas})
+
+
 @app.get("/brawler", response_class=HTMLResponse)
 def pagina_brawlers(request: Request, modo: str | None = None):
     """Índice do meta (accordion). Botões: Geral (força média) + eventos ativos.
