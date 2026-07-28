@@ -394,6 +394,7 @@ def pagina_comparar(request: Request, a: str | None = None, b: str | None = None
             else:
                 res["fracos_brawler"] = _brechas_do_forte(
                     db.winrate_por_brawler_do_jogador(conexao, tag))
+                res["sem_jogo"] = db.brawlers_sem_jogo_do_jogador(conexao, tag)
                 dados[slot] = res
     finally:
         conexao.close()
@@ -406,9 +407,10 @@ def pagina_comparar(request: Request, a: str | None = None, b: str | None = None
             sugestoes = _sugestoes_melhoria(fraco, forte)
         # brechas: SEMPRE na perspectiva do jogador 1 (a) — mostra onde o
         # jogador 2 (b) NÃO domina, para o jogador 1 explorar e superá-lo.
-        if dados["b"].get("fracos_brawler"):
+        if dados["b"].get("fracos_brawler") or dados["b"].get("sem_jogo"):
             brechas = {"alvo_nick": dados["b"]["nick"], "benef_nick": dados["a"]["nick"],
-                       "brawlers": dados["b"]["fracos_brawler"]}
+                       "brawlers": dados["b"].get("fracos_brawler") or [],
+                       "sem_jogo": dados["b"].get("sem_jogo") or []}
     return templates.TemplateResponse(request, "comparar.html", {
         "a": dados["a"], "b": dados["b"], "tag_a": a or "", "tag_b": b or "",
         "erro_a": erros["a"], "erro_b": erros["b"],

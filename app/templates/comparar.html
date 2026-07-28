@@ -68,6 +68,7 @@
 <div class="caixa-dicas caixa-brechas">
   <h3>🎯 Brechas do <b>{{ brechas.alvo_nick }}</b> — onde <b>{{ brechas.benef_nick }}</b> pode superá-lo</h3>
   <p class="nota">Brawlers em que {{ brechas.alvo_nick }} <b>não domina</b> (winrate abaixo de 75% nas batalhas capturadas). {{ brechas.benef_nick }}, especialize-se neles para virar o jogo.</p>
+  {% if brechas.brawlers %}
   <div class="brechas-lista">
     {% for b in brechas.brawlers %}
     <div class="brecha-item">
@@ -77,6 +78,16 @@
     </div>
     {% endfor %}
   </div>
+  {% endif %}
+  {% if brechas.sem_jogo %}
+  <p class="nota" style="margin-top:0.7rem"><b>Sem jogo registrado</b> ({{ brechas.sem_jogo | length }}) — {{ brechas.alvo_nick }} possui mas nunca o vimos jogar (pontos cegos):</p>
+  <div class="semjogo-lista">
+    {% for nome in brechas.sem_jogo %}
+    {%- set u = img_brawler(nome) -%}
+    <span class="semjogo-ico" title="{{ nome }}">{% if u %}<img src="{{ u }}" alt="{{ nome }}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'semjogo-nome',textContent:this.alt}))">{% else %}<span class="semjogo-nome">{{ nome }}</span>{% endif %}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 <p class="nota">🟩 = melhor valor. "Capturado" = calculado das batalhas no nosso banco (não a conta inteira). Troféus/level/coleção vêm do último snapshot da conta.</p>

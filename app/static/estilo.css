@@ -536,6 +536,13 @@ details.recolhivel[open] > summary::before { content: "▾ "; }
 .brecha-wr { font-weight: 800; }
 .brecha-wr.wr-baixo { color: #ff6b6b; } .brecha-wr.wr-medio { color: var(--destaque); }
 .brecha-wr.wr-alto { color: var(--verde); }
+.semjogo-lista { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.4rem; }
+.semjogo-ico { line-height: 0; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.05); }
+.semjogo-ico img { width: 34px; height: 34px; object-fit: cover; display: block; opacity: 0.85; }
+.semjogo-nome {
+  display: inline-block; padding: 0 6px; height: 34px; line-height: 34px;
+  font-size: 0.65rem; font-weight: 700; color: var(--texto-fraco, #9aa);
+}
 
 /* ---------- tier list (meta) ---------- */
 .tier-lista {

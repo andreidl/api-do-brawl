@@ -690,6 +690,21 @@ def winrate_por_brawler_do_jogador(conexao: sqlite3.Connection, tag: str) -> lis
     return out
 
 
+def brawlers_sem_jogo_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[str]:
+    """Brawlers que o jogador POSSUI (no snapshot) mas NÃO têm nenhuma batalha
+    registrada no banco — pontos cegos: nunca o vimos jogar com eles. Nomes em
+    MAIÚSCULO (como no meta/ícones)."""
+    perfil = perfil_do_banco(conexao, tag)
+    if not perfil:
+        return []
+    possuidos = {(b.get("nome") or "").upper()
+                 for b in (perfil.get("brawlers") or []) if b.get("nome")}
+    jogados = {(r["brawler"] or "").upper() for r in conexao.execute(
+        "SELECT DISTINCT brawler FROM batalha_jogadores "
+        "WHERE tag_jogador = ? AND brawler IS NOT NULL", (tag,)).fetchall()}
+    return sorted(possuidos - jogados)
+
+
 def contar_batalhas(conexao: sqlite3.Connection, tag: str) -> int:
     return conexao.execute(
         "SELECT COUNT(*) AS n FROM batalha_jogadores WHERE tag_jogador = ?", (tag,)
