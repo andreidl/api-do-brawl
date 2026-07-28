@@ -61,14 +61,41 @@ def _traduzir_sql(sql: str, tem_params: bool) -> str:
     return sql.replace("?", "%s")
 
 
-class _ConexaoPG:
-    """Fatia da API do sqlite3.Connection que o app usa, sobre um psycopg.Connection."""
+# Parâmetros de conexão libpq: keepalives evitam que o Supabase/roteador solte
+# uma conexão ociosa sem avisar; connect_timeout evita travar no boot.
+_PARAMS_PG: dict = dict(
+    connect_timeout=10,
+    keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=5,
+)
 
-    def __init__(self, conn) -> None:
-        self._conn = conn
+
+class _ConexaoPG:
+    """Fatia da API do sqlite3.Connection que o app usa, sobre um psycopg.Connection.
+
+    Guarda a URL para conseguir RECONECTAR: o Supabase (free) às vezes derruba a
+    conexão no meio de uma query pesada ("SSL connection has been closed
+    unexpectedly"). Como as rotas web são só SELECT, reexecutar o statement numa
+    conexão nova é seguro e evita 500 na página."""
+
+    def __init__(self, url: str) -> None:
+        self._url = url
+        self._conn = psycopg.connect(url, row_factory=_dict_row, **_PARAMS_PG)
+
+    def _reconectar(self) -> None:
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+        self._conn = psycopg.connect(self._url, row_factory=_dict_row, **_PARAMS_PG)
 
     def execute(self, sql: str, params: tuple = ()):
-        return self._conn.execute(_traduzir_sql(sql, bool(params)), params or None)
+        sql_t = _traduzir_sql(sql, bool(params))
+        try:
+            return self._conn.execute(sql_t, params or None)
+        except psycopg.OperationalError:
+            # conexão caiu — reconecta e tenta UMA vez. Se falhar de novo, propaga.
+            self._reconectar()
+            return self._conn.execute(sql_t, params or None)
 
     def executemany(self, sql: str, seq) -> None:
         seq = list(seq)
@@ -305,7 +332,7 @@ def _conectar_postgres(url: str) -> _ConexaoPG:
     if psycopg is None:
         raise RuntimeError("DATABASE_URL definida mas psycopg não está instalado "
                            "(pip install 'psycopg[binary]')")
-    return _ConexaoPG(psycopg.connect(url, row_factory=_dict_row))
+    return _ConexaoPG(url)
 
 
 def garantir_schema_pg(conexao: _ConexaoPG) -> None:
@@ -1400,15 +1427,26 @@ def clube_principal(conexao: sqlite3.Connection) -> dict | None:
     }
 
 
-def times_das_batalhas(conexao: sqlite3.Connection) -> list[dict]:
-    """Todos os participantes com time e resultado conhecidos (p/ composições)."""
-    linhas = conexao.execute(
-        """SELECT bj.hash, bj.time, bj.tag_jogador, bj.nick, bj.resultado,
-                  bj.brawler, bj.star_player, b.modo
-           FROM batalha_jogadores bj
-           JOIN batalhas b ON b.hash = bj.hash
-           WHERE bj.resultado IN ('Victory', 'Defeat') AND bj.time IS NOT NULL"""
-    ).fetchall()
+def times_das_batalhas(conexao: sqlite3.Connection,
+                       membros: set[str] | None = None) -> list[dict]:
+    """Participantes com time e resultado conhecidos (p/ composições).
+
+    Se `membros` for dado, filtra no SQL só esses jogadores. Isso é ESSENCIAL em
+    produção: as composições só olham membros do clube de qualquer forma, e sem o
+    filtro a query traz TODAS as batalhas de TODOS (centenas de milhares de
+    linhas) para a RAM — o que estoura a memória da VM (1GB) e derruba a conexão
+    com o Postgres no meio da query."""
+    sql = """SELECT bj.hash, bj.time, bj.tag_jogador, bj.nick, bj.resultado,
+                    bj.brawler, bj.star_player, b.modo
+             FROM batalha_jogadores bj
+             JOIN batalhas b ON b.hash = bj.hash
+             WHERE bj.resultado IN ('Victory', 'Defeat') AND bj.time IS NOT NULL"""
+    params: tuple = ()
+    if membros:
+        marcadores = ",".join("?" for _ in membros)
+        sql += f" AND bj.tag_jogador IN ({marcadores})"
+        params = tuple(membros)
+    linhas = conexao.execute(sql, params).fetchall()
     return [dict(l) for l in linhas]
 
 

@@ -130,9 +130,10 @@ def _dados_cla(conexao) -> dict:
         fora_do_clube = [r for r in todos if r["tag"] not in clube["membros"]]
     else:
         ranking, fora_do_clube = todos, []
+    membros_cl = clube["membros"] if clube else None
     comp_clube = performance.composicoes_clube(
-        db.times_das_batalhas(conexao),
-        clube["membros"] if clube else None,
+        db.times_das_batalhas(conexao, membros_cl),
+        membros_cl,
     )
     membros = clube["membros"] if clube else set()
     por_brawler = db.ranking_membros_por_brawler(conexao, membros)
@@ -712,7 +713,7 @@ def jogar_agora(request: Request, tag: str, time: str | None = None):
         lp: list[dict] = db.historico_brawler_do_jogador(conexao, tag_norm)
         lp_modo: list[dict] = db.historico_brawler_modo_do_jogador(conexao, tag_norm)
         clube: dict | None = db.clube_principal(conexao)
-        times: list[dict] = db.times_das_batalhas(conexao)
+        times: list[dict] = db.times_das_batalhas(conexao, clube["membros"] if clube else None)
 
         # time selecionado (?time=TAG2,TAG3) — o dono sempre entra primeiro
         time_dados: list[dict] = []
