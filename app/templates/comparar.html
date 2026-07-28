@@ -66,8 +66,8 @@
 
 {% if brechas %}
 <div class="caixa-dicas caixa-brechas">
-  <h3>🎯 Brechas do <b>{{ brechas.forte_nick }}</b> — onde <b>{{ brechas.fraco_nick }}</b> pode superá-lo</h3>
-  <p class="nota">Brawlers em que {{ brechas.forte_nick }} <b>não domina</b> (winrate abaixo de 75% nas batalhas capturadas). Especialize-se neles para virar o jogo.</p>
+  <h3>🎯 Brechas do <b>{{ brechas.alvo_nick }}</b> — onde <b>{{ brechas.benef_nick }}</b> pode superá-lo</h3>
+  <p class="nota">Brawlers em que {{ brechas.alvo_nick }} <b>não domina</b> (winrate abaixo de 75% nas batalhas capturadas). {{ brechas.benef_nick }}, especialize-se neles para virar o jogo.</p>
   <div class="brechas-lista">
     {% for b in brechas.brawlers %}
     <div class="brecha-item">
