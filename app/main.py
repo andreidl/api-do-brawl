@@ -363,13 +363,13 @@ def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
     return s
 
 
-def _brechas_do_forte(brawlers: list[dict], min_jogos: int = 4, limite: int = 6) -> list[dict]:
-    """Brawlers em que o jogador NÃO domina (winrate mais baixo), com amostra
-    mínima. São as 'brechas': onde o adversário mais fraco pode se especializar
-    para superá-lo. Se ele vai bem em tudo, mostra os menos dominantes mesmo."""
-    eleg = sorted((b for b in brawlers if b["jogos"] >= min_jogos),
-                  key=lambda b: b["winrate"])
-    fracos = [b for b in eleg if b["winrate"] <= 50][:limite]
+def _brechas_do_forte(brawlers: list[dict], limite_wr: float = 75.0) -> list[dict]:
+    """Brawlers em que o jogador NÃO domina — winrate abaixo de `limite_wr`, sem
+    mínimo de jogos. São as 'brechas': onde o adversário mais fraco pode se
+    especializar para superá-lo (piores primeiro). Se ele passa de 75% em tudo,
+    mostra os 3 menos dominantes mesmo."""
+    eleg = sorted(brawlers, key=lambda b: b["winrate"])
+    fracos = [b for b in eleg if b["winrate"] < limite_wr]
     return fracos or eleg[:3]
 
 

@@ -67,12 +67,12 @@
 {% if brechas %}
 <div class="caixa-dicas caixa-brechas">
   <h3>🎯 Brechas do <b>{{ brechas.forte_nick }}</b> — onde <b>{{ brechas.fraco_nick }}</b> pode superá-lo</h3>
-  <p class="nota">Brawlers em que {{ brechas.forte_nick }} <b>não domina</b> (menor winrate nas batalhas capturadas). Especialize-se neles para virar o jogo.</p>
+  <p class="nota">Brawlers em que {{ brechas.forte_nick }} <b>não domina</b> (winrate abaixo de 75% nas batalhas capturadas). Especialize-se neles para virar o jogo.</p>
   <div class="brechas-lista">
     {% for b in brechas.brawlers %}
     <div class="brecha-item">
       {{ brawler_ico(b.brawler) }}
-      <span class="brecha-wr {{ 'wr-baixo' if b.winrate < 45 else ('wr-medio' if b.winrate < 50 else 'wr-alto') }}">{{ b.winrate }}%</span>
+      <span class="brecha-wr {{ 'wr-baixo' if b.winrate < 50 else ('wr-medio' if b.winrate < 65 else 'wr-alto') }}">{{ b.winrate }}%</span>
       <span class="nota">{{ b.jogos }}j</span>
     </div>
     {% endfor %}
