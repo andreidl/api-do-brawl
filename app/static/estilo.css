@@ -524,6 +524,19 @@ details.recolhivel[open] > summary::before { content: "▾ "; }
 .acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
 .acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }
 
+/* ---------- brechas do comparar ---------- */
+.caixa-brechas { border-left: 3px solid var(--destaque); }
+.brechas-lista { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.brecha-item {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--painel-borda);
+  border-radius: 8px; padding: 0.3rem 0.55rem;
+}
+.brecha-item .ico-brawler { width: 26px; height: 26px; border-radius: 5px; }
+.brecha-wr { font-weight: 800; }
+.brecha-wr.wr-baixo { color: #ff6b6b; } .brecha-wr.wr-medio { color: var(--destaque); }
+.brecha-wr.wr-alto { color: var(--verde); }
+
 /* ---------- tier list (meta) ---------- */
 .tier-lista {
   display: flex; flex-direction: column; gap: 3px;

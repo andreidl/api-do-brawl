@@ -363,6 +363,16 @@ def _sugestoes_melhoria(fraco: dict, forte: dict) -> list[str]:
     return s
 
 
+def _brechas_do_forte(brawlers: list[dict], min_jogos: int = 4, limite: int = 6) -> list[dict]:
+    """Brawlers em que o jogador NÃO domina (winrate mais baixo), com amostra
+    mínima. São as 'brechas': onde o adversário mais fraco pode se especializar
+    para superá-lo. Se ele vai bem em tudo, mostra os menos dominantes mesmo."""
+    eleg = sorted((b for b in brawlers if b["jogos"] >= min_jogos),
+                  key=lambda b: b["winrate"])
+    fracos = [b for b in eleg if b["winrate"] <= 50][:limite]
+    return fracos or eleg[:3]
+
+
 @app.get("/comparar", response_class=HTMLResponse)
 def pagina_comparar(request: Request, a: str | None = None, b: str | None = None):
     """Compara dois jogadores lado a lado (KPIs do banco) + dicas p/ o mais fraco."""
@@ -382,21 +392,26 @@ def pagina_comparar(request: Request, a: str | None = None, b: str | None = None
             if res is None:
                 erros[slot] = f"{tag} ainda não foi consultado — busque o jogador primeiro."
             else:
+                res["fracos_brawler"] = _brechas_do_forte(
+                    db.winrate_por_brawler_do_jogador(conexao, tag))
                 dados[slot] = res
     finally:
         conexao.close()
-    sugestoes = fraco_nick = None
+    sugestoes = fraco_nick = brechas = None
     if dados["a"] and dados["b"]:
         ta, tb = dados["a"].get("trofeus") or 0, dados["b"].get("trofeus") or 0
         if ta != tb:
             fraco, forte = (dados["a"], dados["b"]) if ta < tb else (dados["b"], dados["a"])
             fraco_nick = fraco["nick"]
             sugestoes = _sugestoes_melhoria(fraco, forte)
+            if forte.get("fracos_brawler"):
+                brechas = {"forte_nick": forte["nick"], "fraco_nick": fraco["nick"],
+                           "brawlers": forte["fracos_brawler"]}
     return templates.TemplateResponse(request, "comparar.html", {
         "a": dados["a"], "b": dados["b"], "tag_a": a or "", "tag_b": b or "",
         "erro_a": erros["a"], "erro_b": erros["b"],
         "totais": imagens.totais_colecao(),
-        "sugestoes": sugestoes, "fraco_nick": fraco_nick,
+        "sugestoes": sugestoes, "fraco_nick": fraco_nick, "brechas": brechas,
     })
 
 
