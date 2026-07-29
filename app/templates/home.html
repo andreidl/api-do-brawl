@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import barra_wr, brawler_ico %}
+{% from "_macros.html" import barra_wr, brawler_ico, star_cell %}
 {% block conteudo %}
 <h1>Consultar jogador</h1>
 {% if mensagem_erro %}<p class="erro">{{ mensagem_erro }}</p>{% endif %}
@@ -79,7 +79,7 @@
         <td data-val="{{ b.usos }}"><b>{{ b.usos }}</b></td>
         <td data-val="{{ b.vitorias }}">{{ b.vitorias }}</td>
         <td data-val="{{ b.winrate if b.winrate is not none else -1 }}">{{ barra_wr(b.winrate) }}</td>
-        <td data-val="{{ b.stars }}">{{ b.stars }} ⭐</td>
+        {{ star_cell(b.stars, b.usos) }}
       </tr>
       {% endfor %}
     </tbody>

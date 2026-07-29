@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import barra_wr, brawler_ico %}
+{% from "_macros.html" import barra_wr, brawler_ico, star_cell %}
 {% block titulo %}{{ perfil.nick }} — API do Brawl{% endblock %}
 {% block main_classe %}acordeon{% endblock %}
 {% block conteudo %}
@@ -101,7 +101,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
         <td><b>{{ b.usos }}</b></td>
         <td>{{ b.vitorias }}</td>
         <td>{{ barra_wr(b.winrate, b.decididos) }}</td>
-        <td>{{ b.stars }} ⭐</td>
+        {{ star_cell(b.stars, b.usos) }}
       </tr>
       {% endfor %}
     </tbody>
@@ -250,7 +250,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% for m in indicadores.por_modo %}
     <tr><td>{{ m.nome }}</td><td>{{ m.partidas }}</td><td>{{ m.vitorias }}</td>
         <td>{{ barra_wr(m.winrate, m.partidas) }}</td>
-        <td>{% if m.stars %}{{ m.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td>
+        {{ star_cell(m.stars, m.partidas) }}
         <td>{{ dur(m.duracao_media) }}</td></tr>
     {% endfor %}
   </tbody>
@@ -281,7 +281,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% for b in g.brawlers %}
     <tr><td>{{ b.brawler }}</td><td>{{ b.jogos }}</td>
         <td>{{ barra_wr(b.winrate, b.jogos) }}</td>
-        <td>{% if b.stars %}{{ b.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td></tr>
+        {{ star_cell(b.stars, b.jogos) }}</tr>
     {% endfor %}
   </tbody>
 </table>
@@ -305,7 +305,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% for m in indicadores.por_mapa %}
     <tr><td>{{ mapa_pt(m.nome) }}</td><td>{{ m.partidas }}</td>
         <td>{{ barra_wr(m.winrate, m.partidas) }}</td>
-        <td>{% if m.stars %}{{ m.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td>
+        {{ star_cell(m.stars, m.partidas) }}
         <td>{{ dur(m.duracao_media) }}</td></tr>
     {% endfor %}
   </tbody>
@@ -353,7 +353,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% for b in indicadores.por_brawler %}
     <tr><td>{{ brawler_ico(b.nome) }}</td><td>{{ b.partidas }}</td><td>{{ b.uso_pct }}%</td>
         <td>{{ barra_wr(b.winrate, b.partidas) }}</td>
-        <td>{% if b.stars %}{{ b.stars }} ⭐{% else %}<span class="nota">0</span>{% endif %}</td></tr>
+        {{ star_cell(b.stars, b.partidas) }}</tr>
     {% endfor %}
   </tbody>
 </table>

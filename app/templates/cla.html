@@ -36,7 +36,7 @@ fetch("/api/refrescar-cla", {method: "POST"}).then(r => r.json()).then(d => {
       <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a> <span class="tag">{{ r.tag }}</span></td>
       <td>{{ r.jogos }}</td>
       <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
-      <td>{{ r.stars }} ⭐ <span class="nota">({{ r.star_pct }}%)</span></td>
+      <td data-sort="{{ r.star_pct }}">{{ r.star_pct }}% <span class="nota">({{ r.stars }}⭐)</span></td>
       <td class="{{ 'bom' if r.trofeus_ganhos > 0 else ('ruim' if r.trofeus_ganhos < 0 else '') }}">{{ ("+" if r.trofeus_ganhos > 0 else "") ~ "{:,}".format(r.trofeus_ganhos).replace(",", ".") }}</td>
     </tr>
     {% endfor %}
@@ -188,7 +188,7 @@ function copiarRanking() {
       <td><a href="/jogador/{{ r.tag.lstrip('#') }}">{{ r.nick }}</a> <span class="tag">{{ r.tag }}</span></td>
       <td>{{ r.jogos }}</td>
       <td>{{ barra_wr(r.winrate, r.jogos) }}</td>
-      <td>{{ r.star_pct }}%</td>
+      <td data-sort="{{ r.star_pct }}">{{ r.star_pct }}% <span class="nota">({{ r.stars }}⭐)</span></td>
     </tr>
     {% endfor %}
   </tbody>

@@ -19,6 +19,14 @@
 {%- if u %}<img class="ico-brawler" src="{{ u }}" alt="" loading="lazy" onerror="this.style.display='none'">{% endif %}{{ nome }}
 {%- endmacro %}
 
+{# Célula de star player: TAXA (%) + nº de vezes entre parênteses. Ordena pela
+   taxa (data-sort), não pelo número absoluto. `jogos` = denominador da taxa. #}
+{% macro star_cell(stars, jogos) -%}
+{%- set s = stars or 0 -%}
+{%- set pct = (s / jogos * 100) if jogos else 0 -%}
+<td data-sort="{{ pct | round(2) }}">{% if s %}{{ pct | round(1) }}% <span class="nota">({{ s }}⭐)</span>{% else %}<span class="nota">0%</span>{% endif %}</td>
+{%- endmacro %}
+
 {# Tabela de modos do brawler no meta: posição (de N) + % star player #}
 {% macro tabela_modos(modos) -%}
 <table class="tabela-modos">
