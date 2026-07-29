@@ -657,6 +657,7 @@ def brawlers_usados_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[di
         """SELECT bj.brawler AS brawler,
                   COUNT(*) AS usos,
                   SUM(CASE WHEN bj.resultado = 'Victory' THEN 1 ELSE 0 END) AS vitorias,
+                  SUM(CASE WHEN bj.resultado IN ('Victory','Defeat') THEN 1 ELSE 0 END) AS decididos,
                   SUM(bj.star_player) AS stars
            FROM batalha_jogadores bj
            WHERE bj.tag_jogador = ? AND bj.brawler IS NOT NULL
@@ -664,9 +665,14 @@ def brawlers_usados_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[di
            ORDER BY usos DESC""",
         (tag,),
     ).fetchall()
-    return [{"brawler": l["brawler"], "usos": int(l["usos"]),
-             "vitorias": int(l["vitorias"] or 0), "stars": int(l["stars"] or 0)}
-            for l in linhas]
+    saida: list[dict] = []
+    for l in linhas:
+        usos, vit = int(l["usos"]), int(l["vitorias"] or 0)
+        dec = int(l["decididos"] or 0)
+        saida.append({"brawler": l["brawler"], "usos": usos, "vitorias": vit,
+                      "decididos": dec, "stars": int(l["stars"] or 0),
+                      "winrate": round(vit / dec * 100, 1) if dec else None})
+    return saida
 
 
 def winrate_por_brawler_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[dict]:

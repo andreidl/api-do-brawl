@@ -92,7 +92,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 <details class="recolhivel" {{ 'open' if brawlers_usados | length <= 12 }}>
   <summary>{{ brawlers_usados | length }} brawlers usados — clique para {{ 'recolher' if brawlers_usados | length <= 12 else 'expandir' }}</summary>
   <table>
-    <thead><tr><th>#</th><th>Brawler</th><th>Usos</th><th>Vitórias</th><th>⭐ Star player</th></tr></thead>
+    <thead><tr><th>#</th><th>Brawler</th><th>Usos</th><th>Vitórias</th><th>Winrate</th><th>⭐ Star player</th></tr></thead>
     <tbody>
       {% for b in brawlers_usados %}
       <tr>
@@ -100,6 +100,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
         <td>{{ brawler_ico(b.brawler) }}</td>
         <td><b>{{ b.usos }}</b></td>
         <td>{{ b.vitorias }}</td>
+        <td>{{ barra_wr(b.winrate, b.decididos) }}</td>
         <td>{{ b.stars }} ⭐</td>
       </tr>
       {% endfor %}
