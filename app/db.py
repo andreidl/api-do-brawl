@@ -66,6 +66,12 @@ def _traduzir_sql(sql: str, tem_params: bool) -> str:
 _PARAMS_PG: dict = dict(
     connect_timeout=10,
     keepalives=1, keepalives_idle=30, keepalives_interval=10, keepalives_count=5,
+    # nenhuma query pode travar o worker pra sempre (ms). Se estourar, vira erro
+    # tratável em vez de pendurar a conexão/requisição indefinidamente.
+    options="-c statement_timeout=20000",
+    # prepare_threshold=None desliga prepared statements — necessário para o
+    # Transaction Pooler (pgbouncer) do Supabase e inofensivo na conexão direta.
+    prepare_threshold=None,
 )
 
 

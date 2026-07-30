@@ -39,14 +39,18 @@ def _loop_rastreio() -> None:
 @contextlib.asynccontextmanager
 async def _ciclo_de_vida(app: FastAPI):
     # No modo Postgres, garante o schema UMA vez no boot (não a cada conexão).
+    # TUDO aqui é best-effort: se o banco estiver fora/lento no boot, o app AINDA
+    # SOBE (senão o uvicorn trava em "Waiting for application startup" e o site
+    # inteiro vira 502). As páginas tratam a falha de banco individualmente.
     if db._database_url():
-        con = db.conectar()
         try:
-            db.garantir_schema_pg(con)
-        except db.ErrosBanco as erro:
-            print(f"[startup] aviso ao garantir schema Postgres: {erro}")
-        finally:
-            con.close()
+            con = db.conectar()
+            try:
+                db.garantir_schema_pg(con)
+            finally:
+                con.close()
+        except Exception as erro:  # noqa: BLE001 — nunca travar o boot por causa do banco
+            print(f"[startup] banco indisponível no boot (segue mesmo assim): {erro}")
     try:  # carrega o mapa nome→id dos brawlers p/ as imagens (best-effort)
         n = imagens.recarregar()
         print(f"[startup] mapa de imagens: {n} brawlers")
