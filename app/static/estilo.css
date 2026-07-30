@@ -524,6 +524,10 @@ details.recolhivel[open] > summary::before { content: "▾ "; }
 .acess-ok { background: rgba(61, 220, 132, 0.12); color: var(--verde); border-color: rgba(61, 220, 132, 0.3); }
 .acess-alerta { background: rgba(255, 206, 0, 0.12); color: var(--destaque); border-color: rgba(255, 206, 0, 0.3); }
 
+/* ---------- guia ---------- */
+.receita { line-height: 1.7; padding-left: 1.2rem; }
+.receita li { margin-bottom: 0.4rem; }
+
 /* ---------- brechas do comparar ---------- */
 .caixa-brechas { border-left: 3px solid var(--destaque); }
 .brechas-lista { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }

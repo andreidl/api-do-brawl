@@ -184,6 +184,22 @@ def api_refrescar_cla():
         return JSONResponse({"erro": str(erro)}, status_code=200)
 
 
+@app.get("/guia", response_class=HTMLResponse)
+def pagina_guia(request: Request):
+    """Tutorial: os meios mais eficientes de ganhar troféu, medidos do nosso
+    banco (troféu/partida por faixa, troféu/minuto por modo, melhores brawlers)."""
+    conexao = db.conectar()
+    try:
+        faixas = db.eficiencia_por_faixa_trofeu(conexao)
+        modos = db.eficiencia_por_modo(conexao)
+        brawlers = db.brawlers_mais_rendem(conexao)
+    finally:
+        conexao.close()
+    return templates.TemplateResponse(request, "guia.html", {
+        "faixas": faixas, "modos": modos, "brawlers": brawlers,
+    })
+
+
 @app.get("/mapas", response_class=HTMLResponse)
 def pagina_mapas(request: Request):
     """Estatísticas por modo e por mapa (das nossas batalhas): jogos, duração e

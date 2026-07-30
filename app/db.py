@@ -711,6 +711,77 @@ def brawlers_sem_jogo_do_jogador(conexao: sqlite3.Connection, tag: str) -> list[
     return sorted(possuidos - jogados)
 
 
+def eficiencia_por_faixa_trofeu(conexao: sqlite3.Connection) -> list[dict]:
+    """Troféu médio por partida em cada faixa de troféu do brawler — mostra que
+    puxar brawler com POUCO troféu rende muito mais (a derrota quase não pune).
+    Inclui o winrate de equilíbrio (break-even) de cada faixa."""
+    linhas = conexao.execute(
+        """SELECT CASE WHEN trofeus < 300 THEN 0 WHEN trofeus < 500 THEN 1
+                       WHEN trofeus < 750 THEN 2 WHEN trofeus < 1000 THEN 3 ELSE 4 END AS faixa,
+                  COUNT(*) AS n, AVG(trofeus_delta) AS delta,
+                  AVG(CASE WHEN resultado = 'Victory' THEN trofeus_delta END) AS dvit,
+                  AVG(CASE WHEN resultado = 'Defeat'  THEN trofeus_delta END) AS dder
+           FROM batalha_jogadores
+           WHERE trofeus_delta IS NOT NULL AND trofeus IS NOT NULL
+                 AND resultado IN ('Victory', 'Defeat')
+           GROUP BY faixa ORDER BY faixa"""
+    ).fetchall()
+    rotulos = ["Abaixo de 300", "300–499", "500–749", "750–999", "1000 ou mais"]
+    saida: list[dict] = []
+    for r in linhas:
+        dvit, dder = float(r["dvit"] or 0), float(r["dder"] or 0)
+        denom = dvit - dder
+        be = (-dder / denom * 100) if denom else None
+        saida.append({"faixa": rotulos[int(r["faixa"])], "n": int(r["n"]),
+                      "delta": round(float(r["delta"]), 2), "vitoria": round(dvit, 2),
+                      "derrota": round(dder, 2),
+                      "break_even": round(be, 1) if be is not None else None})
+    return saida
+
+
+def eficiencia_por_modo(conexao: sqlite3.Connection, min_jogos: int = 50) -> list[dict]:
+    """Eficiência de cada modo: troféu/partida, duração média e TROFÉU/MINUTO
+    (a métrica que importa). Modos sem duração registrada (Sobrevivência) vêm com
+    por_min = None."""
+    linhas = conexao.execute(
+        """SELECT b.modo AS modo, COUNT(*) AS n, AVG(bj.trofeus_delta) AS delta,
+                  AVG(CASE WHEN b.duracao_seg > 0 THEN b.duracao_seg END) AS dur,
+                  AVG(CASE WHEN bj.resultado = 'Victory' THEN 1.0 ELSE 0 END) AS wr
+           FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+           WHERE bj.trofeus_delta IS NOT NULL AND bj.resultado IN ('Victory', 'Defeat')
+           GROUP BY b.modo HAVING COUNT(*) >= ?""",
+        (min_jogos,),
+    ).fetchall()
+    saida: list[dict] = []
+    for r in linhas:
+        dur = float(r["dur"]) if r["dur"] else None
+        delta = float(r["delta"])
+        saida.append({"modo": r["modo"], "n": int(r["n"]), "delta": round(delta, 2),
+                      "dur": round(dur) if dur else None,
+                      "por_min": round(delta / (dur / 60.0), 2) if dur and dur > 0 else None,
+                      "wr": round(float(r["wr"] or 0) * 100, 1)})
+    saida.sort(key=lambda x: (x["por_min"] is not None, x["por_min"] or 0), reverse=True)
+    return saida
+
+
+def brawlers_mais_rendem(conexao: sqlite3.Connection, min_jogos: int = 80,
+                         limite: int = 15) -> list[dict]:
+    """Brawlers que mais renderam troféu por partida (com winrate) — os 'cavalos'
+    do momento para puxar troféu. Amostra mínima para evitar ruído."""
+    linhas = conexao.execute(
+        """SELECT bj.brawler AS brawler, COUNT(*) AS n, AVG(bj.trofeus_delta) AS delta,
+                  AVG(CASE WHEN bj.resultado = 'Victory' THEN 1.0 ELSE 0 END) AS wr
+           FROM batalha_jogadores bj
+           WHERE bj.trofeus_delta IS NOT NULL AND bj.resultado IN ('Victory', 'Defeat')
+                 AND bj.brawler IS NOT NULL
+           GROUP BY bj.brawler HAVING COUNT(*) >= ?
+           ORDER BY AVG(bj.trofeus_delta) DESC LIMIT ?""",
+        (min_jogos, limite),
+    ).fetchall()
+    return [{"brawler": r["brawler"], "n": int(r["n"]), "delta": round(float(r["delta"]), 2),
+             "wr": round(float(r["wr"] or 0) * 100, 1)} for r in linhas]
+
+
 def contar_batalhas(conexao: sqlite3.Connection, tag: str) -> int:
     return conexao.execute(
         "SELECT COUNT(*) AS n FROM batalha_jogadores WHERE tag_jogador = ?", (tag,)

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% from "_macros.html" import brawler_ico %}
+{% block titulo %}Guia — como ganhar troféu — API do Brawl{% endblock %}
+{% block conteudo %}
+<h1>🎓 Como ganhar troféu com eficiência</h1>
+<p class="nota">Tudo abaixo é medido das <b>nossas batalhas capturadas</b> (troféus ganhos/perdidos por partida reais), não de conselho genérico.</p>
+
+<h2>1. Puxe brawlers com POUCO troféu <span class="nota">— o maior fator</span></h2>
+<p class="nota">Quanto mais alto o troféu do brawler, menos você ganha por vitória e <b>muito mais</b> você perde por derrota. Abaixo de 300, perder quase não dói.</p>
+<table>
+  <thead><tr><th>Troféu do brawler</th><th>Troféu / partida</th><th>Numa vitória</th><th>Numa derrota</th><th>Winrate p/ empatar</th><th>Amostra</th></tr></thead>
+  <tbody>
+    {% for f in faixas %}
+    <tr>
+      <td>{{ f.faixa }}</td>
+      <td><b class="{{ 'bom' if f.delta >= 7 else '' }}">+{{ f.delta }}</b></td>
+      <td class="bom">+{{ f.vitoria }}</td>
+      <td class="{{ 'ruim' if f.derrota < -3 else '' }}">{{ f.derrota }}</td>
+      <td>{% if f.break_even is not none %}{{ f.break_even }}%{% else %}—{% endif %}</td>
+      <td class="nota">{{ "{:,}".format(f.n).replace(",", ".") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="nota">💡 Um brawler abaixo de 300 rende bem mais que um de 1000+. E o "winrate p/ empatar" mostra: em troféu baixo, quase qualquer resultado lucra; em 1000+ você precisa vencer bastante só pra não cair.</p>
+
+<h2>2. Jogue os modos que mais rendem POR MINUTO</h2>
+<p class="nota">Não é só o troféu por partida — é o troféu por <b>tempo</b>. Um modo que rende muito mas dura o triplo é pior. Aqui está o troféu/minuto real.</p>
+<table>
+  <thead><tr><th>Modo</th><th>Troféu / min</th><th>Troféu / partida</th><th>Duração méd.</th><th>Winrate</th><th>Amostra</th></tr></thead>
+  <tbody>
+    {% for m in modos %}
+    <tr>
+      <td>{{ m.modo }}</td>
+      <td><b class="{{ 'bom' if m.por_min and m.por_min >= 4.5 else '' }}">{% if m.por_min is not none %}{{ m.por_min }}{% else %}<span class="nota">sem duração</span>{% endif %}</b></td>
+      <td>+{{ m.delta }}</td>
+      <td>{% if m.dur %}{{ (m.dur // 60) }}m{{ '%02d'|format(m.dur % 60) }}s{% else %}<span class="nota">—</span>{% endif %}</td>
+      <td>{{ m.wr }}%</td>
+      <td class="nota">{{ "{:,}".format(m.n).replace(",", ".") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="nota">⚠️ <b>Sobrevivência</b> (Solo/Dupla) rende muito por partida, mas a API não informa a duração dela — por isso não dá pra calcular o troféu/minuto no nosso dado. <b>Cerco</b> mostra a armadilha: bom por partida, mas as partidas são longas → péssimo por minuto.</p>
+
+<h2>3. Os brawlers que mais rendem troféu</h2>
+<p class="nota">Maior troféu médio por partida no nosso banco (mín. 80 jogos). São os "cavalos" pra puxar troféu agora.</p>
+<table>
+  <thead><tr><th>#</th><th>Brawler</th><th>Troféu / partida</th><th>Winrate</th><th>Amostra</th></tr></thead>
+  <tbody>
+    {% for b in brawlers %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ brawler_ico(b.brawler) }}</td>
+      <td><b class="bom">+{{ b.delta }}</b></td>
+      <td>{{ b.wr }}%</td>
+      <td class="nota">{{ b.n }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>📋 A receita, resumida</h2>
+<ol class="receita">
+  <li><b>Escolha seus brawlers fortes que estão com pouco troféu</b> (abaixo de ~500) — é onde cada partida rende mais e a derrota pune menos.</li>
+  <li><b>Jogue Ataque ao Cofre e Nocaute</b> — rápidos e rendem muito por minuto. Evite grindar Cerco (lento).</li>
+  <li><b>Prefira os mapas/modos onde SEU winrate é alto</b> — veja isso no seu perfil (winrate por mapa e melhor brawler por modo).</li>
+  <li><b>Vitória vale ~2× o que a derrota tira</b> nas faixas médias — foque em ganhar consistência, não em jogar muitas partidas ruins.</li>
+</ol>
+<p class="nota">Quer o plano aplicado a você? Abra <b>seu perfil</b> — lá vão aparecer os SEUS brawlers pra puxar e seus modos mais rentáveis.</p>
+{% endblock %}
