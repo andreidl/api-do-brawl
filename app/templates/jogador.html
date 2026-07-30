@@ -61,6 +61,7 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
 <nav class="indice">
   <div class="indice-linha">
     <span class="indice-titulo">📑 Nesta página:</span>
+    {% if plano_trofeus and (plano_trofeus.puxar or plano_trofeus.modos) %}<a href="#plano">🎓 Plano de troféus</a>{% endif %}
     {% if not filtro_tipo %}<a href="#carreira">Carreira</a>{% endif %}
     {% if not filtro_tipo and conta %}<a href="#conta">Conta</a>{% endif %}
     {% if indicadores.longo_prazo and filtro_tipo != 'ranked' %}<a href="#longo-prazo">Histórico longo prazo</a>{% endif %}
@@ -86,6 +87,37 @@ fetch("/api/refrescar/{{ perfil.tag.lstrip('#') }}", {method: "POST"})
     {% if indicadores.brawler_detalhado %}<a href="#detalhe-brawler">detalhe por brawler (cards)</a>{% endif %}
   </div>
 </nav>
+
+{% if plano_trofeus and (plano_trofeus.puxar or plano_trofeus.modos) %}
+<h2 id="plano">🎓 Seu plano de troféus <span class="nota">(como subir mais rápido — <a href="/guia">ver o guia</a>)</span></h2>
+{% if plano_trofeus.puxar %}
+<h3>Puxe estes brawlers <span class="nota">(seus, abaixo de {{ plano_trofeus.teto }} troféus — rendem mais e a derrota pune pouco)</span></h3>
+<table>
+  <thead><tr><th>Brawler</th><th>🏆 Troféus</th><th>Seu winrate</th></tr></thead>
+  <tbody>
+    {% for b in plano_trofeus.puxar %}
+    <tr>
+      <td>{{ brawler_ico(b.brawler) }}</td>
+      <td>{{ b.trofeus }}</td>
+      <td>{% if b.winrate is not none %}{{ barra_wr(b.winrate, b.jogos) }}{% else %}<span class="nota">sem jogo registrado</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<p class="nota">Ordenados pelo seu winrate — priorize os de winrate alto com troféu baixo (mais ganho, menos risco).</p>
+{% endif %}
+{% if plano_trofeus.modos %}
+<h3>Seus modos mais rentáveis <span class="nota">(troféu médio por partida, das suas batalhas)</span></h3>
+<table>
+  <thead><tr><th>Modo</th><th>Troféu / partida</th><th>Suas partidas</th></tr></thead>
+  <tbody>
+    {% for m in plano_trofeus.modos %}
+    <tr><td>{{ m.modo }}</td><td><b class="{{ 'bom' if m.delta > 0 else 'ruim' }}">{{ '+' if m.delta > 0 }}{{ m.delta }}</b></td><td class="nota">{{ m.n }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endif %}
 
 {% if brawlers_usados %}
 <h2 id="mais-usados">🎯 Brawlers mais usados <span class="nota">(nas batalhas capturadas — todas, incluindo showdown)</span></h2>

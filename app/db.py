@@ -782,6 +782,39 @@ def brawlers_mais_rendem(conexao: sqlite3.Connection, min_jogos: int = 80,
              "wr": round(float(r["wr"] or 0) * 100, 1)} for r in linhas]
 
 
+def plano_trofeus_do_jogador(conexao: sqlite3.Connection, tag: str,
+                             teto: int = 600, limite: int = 12) -> dict | None:
+    """Plano personalizado de troféus: brawlers que o jogador POSSUI com poucos
+    troféus (< teto) e que ele joga bem — os melhores pra puxar — mais os modos
+    onde ELE rende mais troféu/partida. None se nunca foi consultado."""
+    perfil = perfil_do_banco(conexao, tag)
+    if not perfil:
+        return None
+    wr = {b["brawler"]: b for b in winrate_por_brawler_do_jogador(conexao, tag)}
+    puxar: list[dict] = []
+    for b in perfil.get("brawlers") or []:
+        nome = (b.get("nome") or "").upper()
+        tro = b.get("trofeus") or 0
+        if not nome or tro >= teto:
+            continue
+        w = wr.get(nome)
+        puxar.append({"brawler": nome, "trofeus": tro,
+                      "winrate": w["winrate"] if w else None,
+                      "jogos": w["jogos"] if w else 0})
+    # melhor winrate (com dado) primeiro; sem dado vai pro fim; desempate: menos troféu
+    puxar.sort(key=lambda x: (-(x["winrate"] if x["winrate"] is not None else -1),
+                              x["trofeus"]))
+    modos = [{"modo": r["modo"], "n": int(r["n"]), "delta": round(float(r["delta"]), 2)}
+             for r in conexao.execute(
+        """SELECT b.modo AS modo, COUNT(*) AS n, AVG(bj.trofeus_delta) AS delta
+           FROM batalha_jogadores bj JOIN batalhas b ON b.hash = bj.hash
+           WHERE bj.tag_jogador = ? AND bj.trofeus_delta IS NOT NULL
+                 AND bj.resultado IN ('Victory', 'Defeat')
+           GROUP BY b.modo HAVING COUNT(*) >= 5
+           ORDER BY AVG(bj.trofeus_delta) DESC""", (tag,)).fetchall()]
+    return {"puxar": puxar[:limite], "modos": modos[:6], "teto": teto}
+
+
 def contar_batalhas(conexao: sqlite3.Connection, tag: str) -> int:
     return conexao.execute(
         "SELECT COUNT(*) AS n FROM batalha_jogadores WHERE tag_jogador = ?", (tag,)

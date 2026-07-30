@@ -478,6 +478,7 @@ def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
         brawlers_modo: list[dict] = db.historico_brawler_modo_do_jogador(conexao, perfil["tag"])
         participantes: list[dict] = db.jogadores_das_batalhas(conexao, perfil["tag"])
         brawlers_usados: list[dict] = db.brawlers_usados_do_jogador(conexao, perfil["tag"])
+        plano_trofeus: dict | None = db.plano_trofeus_do_jogador(conexao, perfil["tag"])
     finally:
         conexao.close()
     historico = _filtrar_tipo(historico, filtro_tipo)
@@ -497,6 +498,7 @@ def _consultar(tag: str, filtro_tipo: str | None = None) -> dict:
     return {
         "perfil": perfil, "gravacao": gravacao,
         "brawlers_usados": brawlers_usados,
+        "plano_trofeus": plano_trofeus,
         "indicadores": indicadores, "extra": extra,
         "brawlers_longo_prazo": brawlers_lp,
         "correlacao": correlacao,
@@ -580,6 +582,7 @@ def _consultar_do_banco(tag_norm: str, filtro_tipo: str | None = None) -> dict |
         brawlers_modo: list[dict] = db.historico_brawler_modo_do_jogador(conexao, tag_norm)
         participantes: list[dict] = db.jogadores_das_batalhas(conexao, tag_norm)
         brawlers_usados: list[dict] = db.brawlers_usados_do_jogador(conexao, tag_norm)
+        plano_trofeus: dict | None = db.plano_trofeus_do_jogador(conexao, tag_norm)
     finally:
         conexao.close()
     historico = _filtrar_tipo(historico, filtro_tipo)
@@ -596,6 +599,7 @@ def _consultar_do_banco(tag_norm: str, filtro_tipo: str | None = None) -> dict |
         "perfil": perfil,
         "gravacao": {"batalhas_novas": 0, "total_batalhas": len(historico)},
         "brawlers_usados": brawlers_usados,
+        "plano_trofeus": plano_trofeus,
         "indicadores": indicadores, "extra": extra,
         "brawlers_longo_prazo": brawlers_lp,
         "correlacao": correlacao,
